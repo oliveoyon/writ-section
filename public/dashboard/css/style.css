@@ -1,0 +1,632 @@
+body {
+    font-family: Arial, sans-serif, bangla;
+    margin: 0;
+    padding: 0;
+}
+
+#loader-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #5d5c5cb3;
+    z-index: 9999;
+ }
+ 
+ #loader {
+    border: 16px solid #f3f3f3;
+    border-top: 16px solid #c30f08;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    margin: 15% auto;
+    animation: spin 1s linear infinite;
+ }
+
+ @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Sidebar */
+.sidebar {
+    height: 100vh; /* Full viewport height */
+    overflow-y: auto; /* Make sidebar scrollable */
+    position: fixed; /* Keep sidebar fixed */
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    background-color: #343a40;
+    color: white;
+    transition: transform 0.3s ease;
+    z-index: 10;
+    padding-top: 60px;
+}
+
+.sidebar.collapsed {
+    transform: translateX(-250px);
+}
+
+.search-form {
+    display: flex;
+    align-items: center;
+    padding: 6px 16px; /* Increased right padding */
+    /* background-color: #495057; */
+    border-bottom: 1px solid #343a40;
+    margin-bottom: 10px;
+}
+
+.search-form input {
+    flex: 1;
+    padding: 6px;
+    border: none;
+    border-radius: 4px 0 0 4px;
+    outline: none;
+    background-color: #6c757d;
+    color: white;
+    font-size: 14px;
+    height: 32px;
+}
+
+.search-form input::placeholder {
+    color: #dcdcdc;
+}
+
+.search-form button {
+    padding: 6px 10px;
+    border: none;
+    background: #28a745;
+    cursor: pointer;
+    border-radius: 0 4px 4px 0;
+    height: 32px;
+}
+
+.search-form button:hover {
+    background: #218838;
+}
+
+.search-form i {
+    color: white;
+}
+
+.sidebar .logo {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* Sidebar container */
+/* Sidebar */
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+/* Sidebar list items */
+.sidebar ul li {
+    padding: 12px 20px;
+    border-bottom: 1px solid #495057;
+    cursor: pointer;
+    position: relative;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+/* Remove default link styles */
+.sidebar ul li a {
+    text-decoration: none; /* Remove underline */
+    color: inherit; /* Inherit the color from the list item */
+    display: block; /* Make anchor tag a block-level element */
+}
+
+/* Sidebar hover effect */
+.sidebar ul li:hover {
+    background-color: #495057;
+}
+
+/* Submenu styles */
+.sidebar ul li .submenu {
+    display: none;
+    padding-left: 2px; /* Reduced left space */
+    margin-left: 0px; /* Reduced left space */
+}
+
+/* Show submenu when parent has 'show' class */
+.sidebar ul li.show > .submenu {
+    display: block;
+}
+
+/* Multilevel menu icons */
+.sidebar ul li i {
+    margin-right: 10px;
+}
+
+/* Full-width green background for active submenu */
+.sidebar ul li.show::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #28a745; /* Green background */
+}
+
+/* Hover effect for submenu items */
+.sidebar ul li .submenu li {
+    padding: 10px 20px;
+    border-bottom: 1px solid #495057;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar ul li .submenu li:hover {
+    background-color: #28a745; /* Green hover */
+    color: white;
+}
+
+/* Active Menu Item */
+.sidebar ul li.menu-active {
+    background-color: #495057; /* Active menu item background */
+    color: white; /* Ensure text color is white */
+}
+
+/* Active Submenu Item */
+.sidebar ul li .submenu .submenu-active {
+    background-color: #28a745; /* Green background for active submenu */
+    color: white; /* White text for active submenu item */
+}
+
+/* Ensure submenus are visible when active */
+.sidebar ul li.show .submenu {
+    display: block;
+}
+
+/* Optional: Add a green border to active menu */
+.sidebar ul li.menu-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 5px;
+    height: 100%;
+    background-color: #28a745; /* Green left border */
+}
+
+/* Active submenu item hover effect */
+.sidebar ul li .submenu .submenu-active:hover {
+    background-color: #218838; /* Darker green for active submenu hover */
+    color: white; /* White text on hover */
+}
+
+/* Add a gap between the main menu item and the first submenu item */
+.sidebar ul li.has-submenu > .submenu {
+    margin-top: 10px; /* Adds a 3px gap between the main menu item and the first submenu */
+}
+
+/* Sidebar toggle button */
+#sidebarToggle {
+    font-size: 24px;
+    color: white;
+    border: none;
+    background: transparent;
+    display: block;
+}
+
+/* Header */
+.header {
+    background-color: #c30f08;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 250px;
+    width: calc(100% - 250px);
+    z-index: 9;
+    transition: left 0.3s ease, width 0.3s ease;
+}
+
+/* Content */
+.content {
+    margin-left: 250px;
+    padding: 20px;
+    transition: margin-left 0.3s ease;
+    margin-top: 60px;
+}
+
+.content.collapsed {
+    margin-left: 0;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    /* Uniform chart sizing */
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    /* Subtle gray */
+    border-bottom: 1px solid #dee2e6;
+    /* Border for separation */
+    font-size: 16px;
+    font-weight: 600;
+    color: #343a40;
+    /* Dark text */
+}
+
+.small-box {
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow */
+}
+
+.small-box .icon {
+    opacity: 0.7;
+    /* Subtle icon opacity */
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fa;
+    /* Light striped table rows */
+}
+
+.progress {
+    height: 20px;
+    border-radius: 8px;
+}
+
+.progress-bar {
+    line-height: 20px;
+}
+
+.dashboard-stats {
+    padding: 20px;
+    background: #f8f9fa; /* Light background */
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.stat-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+}
+
+.stat-box:hover {
+    transform: translateY(-5px);
+}
+
+.stat-box .inner h3 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+    color: #333;
+}
+
+.stat-box .inner p {
+    font-size: 14px;
+    margin: 5px 0 0;
+    color: #666;
+}
+
+.stat-box .icon i {
+    font-size: 30px;
+    color: #007bff;
+}
+
+.stat-box:nth-child(2) .icon i {
+    color: #28a745;
+}
+
+.stat-box:nth-child(3) .icon i {
+    color: #ffc107;
+}
+
+.stat-box:nth-child(4) .icon i {
+    color: #17a2b8;
+}
+
+
+
+
+/* Mobile view adjustments */
+@media (max-width: 1024px) {
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 9;
+    }
+
+    #sidebarToggle {
+        order: 2;
+    }
+
+    .profile-menu {
+        order: 1;
+    }
+
+    .sidebar {
+        left: -250px;
+        height: 100%;
+    }
+
+    .sidebar.show {
+        left: 0;
+    }
+
+    .content {
+        margin-left: 0;
+    }
+
+    #overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 8;
+    }
+}
+
+
+ /* Modal Background */
+ .modal-content {
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    border: none;
+    transition: all 0.3s ease-in-out;
+    background-color: #f8f9fa;
+    /* Light gray background */
+}
+
+/* Modal Header */
+.modal-header {
+    background-color: #c30f08;
+    /* Your primary red */
+    color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    padding: 15px;
+}
+
+/* Modal Title */
+.modal-title {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Close Button */
+.modal-header .btn-close {
+    color: white;
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+/* Modal Body */
+.modal-body {
+    padding: 20px;
+}
+
+/* Form Inputs */
+.modal-body input,
+.modal-body select,
+.modal-body textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    transition: border 0.2s, box-shadow 0.2s;
+    background-color: white;
+}
+
+.modal-body input:focus,
+.modal-body select:focus,
+.modal-body textarea:focus {
+    border-color: #c30f08;
+    outline: none;
+    box-shadow: 0 0 5px rgba(195, 15, 8, 0.4);
+}
+
+/* Modal Footer */
+.modal-footer {
+    padding: 15px;
+    border-top: 1px solid #ddd;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    background-color: #e9ecef;
+    /* Light gray footer */
+}
+
+/* Buttons */
+.modal-footer .btn {
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+/* Primary Button */
+.modal-footer .btn-primary {
+    background-color: #c30f08;
+    border: none;
+}
+
+.modal-footer .btn-primary:hover {
+    background-color: #9d0c06;
+}
+
+/* Cancel Button */
+.modal-footer .btn-secondary {
+    background-color: #6c757d;
+    /* Gray */
+    border: none;
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: #545b62;
+}
+
+.custombtn .btn {
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+/* Primary Button */
+.custombtn .btn-primary {
+    background-color: #c30f08;
+    border: none;
+}
+
+.custombtn .btn-primary:hover {
+    background-color: #9d0c06;
+}
+
+/* Cancel Button */
+.custombtn .btn-secondary {
+    background-color: #6c757d;
+    /* Gray */
+    border: none;
+}
+
+.custombtn .btn-secondary:hover {
+    background-color: #545b62;
+}
+
+.btnCustom {
+    background-color: #c30f08;
+    border: none;
+}
+
+.btnCustom:hover {
+    background-color: #9d0c06;
+}
+
+/* Responsive Modal */
+@media (max-width: 576px) {
+    .modal-dialog {
+        max-width: 90%;
+    }
+}
+
+
+/* Profile Menu Styles */
+.profile-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Profile Button Styling */
+.profile-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.profile-button i {
+    margin-right: 8px;
+    font-size: 18px;
+}
+
+/* Hover Effect on Profile Button */
+.profile-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+/* Dropdown Menu Styling */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    min-width: 160px;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Hover Effect on Dropdown Links */
+.dropdown-menu a {
+    padding: 12px 20px;
+    display: block;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    border-bottom: 1px solid #f1f1f1;
+    transition: background-color 0.3s ease;
+    border-radius: 5px;
+}
+
+.dropdown-menu a:hover {
+    background-color: #c30f08;
+    color: white;
+}
+
+/* Remove Border from Last Item */
+.dropdown-menu a:last-child {
+    border-bottom: none;
+}
+
+/* Dropdown Active State */
+.profile-menu .show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Profile Button Hover Background */
+.profile-menu:hover .profile-button {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Mobile Fixes */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        left: 0; /* Adjusts dropdown to the left on mobile */
+        right: auto; /* Removes the right positioning */
+        width: 100%; /* Makes the dropdown fill the screen width */
+    }
+}
+
+
+
