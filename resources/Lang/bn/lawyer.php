@@ -26,7 +26,7 @@ return [
         'full_name'     => 'পূর্ণ নাম',
         'email'         => 'ইমেইল',
         'phone'         => 'মোবাইল নম্বর',
-        'address'       => 'ঠিকানা',
+        'enrolmentCourt' => 'নিবন্ধিত কোর্ট',
         'bar_council_id'=> 'বার কাউন্সিল আইডি',
         'member_since'  => 'সদস্য হয়েছেন',
     ],

@@ -26,7 +26,7 @@ return [
         'full_name' => 'Full Name',
         'email' => 'Email',
         'phone' => 'Phone',
-        'address' => 'Address',
+        'enrolmentCourt' => 'Enrolment Court',
         'bar_council_id' => 'Bar Council ID',
         'member_since' => 'Member Since',
     ],

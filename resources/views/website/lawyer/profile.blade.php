@@ -110,8 +110,8 @@
                                 <p class="mb-0">{{ auth()->user()->lawyer->phone ?? '' }}</p>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <strong>{{ __('lawyer.label.address') }}:</strong>
-                                <p class="mb-0">Dhaka, Bangladesh</p>
+                                <strong>{{ __('lawyer.label.enrolmentCourt') }}:</strong>
+                                <p class="mb-0">{{ auth()->user()->lawyer->barCourtType ?? '' }}</p>
                             </div>
                         </div>
                     </div>

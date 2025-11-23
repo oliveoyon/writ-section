@@ -101,6 +101,16 @@ class LawyerRegistrationController extends Controller
             'password.regex' => __('writ.lawyer.validation_password_english'), // "Password must contain English characters only"
         ]);
 
+        $phone = $request->phone;
+
+        // Remove leading 88 if exists
+        if (str_starts_with($phone, '88')) {
+            $phone = substr($phone, 2);
+        }
+
+        // Optional: remove any other non-digit characters
+        $phone = preg_replace('/\D/', '', $phone);
+
         $user = User::create([
             'name' => $request->full_name,
             'email' => $request->email,
@@ -113,7 +123,7 @@ class LawyerRegistrationController extends Controller
             'user_id' => $user->id,
             'bar_council_id' => $request->member_id,
             'full_name' => $request->full_name,
-            'phone' => $request->phone,
+            'phone' => $phone,
             'picture' => $request->picture ?? null,
             'barDateOfJoining' => $request->barDateOfJoining ?? null,
             'barDateOfEnrollment' => $request->barDateOfEnrollment ?? null,
