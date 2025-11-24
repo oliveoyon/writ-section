@@ -81,13 +81,29 @@
 
                 <!-- Profile Header -->
                 <div class="profile-header d-flex align-items-center">
-                    <img src="{{ auth()->user()->lawyer->picture ?? '' }}" class="me-3" alt="Lawyer Photo">
+                    @php
+                        $localPic = auth()->user()->lawyer->picture ?? null; // uploaded image in storage
+                        $apiPic = auth()->user()->lawyer->api_picture ?? null; // picture from API
+                        if ($localPic) {
+                            $displaySrc = asset($localPic); // use local uploaded image
+                        } elseif ($apiPic) {
+                            $displaySrc = $apiPic; // use API link
+                        } else {
+                            $displaySrc = 'https://via.placeholder.com/110x110?text=Photo'; // placeholder
+                        }
+                    @endphp
+
+                    <img src="{{ $displaySrc }}" class="me-3" alt="Lawyer Photo"
+                        style="width:110px; height:110px; border-radius:50%; object-fit:cover;">
+
                     <div>
                         <h4 class="mb-1">{{ auth()->user()->lawyer->full_name ?? '' }}</h4>
                         <p class="mb-1">{{ __('lawyer.label.bar_council_id') }}:
                             <span class="gold-text">{{ auth()->user()->lawyer->bar_council_id ?? '' }}</span>
                         </p>
-                        <p class="mb-0">{{ __('lawyer.label.member_since') }}: {{ auth()->user()->lawyer->barDateOfEnrollment ? date('Y', strtotime(auth()->user()->lawyer->barDateOfEnrollment)) : '' }}</p>
+                        {{-- <p class="mb-0">{{ __('lawyer.label.member_since') }}:
+                            {{ auth()->user()->lawyer->barDateOfEnrollment ? date('Y', strtotime(auth()->user()->lawyer->barDateOfEnrollment)) : '' }}
+                        </p> --}}
                     </div>
                 </div>
 
@@ -117,16 +133,7 @@
                     </div>
                 </div>
 
-                <!-- About Me -->
-                <div class="card lawyer-card mb-4">
-                    <div class="card-body">
-                        <h5 class="profile-section-title">{{ __('lawyer.section.about_me') }}</h5>
-                        <p>
-                            Professional lawyer specializing in civil and family matters with over 8 years of experience.
-                            Passionate about justice, ethics, and client support.
-                        </p>
-                    </div>
-                </div>
+
 
                 <!-- Recent Cases -->
                 <div class="card lawyer-card">

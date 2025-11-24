@@ -64,6 +64,45 @@
         footer a:hover {
             text-decoration: underline;
         }
+
+        @media (max-width: 991px) {
+
+            /* Always show dropdown menu items */
+            .mobile-expand {
+                display: block !important;
+                position: static !important;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            /* Remove dropdown-item design */
+            .mobile-expand .dropdown-item {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                color: #fff !important;
+                /* same as navbar links */
+            }
+
+            /* Remove hover background */
+            .mobile-expand .dropdown-item:hover {
+                background: none !important;
+                color: #d4a017 !important;
+            }
+
+            /* Hide dropdown arrow toggle */
+            #lawyerMenu::after {
+                display: none !important;
+            }
+
+            /* Make the username act like a normal header label */
+            #lawyerMenu {
+                pointer-events: none;
+                cursor: default;
+                color: #d4a017 !important;
+                font-weight: bold;
+            }
+        }
     </style>
 </head>
 
@@ -82,10 +121,11 @@
 
                     <!-- Lawyer dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="lawyerMenu" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="lawyerMenu" role="button"
+                            data-bs-toggle="dropdown">
                             {{ Auth::user()->name ?? __('lawyer.nav.lawyer') }}
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="lawyerMenu">
+                        <ul class="dropdown-menu dropdown-menu-end mobile-expand" aria-labelledby="lawyerMenu">
                             <li><a class="dropdown-item" href="#">{{ __('lawyer.nav.dashboard') }}</a></li>
                             <li><a class="dropdown-item" href="#">{{ __('lawyer.nav.my_cases') }}</a></li>
                             <li><a class="dropdown-item" href="#">{{ __('lawyer.nav.notifications') }}</a></li>
@@ -163,4 +203,5 @@
         });
     </script>
 </body>
+
 </html>
