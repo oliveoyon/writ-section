@@ -1,27 +1,22 @@
-@extends('dashboard.layouts.admin')
+@extends('admin.layouts.adminlayout')
 @section('title', 'Users List')
 
 @section('content')
-<div class="app-content-header">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-sm-6">
-                <h3 class="mb-0">Users</h3>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-end">
-                    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Users</li>
-                </ol>
-            </div>
-        </div>
+<div class="container py-2">
+
+    <!-- Header -->
+    <div class="lawyer-card d-flex justify-content-between align-items-center mb-3 p-2" style="background:#00284d; color:#fff;">
+        <h4 class="mb-0 profile-section-title text-white">Users</h4>
+        @can('Create Users')
+        <a href="{{ route('admin.users.create') }}" class="btn btn-gold btn-sm px-4">
+            <i class="bi bi-plus-lg"></i> Create User
+        </a>
+        @endcan
     </div>
-</div>
 
-<div class="app-content">
-    <div class="container-fluid">
+    <!-- Users Grid -->
+    <div class="lawyer-card p-3">
         <div class="row g-4">
-
             @foreach($users as $user)
             <div class="col-md-6 col-lg-4">
                 <div class="card shadow-sm border-0 user-card h-100 position-relative">
@@ -37,7 +32,9 @@
                                     {{ $user->is_active ? 'Active' : 'Inactive' }}
                                 </span>
                             </div>
-                            <p class="text-muted mb-2">{{ $user->email }}</p>
+                            <p class="text-muted mb-1">{{ $user->email }}</p>
+                            <p class="text-muted mb-1">{{ $user->phone_number ?? 'N/A' }}</p>
+                            <p class="text-muted mb-2"><strong>User Type:</strong> {{ ucfirst($user->user_type) }}</p>
 
                             <!-- Roles -->
                             <div class="mb-2">
@@ -45,24 +42,30 @@
                                     <span class="badge bg-primary me-1 mb-1">{{ $role->name }}</span>
                                 @endforeach
                             </div>
-
                         </div>
 
                         <!-- Actions -->
                         <div class="d-flex justify-content-between align-items-center mt-3">
+                            @can('View User Permissions')
                             <div>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#permissionsModal-{{ $user->id }}">
                                     View Permissions
                                     <span class="badge bg-light text-dark">{{ $user->permissions->count() }}</span>
                                 </button>
                             </div>
+                            @endcan
+                            
                             <div class="d-flex gap-2">
+                                @can('Edit Users')
                                 <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil-fill"></i>
                                 </a>
+                                @endcan
+                                @can('Delete Users')
                                 <button type="button" class="btn btn-sm btn-outline-danger delete-user" data-id="{{ $user->id }}">
                                     <i class="bi bi-trash-fill"></i>
                                 </button>
+                                @endcan
                             </div>
                         </div>
                     </div>
@@ -103,12 +106,13 @@
 
             </div>
             @endforeach
-
         </div>
     </div>
-</div>
 
-@push('styles')
+</div>
+@endsection
+
+@push('css')
 <style>
 .user-card {
     border-radius: 0.8rem;
@@ -130,10 +134,20 @@
 .status-bar {
     z-index: 1;
 }
+.btn-gold {
+    background-color:#d4a017;
+    color:#fff;
+    border-radius:8px;
+    font-weight:500;
+}
+.btn-gold:hover {
+    background-color:#b38b0f;
+}
 </style>
 @endpush
 
-@push('scripts')
+@push('js')
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
 
@@ -176,4 +190,3 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 @endpush
-@endsection

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\PermissionManagerController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\LawyerCaseController;
 use App\Http\Controllers\LawyerController;
 use App\Http\Controllers\LawyerRegistrationController;
 use App\Http\Controllers\ProfileController;
@@ -33,6 +34,12 @@ Route::middleware(['auth', 'checkUserType:lawyer'])->prefix('lawyer')->group(fun
     Route::get('/documents', [LawyerController::class, 'documents'])->name('lawyer.documents');
     Route::get('/settings', [LawyerController::class, 'settings'])->name('lawyer.settings');
     Route::post('/settings/update', [LawyerController::class, 'settingsUpdate'])->name('lawyer.settings.update');
+
+
+
+    Route::get('/case/create', [LawyerCaseController::class, 'create'])->name('lawyer.case.create');
+    Route::post('/case/store', [LawyerCaseController::class, 'store'])->name('lawyer.case.store');
+    Route::get('/case/{case}/top-sheet', [LawyerCaseController::class, 'printTopSheet'])->name('lawyer.case.top_sheet');
     
 });
 
@@ -45,6 +52,8 @@ Route::middleware('auth')->group(function () {
 
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin'])->group(function () {
+    Route::get('/homes', [DashboardController::class, 'homes'])->name('dashboard.homes');
+    
     Route::get('/home', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/home-test', [DashboardController::class, 'test'])->name('dashboard.test');
     Route::resource('permission-groups', PermissionGroupController::class)->except(['show']);

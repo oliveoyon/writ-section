@@ -22,6 +22,9 @@ return [
         'recent_cases' => 'সাম্প্রতিক মামলাসমূহ',
         'change_password' => 'পাসওয়ার্ড পরিবর্তন',
         'profile_picture' => 'প্রোফাইল ছবি',
+        'basic_info' => 'মৌলিক তথ্য',
+        'recent_cases' => 'সাম্প্রতিক মামলা',
+        'case_filing' => 'নতুন মামলা দায়ের করুন',
     ],
 
     'label' => [
@@ -34,6 +37,22 @@ return [
         'current_password' => 'বর্তমান পাসওয়ার্ড',
         'new_password' => 'নতুন পাসওয়ার্ড',
         'confirm_new_password' => 'নতুন পাসওয়ার্ড নিশ্চিত করুন',
+        'full_name' => 'পূর্ণ নাম',
+        'email' => 'ইমেইল',
+        'phone' => 'ফোন',
+        'bar_council_id' => 'বার কাউন্সিল আইডি',
+        'enrolmentCourt' => 'নিবন্ধনকৃত আদালত',
+        'case_type' => 'মামলার ধরন',
+        'subject' => 'বিষয়',
+        'description' => 'বিবরণ',
+        'file' => 'ফাইল',
+        'petitioners' => 'বাদী',
+        'respondents' => 'বিবাদী',
+        'name' => 'নাম',
+        'address' => 'ঠিকানা',
+        'nid' => 'জাতীয় পরিচয়পত্র',
+        'designation' => 'পদবী',
+        'organization' => 'সংস্থা',
     ],
 
     'footer' => [
@@ -55,6 +74,22 @@ return [
     ],
     'helper' => [
         'upload_new_image' => 'নতুন ছবি আপলোড করুন (bar_council_id_timestamp.ext হিসেবে সংরক্ষিত হবে)',
+    ],
+
+    'case' => [
+        'top_sheet' => 'টপ শিট',
+        'lawyer' => 'আইনজীবী',
+        'case_type' => 'মামলার ধরন',
+        'subject' => 'বিষয়',
+        'petitioners' => 'বাদী',
+        'respondents' => 'বিবাদী',
+        'name' => 'নাম',
+        'address' => 'ঠিকানা',
+        'phone' => 'ফোন',
+        'email' => 'ইমেইল',
+        'nid' => 'জাতীয় পরিচয়পত্র',
+        'designation' => 'পদবী',
+        'organization' => 'সংস্থা',
     ],
 
 ];

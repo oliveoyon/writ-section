@@ -31,4 +31,9 @@ class Lawyer extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function cases()
+    {
+        return $this->hasMany(CourtCase::class, 'lawyer_id');
+    }
 }

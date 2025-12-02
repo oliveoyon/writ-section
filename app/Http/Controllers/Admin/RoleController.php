@@ -27,7 +27,7 @@ class RoleController extends Controller
         $roles = $loggedInUser->hasRole('Super Admin')
             ? Role::all()
             : Role::where('name', '!=', 'Super Admin')->get();
-            
+
         $permissions = Permission::with('group')->get();
 
         return view('admin.rbac.roles', compact('roles', 'permissions'));
@@ -104,7 +104,11 @@ class RoleController extends Controller
     {
         $role = Role::findOrFail($id);
         $permissionIds = $request->input('permissions', []);
-        $role->syncPermissions($permissionIds);
+
+        // Get permission names by IDs
+        $permissions = \Spatie\Permission\Models\Permission::whereIn('id', $permissionIds)->pluck('name')->toArray();
+
+        $role->syncPermissions($permissions);
 
         return response()->json([
             'success' => true,
