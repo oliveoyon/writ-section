@@ -1,6 +1,6 @@
 @extends('website.layouts.lawyerlayout')
 
-@section('title', __('lawyer.title'))
+@section('title', __('lawyer.case.edit_title'))
 
 @section('content')
 <style>
@@ -59,10 +59,11 @@
         {{-- Main Content --}}
         <div class="col-md-9">
 
-            <h3 class="mb-4">{{ __('lawyer.case.create_title') }}</h3>
+            <h3 class="mb-4">{{ __('lawyer.case.edit_title') }}</h3>
 
-            <form action="{{ route('lawyer.case.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('lawyer.case.update', $case->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
+                @method('PUT')
 
                 <!-- CASE INFO -->
                 <div class="card lawyer-card">
@@ -71,15 +72,15 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label>{{ __('lawyer.case.case_type') }}</label>
-                                <input type="text" name="case_type" class="form-control" value="{{ old('case_type') }}" required>
+                                <input type="text" name="case_type" class="form-control" value="{{ old('case_type', $case->case_type) }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label>{{ __('lawyer.case.subject') }}</label>
-                                <input type="text" name="subject" class="form-control" value="{{ old('subject') }}" required>
+                                <input type="text" name="subject" class="form-control" value="{{ old('subject', $case->subject) }}" required>
                             </div>
                             <div class="col-md-12">
                                 <label>{{ __('lawyer.case.description') }}</label>
-                                <textarea name="description" class="form-control">{{ old('description') }}</textarea>
+                                <textarea name="description" class="form-control">{{ old('description', $case->description) }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -101,12 +102,14 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @foreach($case->petitioners as $i => $p)
                                 <tr>
-                                    <td><input type="text" name="petitioners[0][name_or_organization]" class="form-control" required></td>
-                                    <td><input type="text" name="petitioners[0][represented_by]" class="form-control"></td>
-                                    <td><input type="text" name="petitioners[0][phone]" class="form-control"></td>
+                                    <td><input type="text" name="petitioners[{{ $i }}][name_or_organization]" class="form-control" value="{{ old("petitioners.$i.name_or_organization", $p->name_or_organization) }}" required></td>
+                                    <td><input type="text" name="petitioners[{{ $i }}][represented_by]" class="form-control" value="{{ old("petitioners.$i.represented_by", $p->represented_by) }}"></td>
+                                    <td><input type="text" name="petitioners[{{ $i }}][phone]" class="form-control" value="{{ old("petitioners.$i.phone", $p->phone) }}"></td>
                                     <td></td>
                                 </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -129,13 +132,15 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @foreach($case->respondents as $i => $r)
                                 <tr>
-                                    <td><input type="text" name="respondents[0][name]" class="form-control" required></td>
-                                    <td><input type="text" name="respondents[0][designation]" class="form-control"></td>
-                                    <td><input type="text" name="respondents[0][organization]" class="form-control"></td>
-                                    <td><input type="text" name="respondents[0][address]" class="form-control"></td>
+                                    <td><input type="text" name="respondents[{{ $i }}][name]" class="form-control" value="{{ old("respondents.$i.name", $r->name) }}" required></td>
+                                    <td><input type="text" name="respondents[{{ $i }}][designation]" class="form-control" value="{{ old("respondents.$i.designation", $r->designation) }}"></td>
+                                    <td><input type="text" name="respondents[{{ $i }}][organization]" class="form-control" value="{{ old("respondents.$i.organization", $r->organization) }}"></td>
+                                    <td><input type="text" name="respondents[{{ $i }}][address]" class="form-control" value="{{ old("respondents.$i.address", $r->address) }}"></td>
                                     <td></td>
                                 </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -149,18 +154,17 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">{{ __('lawyer.case.submit') }}</button>
+                <button type="submit" class="btn btn-primary">{{ __('lawyer.case.update') }}</button>
             </form>
 
         </div>
     </div>
 </div>
 
-<!-- DYNAMIC ROW JS -->
 @push('scripts')
 <script>
-let petitionerIndex = 1;
-let respondentIndex = 1;
+let petitionerIndex = {{ $case->petitioners->count() }};
+let respondentIndex = {{ $case->respondents->count() }};
 
 // Add Petitioner Row
 document.getElementById('addPetitioner').addEventListener('click', function(){

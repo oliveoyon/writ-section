@@ -11,11 +11,9 @@ class CasePetitioner extends Model
 
     protected $fillable = [
         'case_id',
-        'name',
-        'address',
+        'name_or_organization',
+        'represented_by',
         'phone',
-        'email',
-        'nid',
     ];
 
     public function courtCase()

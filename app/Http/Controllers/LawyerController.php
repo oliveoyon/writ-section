@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CourtCase;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Lawyer;
@@ -22,8 +23,19 @@ class LawyerController extends Controller
 
     public function myCases()
     {
-        return view('website.lawyer.profile');
+        $cases = CourtCase::where('lawyer_id', auth()->user()->lawyer->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('website.lawyer.my_cases', compact('cases'));
     }
+
+
+  
+
+    
+
+
 
     public function notifications()
     {

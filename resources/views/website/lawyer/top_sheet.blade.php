@@ -9,10 +9,15 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         table, th, td { border: 1px solid #000; }
         th, td { padding: 8px; text-align: left; }
-        .barcode { text-align: center; margin-top: 20px; }
+        .barcode { text-align: center; margin-top: 10px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
+    <div class="barcode">
+        <img src="data:image/png;base64,{{ $barcode }}" alt="Case Barcode">
+        <p>{{ $case->temporary_barcode }}</p>
+    </div>
+
     <h2>Top Sheet</h2>
 
     <p><strong>Case Type:</strong> {{ $case->case_type }}</p>
@@ -23,21 +28,17 @@
     <table>
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Address</th>
+                <th>Name / Organization</th>
+                <th>Represented By</th>
                 <th>Phone</th>
-                <th>Email</th>
-                <th>NID</th>
             </tr>
         </thead>
         <tbody>
             @foreach($case->petitioners as $p)
                 <tr>
-                    <td>{{ $p->name }}</td>
-                    <td>{{ $p->address }}</td>
+                    <td>{{ $p->name_or_organization }}</td>
+                    <td>{{ $p->represented_by }}</td>
                     <td>{{ $p->phone }}</td>
-                    <td>{{ $p->email }}</td>
-                    <td>{{ $p->nid }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -64,10 +65,5 @@
             @endforeach
         </tbody>
     </table>
-
-    <div class="barcode">
-        <img src="data:image/png;base64,{{ $barcode }}" alt="Case Barcode">
-        <p>{{ $case->temporary_barcode }}</p>
-    </div>
 </body>
 </html>

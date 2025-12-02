@@ -29,6 +29,8 @@ Route::post('/lawyer/register', [LawyerRegistrationController::class, 'register'
 Route::middleware(['auth', 'checkUserType:lawyer'])->prefix('lawyer')->group(function() {
     Route::get('/dashboard', [LawyerController::class, 'dashboard'])->name('lawyer.dashboard');
     Route::get('/my-cases', [LawyerController::class, 'myCases'])->name('lawyer.my_cases');
+    Route::delete('{case}', [LawyerCaseController::class, 'destroy'])->name('lawyer.case.destroy');
+
     Route::get('/notifications', [LawyerController::class, 'notifications'])->name('lawyer.notifications');
     Route::get('/messages', [LawyerController::class, 'messages'])->name('lawyer.messages');
     Route::get('/documents', [LawyerController::class, 'documents'])->name('lawyer.documents');
@@ -37,9 +39,13 @@ Route::middleware(['auth', 'checkUserType:lawyer'])->prefix('lawyer')->group(fun
 
 
 
-    Route::get('/case/create', [LawyerCaseController::class, 'create'])->name('lawyer.case.create');
-    Route::post('/case/store', [LawyerCaseController::class, 'store'])->name('lawyer.case.store');
-    Route::get('/case/{case}/top-sheet', [LawyerCaseController::class, 'printTopSheet'])->name('lawyer.case.top_sheet');
+    Route::get('cases/create', [LawyerCaseController::class, 'create'])->name('lawyer.case.create');
+    Route::post('cases', [LawyerCaseController::class, 'store'])->name('lawyer.case.store');
+    Route::get('cases/{case}/summary', [LawyerCaseController::class, 'summary'])->name('lawyer.case.summary');
+    Route::get('cases/{case}/top-sheet', [LawyerCaseController::class, 'printTopSheet'])->name('lawyer.case.top_sheet');
+    
+    Route::get('{case}/edit', [LawyerCaseController::class, 'edit'])->name('lawyer.case.edit');
+    Route::put('{case}', [LawyerCaseController::class, 'update'])->name('lawyer.case.update');
     
 });
 

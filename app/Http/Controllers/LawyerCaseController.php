@@ -22,13 +22,22 @@ class LawyerCaseController extends Controller
     // Store case data
     public function store(Request $request)
     {
+        // Validation
         $request->validate([
             'case_type' => 'required|string|max:255',
             'subject' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'petitioners.*.name' => 'required|string|max:255',
+
+            'petitioners.*.name_or_organization' => 'required|string|max:255',
+            'petitioners.*.represented_by' => 'nullable|string|max:255',
+            'petitioners.*.phone' => 'nullable|string|max:20',
+
             'respondents.*.name' => 'required|string|max:255',
-            'files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120', // 5MB limit
+            'respondents.*.designation' => 'nullable|string|max:255',
+            'respondents.*.organization' => 'nullable|string|max:255',
+            'respondents.*.address' => 'nullable|string|max:255',
+
+            'files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         // 1️⃣ Create the case
@@ -45,11 +54,9 @@ class LawyerCaseController extends Controller
         foreach ($request->petitioners as $p) {
             CasePetitioner::create([
                 'case_id' => $case->id,
-                'name' => $p['name'],
-                'address' => $p['address'] ?? null,
+                'name_or_organization' => $p['name_or_organization'],
+                'represented_by' => $p['represented_by'] ?? null,
                 'phone' => $p['phone'] ?? null,
-                'email' => $p['email'] ?? null,
-                'nid' => $p['nid'] ?? null,
             ]);
         }
 
@@ -79,9 +86,123 @@ class LawyerCaseController extends Controller
             }
         }
 
-        // 5️⃣ Redirect to Top Sheet PDF
-        return redirect()->route('lawyer.case.top_sheet', $case->id);
+        // 5️⃣ Redirect to case summary page
+        return redirect()->route('lawyer.case.summary', $case->id);
     }
+
+    // Case summary page after filing
+    public function summary(CourtCase $case)
+    {
+        return view('website.lawyer.case_summary', compact('case'));
+    }
+
+    // Show edit form
+    public function edit(CourtCase $case)
+    {
+        if ($case->status !== 'draft') {
+            abort(403, 'Only draft cases can be edited.');
+        }
+
+        return view('website.lawyer.case_edit', compact('case'));
+    }
+
+    // Update case
+    public function update(Request $request, CourtCase $case)
+    {
+        if ($case->status !== 'draft') {
+            abort(403, 'Only draft cases can be updated.');
+        }
+
+        $request->validate([
+            'case_type' => 'required|string|max:255',
+            'subject' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'petitioners.*.name_or_organization' => 'required|string|max:255',
+            'petitioners.*.represented_by' => 'nullable|string|max:255',
+            'petitioners.*.phone' => 'nullable|string|max:20',
+            'respondents.*.name' => 'required|string|max:255',
+            'respondents.*.designation' => 'nullable|string|max:255',
+            'respondents.*.organization' => 'nullable|string|max:255',
+            'respondents.*.address' => 'nullable|string|max:255',
+            'files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ]);
+
+        // Update case info
+        $case->update([
+            'case_type' => $request->case_type,
+            'subject' => $request->subject,
+            'description' => $request->description,
+        ]);
+
+        // Update Petitioners (delete old and insert new)
+        $case->petitioners()->delete();
+        foreach ($request->petitioners as $p) {
+            CasePetitioner::create([
+                'case_id' => $case->id,
+                'name_or_organization' => $p['name_or_organization'],
+                'represented_by' => $p['represented_by'] ?? null,
+                'phone' => $p['phone'] ?? null,
+            ]);
+        }
+
+        // Update Respondents (delete old and insert new)
+        $case->respondents()->delete();
+        foreach ($request->respondents as $r) {
+            CaseRespondent::create([
+                'case_id' => $case->id,
+                'name' => $r['name'],
+                'designation' => $r['designation'] ?? null,
+                'organization' => $r['organization'] ?? null,
+                'address' => $r['address'] ?? null,
+            ]);
+        }
+
+        // Handle new file uploads
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store('case_files');
+
+                CaseFile::create([
+                    'case_id' => $case->id,
+                    'file_path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'file_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ]);
+            }
+        }
+
+        return redirect()->route('lawyer.case.summary', $case->id)
+            ->with('success', 'Case updated successfully!');
+    }
+
+    public function destroy(CourtCase $case)
+    {
+        // Only allow deletion if case is draft
+        if ($case->status != 'draft') {
+            return redirect()->back()->with('error', 'Only draft cases can be deleted.');
+        }
+
+        // Delete associated petitioners
+        $case->petitioners()->delete();
+
+        // Delete associated respondents
+        $case->respondents()->delete();
+
+        // Delete associated files from storage and database
+        foreach ($case->files as $file) {
+            if (Storage::exists($file->file_path)) {
+                Storage::delete($file->file_path);
+            }
+            $file->delete();
+        }
+
+        // Finally, delete the case itself
+        $case->delete();
+
+        return redirect()->back()->with('success', 'Draft case deleted successfully.');
+    }
+
 
     // Generate Top-Sheet PDF
     public function printTopSheet(CourtCase $case)
@@ -94,6 +215,6 @@ class LawyerCaseController extends Controller
         $mpdf = new Mpdf(['format' => 'A4']);
         $mpdf->WriteHTML($html);
 
-        return $mpdf->Output('TopSheet_'.$case->temporary_barcode.'.pdf', 'I');
+        return $mpdf->Output('TopSheet_' . $case->temporary_barcode . '.pdf', 'I');
     }
 }
