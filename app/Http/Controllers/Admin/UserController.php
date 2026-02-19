@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
@@ -31,6 +32,7 @@ class UserController extends Controller
     public function create()
     {
         $loggedInUser = Auth::user();
+        $departments = Department::get();
 
         $roles = $loggedInUser->hasRole('Super Admin')
             ? Role::all()
@@ -38,7 +40,6 @@ class UserController extends Controller
 
         $permissionGroups = PermissionGroup::with('permissions')->get();
 
-        // Empty arrays for new user
         $userRoles = [];
         $directPermissions = [];
 
@@ -46,49 +47,47 @@ class UserController extends Controller
             'roles',
             'permissionGroups',
             'userRoles',
-            'directPermissions'
+            'directPermissions',
+            'departments'
         ));
     }
-
 
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'login_id' => 'nullable|string|max:255|unique:users,login_id',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
+            'department' => 'nullable|exists:departments,id', // validate FK
             'roles' => 'array',
             'permissions' => 'array',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'is_active' => $request->has('is_active') ? true : false,
-        ]);
+        $user = new User();
+        $user->name = $request->name;
+        $user->login_id = $request->login_id;
+        $user->email = $request->email;
+        $user->department = $request->department; // store department id
+        $user->password = Hash::make($request->password);
+        $user->is_active = $request->has('is_active');
+        $user->user_type = $request->user_type ?? null;
+        $user->save();
 
-        if ($request->roles) {
-            $user->assignRole($request->roles);
-        }
+        $user->assignRole($request->roles ?? []);
+        $user->givePermissionTo($request->permissions ?? []);
 
-        if ($request->permissions) {
-            $user->givePermissionTo($request->permissions);
-        }
-
-        // Clear Spatie permission cache for instant sync
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        if ($request->expectsJson()) {
-            return response()->json(['success' => 'User created successfully']);
-        }
-
-        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
+        return redirect()->route('admin.users.index')
+            ->with('swal-success', 'User created successfully.');
     }
+
 
     public function edit(User $user)
     {
         $loggedInUser = Auth::user();
+        $departments = Department::get();
 
         $roles = $loggedInUser->hasRole('Super Admin')
             ? Role::all()
@@ -96,8 +95,6 @@ class UserController extends Controller
 
         $permissionGroups = PermissionGroup::with('permissions')->get();
         $userRoles = $user->roles->pluck('name')->toArray();
-
-        // Only direct permissions
         $directPermissions = $user->permissions->pluck('name')->toArray();
 
         return view('admin.rbac.users.create_edit', compact(
@@ -105,43 +102,43 @@ class UserController extends Controller
             'roles',
             'permissionGroups',
             'userRoles',
-            'directPermissions'
+            'directPermissions',
+            'departments'
         ));
     }
-
 
     public function update(Request $request, User $user)
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'login_id' => 'nullable|string|max:255|unique:users,login_id,' . $user->id,
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
+            'department' => 'nullable|exists:departments,id', // validate FK
             'roles' => 'array',
             'permissions' => 'array',
         ]);
 
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => $request->password ? Hash::make($request->password) : $user->password,
-            'is_active' => $request->has('is_active') ? true : false,
-        ]);
+        $user->name = $request->name;
+        $user->login_id = $request->login_id;
+        $user->email = $request->email;
+        $user->department = $request->department; // store department id
+        if ($request->password) {
+            $user->password = Hash::make($request->password);
+        }
+        $user->is_active = $request->has('is_active');
+        $user->user_type = $request->user_type ?? $user->user_type;
+        $user->save();
 
-        // Sync roles
         $user->syncRoles($request->roles ?? []);
-
-        // Sync direct permissions
         $user->syncPermissions($request->permissions ?? []);
 
-        // Clear Spatie permission cache for instant sync
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        if ($request->expectsJson()) {
-            return response()->json(['success' => 'User updated successfully']);
-        }
-
-        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
+        return redirect()->route('admin.users.index')
+            ->with('swal-success', 'User updated successfully.');
     }
+
 
     public function destroy(User $user, Request $request)
     {
@@ -151,8 +148,7 @@ class UserController extends Controller
             return response()->json(['success' => 'User deleted successfully']);
         }
 
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully');
+        return redirect()->route('admin.users.index')
+            ->with('swal-success', 'User deleted successfully.');
     }
-
-    
 }

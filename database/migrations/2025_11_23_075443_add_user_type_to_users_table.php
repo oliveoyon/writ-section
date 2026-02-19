@@ -10,7 +10,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('user_type')->default('lawyer')->after('password'); 
-            // default 'lawyer' for now, can change later
+            $table->string('login_id')->nullable()->after('id');
+            $table->string('department')->nullable()->after('login_id');
         });
     }
 

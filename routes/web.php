@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PermissionGroupController;
 use App\Http\Controllers\Admin\PermissionManagerController;
@@ -36,8 +37,6 @@ Route::middleware(['auth', 'checkUserType:lawyer'])->prefix('lawyer')->group(fun
     Route::get('/documents', [LawyerController::class, 'documents'])->name('lawyer.documents');
     Route::get('/settings', [LawyerController::class, 'settings'])->name('lawyer.settings');
     Route::post('/settings/update', [LawyerController::class, 'settingsUpdate'])->name('lawyer.settings.update');
-
-
 
     Route::get('cases/create', [LawyerCaseController::class, 'create'])->name('lawyer.case.create');
     Route::post('cases', [LawyerCaseController::class, 'store'])->name('lawyer.case.store');
@@ -77,6 +76,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
     Route::post('permission-manager/permission', [PermissionManagerController::class, 'storePermission'])->name('permission-manager.permission.store');
     Route::put('permission-manager/permission/{id}', [PermissionManagerController::class, 'updatePermission'])->name('permission-manager.permission.update');
     Route::delete('permission-manager/permission/{id}', [PermissionManagerController::class, 'destroyPermission'])->name('permission-manager.permission.destroy');
+    Route::resource('departments', DepartmentController::class)->except(['show']);
+
 
     Route::resource('users', UserController::class);
 

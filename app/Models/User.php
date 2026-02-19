@@ -20,8 +20,12 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'email_verified_at',
         'password',
+        'user_type',
         'is_active',
+        'login_id',
+        'department', // stores the FK (departments.id)
     ];
 
     /**
@@ -50,5 +54,11 @@ class User extends Authenticatable
     public function lawyer()
     {
         return $this->hasOne(Lawyer::class);
+    }
+
+    public function departmentRelation()
+    {
+        // The column in users table is 'department', but it references departments.id
+        return $this->belongsTo(Department::class, 'department', 'id');
     }
 }

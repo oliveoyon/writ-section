@@ -40,7 +40,7 @@ class LawyerCaseController extends Controller
             'files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        // 1️⃣ Create the case
+        // 1Create the case
         $case = CourtCase::create([
             'lawyer_id' => auth()->user()->lawyer->id,
             'case_type' => $request->case_type,
@@ -50,7 +50,7 @@ class LawyerCaseController extends Controller
             'temporary_barcode_generated_at' => now(),
         ]);
 
-        // 2️⃣ Save Petitioners
+        // Save Petitioners
         foreach ($request->petitioners as $p) {
             CasePetitioner::create([
                 'case_id' => $case->id,
@@ -60,7 +60,7 @@ class LawyerCaseController extends Controller
             ]);
         }
 
-        // 3️⃣ Save Respondents
+        // Save Respondents
         foreach ($request->respondents as $r) {
             CaseRespondent::create([
                 'case_id' => $case->id,
@@ -71,10 +71,10 @@ class LawyerCaseController extends Controller
             ]);
         }
 
-        // 4️⃣ Save uploaded files
+        // Save uploaded files
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('case_files');
+                $path = $file->store('case_files', 'public');
 
                 CaseFile::create([
                     'case_id' => $case->id,
@@ -86,7 +86,7 @@ class LawyerCaseController extends Controller
             }
         }
 
-        // 5️⃣ Redirect to case summary page
+        // Redirect to case summary page
         return redirect()->route('lawyer.case.summary', $case->id);
     }
 
@@ -160,7 +160,7 @@ class LawyerCaseController extends Controller
         // Handle new file uploads
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('case_files');
+                $path = $file->store('case_files', 'public');
 
                 CaseFile::create([
                     'case_id' => $case->id,
