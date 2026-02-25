@@ -65,9 +65,15 @@
             <div class="card lawyer-card">
                 <div class="card-body">
                     <h5 class="profile-section-title">{{ __('lawyer.case.basic_info') }}</h5>
+                    <p><strong>Status:</strong> {{ ucfirst(str_replace('_', ' ', $case->status)) }}</p>
                     <p><strong>{{ __('lawyer.case.case_type') }}:</strong> {{ $case->case_type }}</p>
                     <p><strong>{{ __('lawyer.case.subject') }}:</strong> {{ $case->subject }}</p>
                     <p><strong>{{ __('lawyer.case.description') }}:</strong> {{ $case->description }}</p>
+                    @if ($case->status === 'returned_to_lawyer')
+                        <div class="alert alert-warning mt-2 mb-0">
+                            <strong>Returned Reason:</strong> {{ $case->return_reason ?? 'Incomplete information.' }}
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -145,10 +151,17 @@
                     {{ __('lawyer.case.print_top_sheet') }}
                 </a>
 
-                @if ($case->status === 'draft')
+                @if (in_array($case->status, ['draft', 'returned_to_lawyer']))
                     <a href="{{ route('lawyer.case.edit', $case->id) }}" class="btn btn-warning">
                         {{ __('lawyer.case.edit_case') }}
                     </a>
+                @endif
+
+                @if ($case->status === 'returned_to_lawyer')
+                    <form action="{{ route('lawyer.case.resubmit', $case->id) }}" method="POST" class="d-inline-block">
+                        @csrf
+                        <button type="submit" class="btn btn-success">Re-Submit with New Temp ID</button>
+                    </form>
                 @endif
             </div>
 

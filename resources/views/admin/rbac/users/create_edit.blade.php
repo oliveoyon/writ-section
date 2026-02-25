@@ -106,6 +106,7 @@
                             <select name="user_type" class="form-select" required>
                                 <option value="">Select User Type</option>
                                 <option value="admin" {{ (old('user_type', $user->user_type ?? '') == 'admin') ? 'selected' : '' }}>Admin</option>
+                                <option value="staff" {{ (old('user_type', $user->user_type ?? '') == 'staff') ? 'selected' : '' }}>Staff</option>
                             </select>
                             @error('user_type')
                                 <div class="text-danger">{{ $message }}</div>

@@ -93,14 +93,16 @@ class LawyerCaseController extends Controller
     // Case summary page after filing
     public function summary(CourtCase $case)
     {
+        $this->ensureCaseOwner($case);
         return view('website.lawyer.case_summary', compact('case'));
     }
 
     // Show edit form
     public function edit(CourtCase $case)
     {
-        if ($case->status !== 'draft') {
-            abort(403, 'Only draft cases can be edited.');
+        $this->ensureCaseOwner($case);
+        if (!in_array($case->status, ['draft', 'returned_to_lawyer'], true)) {
+            abort(403, 'Only draft or returned cases can be edited.');
         }
 
         return view('website.lawyer.case_edit', compact('case'));
@@ -109,8 +111,9 @@ class LawyerCaseController extends Controller
     // Update case
     public function update(Request $request, CourtCase $case)
     {
-        if ($case->status !== 'draft') {
-            abort(403, 'Only draft cases can be updated.');
+        $this->ensureCaseOwner($case);
+        if (!in_array($case->status, ['draft', 'returned_to_lawyer'], true)) {
+            abort(403, 'Only draft or returned cases can be updated.');
         }
 
         $request->validate([
@@ -176,8 +179,28 @@ class LawyerCaseController extends Controller
             ->with('success', 'Case updated successfully!');
     }
 
+    public function resubmit(CourtCase $case)
+    {
+        $this->ensureCaseOwner($case);
+
+        if ($case->status !== 'returned_to_lawyer') {
+            return back()->with('error', 'Only returned cases can be resubmitted.');
+        }
+
+        $newTemp = $this->generateUniqueTempBarcode();
+        $case->update([
+            'status' => 'resubmitted',
+            'temporary_barcode' => $newTemp,
+            'temporary_barcode_generated_at' => now(),
+        ]);
+
+        return redirect()->route('lawyer.case.summary', $case->id)
+            ->with('success', 'Case resubmitted successfully. New Temp ID: ' . $newTemp);
+    }
+
     public function destroy(CourtCase $case)
     {
+        $this->ensureCaseOwner($case);
         // Only allow deletion if case is draft
         if ($case->status != 'draft') {
             return redirect()->back()->with('error', 'Only draft cases can be deleted.');
@@ -207,6 +230,10 @@ class LawyerCaseController extends Controller
     // Generate Top-Sheet PDF
     public function printTopSheet(CourtCase $case)
     {
+        $this->ensureCaseOwner($case);
+        if (!$case->temporary_barcode) {
+            return redirect()->back()->with('error', 'No temporary barcode available for this case.');
+        }
         $generator = new BarcodeGeneratorPNG();
         $barcode = base64_encode($generator->getBarcode($case->temporary_barcode, $generator::TYPE_CODE_128, 2, 50));
 
@@ -216,5 +243,22 @@ class LawyerCaseController extends Controller
         $mpdf->WriteHTML($html);
 
         return $mpdf->Output('TopSheet_' . $case->temporary_barcode . '.pdf', 'I');
+    }
+
+    private function ensureCaseOwner(CourtCase $case): void
+    {
+        $lawyerId = auth()->user()?->lawyer?->id;
+        if (!$lawyerId || (int) $case->lawyer_id !== (int) $lawyerId) {
+            abort(403, 'Unauthorized case access.');
+        }
+    }
+
+    private function generateUniqueTempBarcode(): string
+    {
+        do {
+            $candidate = 'TEMP' . now()->format('YmdHis') . random_int(100, 999);
+        } while (CourtCase::where('temporary_barcode', $candidate)->exists());
+
+        return $candidate;
     }
 }

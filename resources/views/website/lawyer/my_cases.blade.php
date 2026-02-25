@@ -142,16 +142,25 @@
                                             class="btn btn-sm btn-info">View Summary</a>
 
                                         <!-- Edit/Delete Buttons (Only for Draft) -->
-                                        @if ($case->status == 'draft')
+                                        @if (in_array($case->status, ['draft', 'returned_to_lawyer']))
                                             <a href="{{ route('lawyer.case.edit', $case->id) }}"
                                                 class="btn btn-sm btn-warning">Edit</a>
 
-                                            <form action="{{ route('lawyer.case.destroy', $case->id) }}" method="POST"
-                                                class="d-inline-block"
-                                                onsubmit="return confirm('Are you sure you want to delete this draft case?');">
+                                            @if ($case->status == 'draft')
+                                                <form action="{{ route('lawyer.case.destroy', $case->id) }}" method="POST"
+                                                    class="d-inline-block"
+                                                    onsubmit="return confirm('Are you sure you want to delete this draft case?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                                </form>
+                                            @endif
+                                        @endif
+
+                                        @if ($case->status == 'returned_to_lawyer')
+                                            <form action="{{ route('lawyer.case.resubmit', $case->id) }}" method="POST" class="d-inline-block">
                                                 @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                                <button type="submit" class="btn btn-sm btn-primary">Re-Submit</button>
                                             </form>
                                         @endif
                                     </td>

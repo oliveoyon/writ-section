@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
 
             'checkUserType' => \App\Http\Middleware\CheckUserType::class,
+            'ensureDepartment' => \App\Http\Middleware\EnsureDepartment::class,
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\Localization::class, 

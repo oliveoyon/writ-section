@@ -60,6 +60,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'department' => 'nullable|exists:departments,id', // validate FK
+            'user_type' => 'required|in:admin,staff',
             'roles' => 'array',
             'permissions' => 'array',
         ]);
@@ -71,10 +72,11 @@ class UserController extends Controller
         $user->department = $request->department; // store department id
         $user->password = Hash::make($request->password);
         $user->is_active = $request->has('is_active');
-        $user->user_type = $request->user_type ?? null;
+        $user->user_type = $request->user_type;
         $user->save();
 
-        $user->assignRole($request->roles ?? []);
+        $roles = $this->resolveRolesForUserType($request);
+        $user->syncRoles($roles);
         $user->givePermissionTo($request->permissions ?? []);
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
@@ -115,6 +117,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
             'department' => 'nullable|exists:departments,id', // validate FK
+            'user_type' => 'required|in:admin,staff',
             'roles' => 'array',
             'permissions' => 'array',
         ]);
@@ -127,10 +130,11 @@ class UserController extends Controller
             $user->password = Hash::make($request->password);
         }
         $user->is_active = $request->has('is_active');
-        $user->user_type = $request->user_type ?? $user->user_type;
+        $user->user_type = $request->user_type;
         $user->save();
 
-        $user->syncRoles($request->roles ?? []);
+        $roles = $this->resolveRolesForUserType($request);
+        $user->syncRoles($roles);
         $user->syncPermissions($request->permissions ?? []);
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
@@ -150,5 +154,26 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('swal-success', 'User deleted successfully.');
+    }
+
+    private function resolveRolesForUserType(Request $request): array
+    {
+        $requestedRoles = collect($request->input('roles', []))
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($request->user_type === 'staff') {
+            return [Role::whereRaw('LOWER(name) = ?', ['staff'])->value('name') ?? 'Staff'];
+        }
+
+        $hasSuperAdminSelected = collect($requestedRoles)
+            ->contains(fn ($roleName) => strtolower((string) $roleName) === 'super admin');
+
+        if ($hasSuperAdminSelected) {
+            return [Role::whereRaw('LOWER(name) = ?', ['super admin'])->value('name') ?? 'Super Admin'];
+        }
+
+        return [Role::whereRaw('LOWER(name) = ?', ['admin'])->value('name') ?? 'Admin'];
     }
 }

@@ -2,10 +2,13 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\FilingController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PermissionGroupController;
 use App\Http\Controllers\Admin\PermissionManagerController;
+use App\Http\Controllers\Admin\RegistrarTrackingController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SectionReceiveController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LawyerCaseController;
@@ -42,6 +45,7 @@ Route::middleware(['auth', 'checkUserType:lawyer'])->prefix('lawyer')->group(fun
     Route::post('cases', [LawyerCaseController::class, 'store'])->name('lawyer.case.store');
     Route::get('cases/{case}/summary', [LawyerCaseController::class, 'summary'])->name('lawyer.case.summary');
     Route::get('cases/{case}/top-sheet', [LawyerCaseController::class, 'printTopSheet'])->name('lawyer.case.top_sheet');
+    Route::post('cases/{case}/resubmit', [LawyerCaseController::class, 'resubmit'])->name('lawyer.case.resubmit');
     
     Route::get('{case}/edit', [LawyerCaseController::class, 'edit'])->name('lawyer.case.edit');
     Route::put('{case}', [LawyerCaseController::class, 'update'])->name('lawyer.case.update');
@@ -81,7 +85,35 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
 
     Route::resource('users', UserController::class);
 
+});
 
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin,staff'])->group(function () {
+    Route::prefix('tracking')->name('tracking.')->group(function () {
+        Route::middleware('ensureDepartment:Filing Section,Filing')->group(function () {
+            Route::get('filing', [FilingController::class, 'index'])->name('filing.index');
+            Route::get('filing/scan-temp', [FilingController::class, 'showTempScan'])->name('filing.scan-temp');
+            Route::post('filing/scan-temp', [FilingController::class, 'receiveTemp'])->name('filing.receive-temp');
+            Route::post('filing/return-to-lawyer', [FilingController::class, 'returnToLawyer'])->name('filing.return-to-lawyer');
+            Route::post('filing/lawyer-lookup', [FilingController::class, 'lookupLawyerMember'])->name('filing.lawyer-lookup');
+            Route::get('filing/direct-create', [FilingController::class, 'showDirectCreate'])->name('filing.direct-create');
+            Route::post('filing/direct-create', [FilingController::class, 'storeDirectCreate'])->name('filing.store-direct');
+            Route::get('filing/cases/{case}', [FilingController::class, 'show'])->name('filing.show');
+            Route::get('filing/print', [FilingController::class, 'printIndex'])->name('filing.print-index');
+            Route::get('filing/print/{case}', [FilingController::class, 'printLabel'])->name('filing.print-label');
+            Route::get('filing/print/{case}/pdf', [FilingController::class, 'printLabelPdf'])->name('filing.print-label-pdf');
+        });
+
+        Route::middleware('ensureDepartment:Affidavit Section,Affidavit,Requisite,Put-Up,Typing,Compare,Superintendent,Ready Table,Record Room')->group(function () {
+            Route::get('section/receive', [SectionReceiveController::class, 'show'])->name('section.receive');
+            Route::post('section/receive', [SectionReceiveController::class, 'receive'])->name('section.receive.store');
+        });
+
+        Route::middleware('ensureDepartment:Registrar,Registrar Section')->group(function () {
+            Route::get('lookup', [RegistrarTrackingController::class, 'lookup'])->name('lookup');
+            Route::get('cases/{case}/timeline', [RegistrarTrackingController::class, 'timeline'])->name('timeline');
+            Route::post('cases/{case}/override-receive', [RegistrarTrackingController::class, 'overrideReceive'])->name('override');
+        });
+    });
 });
 
 require __DIR__.'/auth.php';

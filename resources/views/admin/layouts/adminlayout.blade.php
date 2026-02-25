@@ -1,19 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Admin Dashboard</title>
+    <title>{{ __('messages.admin_panel_title') }}</title>
 
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-
-    <!-- AOS Animation -->
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
 
     <style>
@@ -63,158 +58,160 @@
 </head>
 
 <body class="d-flex flex-column min-vh-100">
-
-    <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Admin Panel</a>
-
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
+                @php
+                    $isLoggedIn = auth()->check();
+                    $currentUser = $isLoggedIn ? auth()->user() : null;
+                    $currentType = $currentUser?->user_type;
+                    $departmentName = strtolower((string) ($currentUser?->departmentRelation?->name ?? ''));
+
+                    $canSeeAdminMenu = $isLoggedIn && $currentType === 'admin';
+                    $canSeeFilingMenu = $isLoggedIn && str_contains($departmentName, 'filing');
+                    $canSeeAffidavitMenu = $isLoggedIn && str_contains($departmentName, 'affidavit');
+
+                    $brandRoute = '#';
+                    if ($canSeeAdminMenu) {
+                        $brandRoute = route('admin.dashboard');
+                    } elseif ($canSeeFilingMenu) {
+                        $brandRoute = route('admin.tracking.filing.index');
+                    } elseif ($canSeeAffidavitMenu) {
+                        $brandRoute = route('admin.tracking.section.receive');
+                    }
+                @endphp
+
+                <a class="navbar-brand fw-bold" href="{{ $brandRoute }}">{{ __('messages.admin_panel_brand') }}</a>
+
                 <ul class="navbar-nav ms-auto align-items-lg-center">
+                    @if($canSeeAdminMenu)
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('admin.dashboard') }}">
+                                <i class="bi bi-speedometer"></i> {{ __('messages.dashboard') }}
+                            </a>
+                        </li>
 
-                    <!-- Home -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Home</a>
-                    </li>
+                        @canany(['View Permission Group', 'View Permission', 'View Roles', 'View Users'])
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                    <i class="bi bi-people"></i> {{ __('messages.admin_menu') }}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    @can('View Users')
+                                        <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">{{ __('messages.users') }}</a></li>
+                                    @endcan
+                                    @can('View Roles')
+                                        <li><a class="dropdown-item" href="{{ route('admin.roles.index') }}">{{ __('messages.roles') }}</a></li>
+                                    @endcan
+                                    @can('View Permission')
+                                        <li><a class="dropdown-item" href="{{ route('admin.permissions.index') }}">{{ __('messages.permissions') }}</a></li>
+                                    @endcan
+                                    @can('View Permission Group')
+                                        <li><a class="dropdown-item" href="{{ route('admin.permission-groups.index') }}">{{ __('messages.permission_groups') }}</a></li>
+                                    @endcan
+                                    <li><a class="dropdown-item" href="{{ route('admin.departments.index') }}">{{ __('messages.departments') }}</a></li>
+                                </ul>
+                            </li>
+                        @endcanany
+                    @endif
 
-                    <!-- Dashboard -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.dashboard') }}">
-                            <i class="bi bi-speedometer"></i> {{ __('messages.dashboard') }}
-                        </a>
-                    </li>
-
-                    <!-- Writ Section -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Writ Section</a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">All Writs</a></li>
-                            <li><a class="dropdown-item" href="#">Create New</a></li>
-                            <li><a class="dropdown-item" href="#">Pending Files</a></li>
-                            <li><a class="dropdown-item" href="#">Completed Files</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Reports -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Reports</a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">Monthly Report</a></li>
-                            <li><a class="dropdown-item" href="#">Yearly Summary</a></li>
-                            <li><a class="dropdown-item" href="#">Analytics Dashboard</a></li>
-                        </ul>
-                    </li>
-
-                    <!-- User Management (RBAC) -->
-                    @canany(['View Permission Group', 'View Permission', 'View Roles', 'View Users'])
+                    @if($canSeeFilingMenu)
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                <i class="bi bi-people"></i> {{ __('messages.user_management') }}
+                                <i class="bi bi-folder-check"></i> {{ __('messages.filing_menu') }}
                             </a>
-
                             <ul class="dropdown-menu dropdown-menu-end">
-
-                                @can('View Permission Group')
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('admin.permission-groups.index') }}">
-                                            <i class="bi bi-diagram-3 me-1"></i> {{ __('messages.permission_groups') }}
-                                        </a>
-                                    </li>
-                                @endcan
-
-                                @can('View Permission')
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('admin.permissions.index') }}">
-                                            <i class="bi bi-shield-lock me-1"></i> {{ __('messages.permissions') }}
-                                        </a>
-                                    </li>
-                                @endcan
-
-                                @can('View Roles')
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('admin.roles.index') }}">
-                                            <i class="bi bi-person-badge me-1"></i> {{ __('messages.roles') }}
-                                        </a>
-                                    </li>
-                                @endcan
-
-                                @can('View Users')
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route('admin.users.index') }}">
-                                            <i class="bi bi-people me-1"></i> {{ __('messages.users') }}
-                                        </a>
-                                    </li>
-                                @endcan
-
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.index') }}">{{ __('messages.filing_module') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.scan-temp') }}">{{ __('messages.filing_scan_temp') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.direct-create') }}">{{ __('messages.filing_direct_create') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.print-index') }}">{{ __('messages.filing_print_module') }}</a></li>
                             </ul>
                         </li>
-                    @endcanany
+                    @endif
 
-                    <!-- Profile -->
+                    @if($canSeeAffidavitMenu)
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="bi bi-upc-scan"></i> {{ __('messages.affidavit_menu') }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.section.receive') }}">{{ __('messages.affidavit_receive') }}</a></li>
+                            </ul>
+                        </li>
+                    @endif
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            {{ Auth::user()->name ?? 'Profile' }}
+                            {{ __('messages.language') }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">My Profile</a></li>
-                            <li><a class="dropdown-item" href="#">Account Settings</a></li>
-                            <li><a class="dropdown-item" href="#">Notifications</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
+                            <li><a class="dropdown-item" href="{{ route('locale.set', 'en') }}">{{ __('messages.lang_en') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('locale.set', 'bn') }}">{{ __('messages.lang_bn') }}</a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            {{ Auth::user()->name ?? __('messages.profile') }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">{{ __('messages.my_profile') }}</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <button class="dropdown-item text-danger">Logout</button>
+                                    <button class="dropdown-item text-danger">{{ __('messages.logout') }}</button>
                                 </form>
                             </li>
                         </ul>
                     </li>
-
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- MAIN CONTENT -->
     <main class="flex-fill">
         @yield('content')
     </main>
 
-    <!-- FOOTER -->
     <footer>
         <div class="container">
             <div class="row text-center text-md-start">
                 <div class="col-md-4 mb-3">
-                    <h5>Contact Us</h5>
-                    <p>Email: info@example.com<br>Phone: +880 1234 567890</p>
+                    <h5>{{ __('messages.contact_us') }}</h5>
+                    <p>{{ __('messages.contact_email') }}<br>{{ __('messages.contact_phone') }}</p>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <h5>Quick Links</h5>
+                    <h5>{{ __('messages.quick_links') }}</h5>
                     <ul class="list-unstyled">
-                        <li><a href="#">Dashboard</a></li>
-                        <li><a href="#">Reports</a></li>
-                        <li><a href="#">Writ Section</a></li>
+                        @if($canSeeAdminMenu)
+                            <li><a href="{{ route('admin.dashboard') }}">{{ __('messages.dashboard') }}</a></li>
+                        @endif
+                        @if($canSeeFilingMenu)
+                            <li><a href="{{ route('admin.tracking.filing.index') }}">{{ __('messages.filing_module') }}</a></li>
+                        @endif
+                        @if($canSeeAffidavitMenu)
+                            <li><a href="{{ route('admin.tracking.section.receive') }}">{{ __('messages.affidavit_receive') }}</a></li>
+                        @endif
                     </ul>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <h5>Follow Us</h5>
-                    <a href="#" class="me-2">Facebook</a>
-                    <a href="#" class="me-2">Twitter</a>
-                    <a href="#">LinkedIn</a>
+                    <h5>{{ __('messages.follow_us') }}</h5>
+                    <a href="#" class="me-2">{{ __('messages.facebook') }}</a>
+                    <a href="#" class="me-2">{{ __('messages.twitter') }}</a>
+                    <a href="#">{{ __('messages.linkedin') }}</a>
                 </div>
             </div>
 
             <hr class="mt-3" style="border-color: #d4a017;">
-            <p class="text-center mt-2 mb-0">© 2025 Admin Panel. All Rights Reserved.</p>
+            <p class="text-center mt-2 mb-0">{{ __('messages.copyright', ['year' => date('Y')]) }}</p>
         </div>
     </footer>
 
-    <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script>

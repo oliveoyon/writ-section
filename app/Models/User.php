@@ -61,4 +61,9 @@ class User extends Authenticatable
         // The column in users table is 'department', but it references departments.id
         return $this->belongsTo(Department::class, 'department', 'id');
     }
+
+    public function receivedMovements()
+    {
+        return $this->hasMany(FileMovement::class, 'received_by_user_id');
+    }
 }

@@ -10,4 +10,17 @@ class Department extends Model
     use HasFactory;
 
     protected $fillable = ['name'];
+
+    public const CANONICAL_NAMES = [
+        'Filing Section',
+        'Affidavit Section',
+        'Requisite',
+        'Put-Up',
+        'Typing',
+        'Compare',
+        'Superintendent',
+        'Ready Table',
+        'Record Room',
+        'Registrar',
+    ];
 }
