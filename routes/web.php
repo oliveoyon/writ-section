@@ -112,7 +112,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
         Route::get('register-report', [RegistrarTrackingController::class, 'registerReport'])->name('register-report');
         Route::get('register-report/pdf', [RegistrarTrackingController::class, 'registerReportPdf'])->name('register-report.pdf');
 
-        Route::middleware('ensureDepartment:Filing Section,Filing')->group(function () {
+        Route::middleware('ensureDepartment:Filing Section')->group(function () {
             Route::get('filing', [FilingController::class, 'index'])->name('filing.index');
             Route::get('filing/scan-temp', [FilingController::class, 'showTempScan'])->name('filing.scan-temp');
             Route::post('filing/scan-temp', [FilingController::class, 'receiveTemp'])->name('filing.receive-temp');
@@ -126,12 +126,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
             Route::get('filing/print/{case}/pdf', [FilingController::class, 'printLabelPdf'])->name('filing.print-label-pdf');
         });
 
-        Route::middleware('ensureDepartment:Affidavit Section,Affidavit,Requisite,Put-Up,Typing,Compare,Superintendent,Ready Table,Record Room')->group(function () {
+        Route::middleware('ensureDepartment:Affidavit Section,Requisite Section,Put-Up Section,Typing Section,Compare Section,Superintendent,Ready Table,Record Room')->group(function () {
             Route::get('section/receive', [SectionReceiveController::class, 'show'])->name('section.receive');
             Route::post('section/receive', [SectionReceiveController::class, 'receive'])->name('section.receive.store');
         });
 
-        Route::middleware('ensureDepartment:Registrar,Registrar Section')->group(function () {
+        Route::middleware('ensureDepartment:Assistant Registrar Office')->group(function () {
             Route::get('lookup', [RegistrarTrackingController::class, 'lookup'])->name('lookup');
             Route::get('cases/{case}/timeline', [RegistrarTrackingController::class, 'timeline'])->name('timeline');
             Route::post('cases/{case}/override-receive', [RegistrarTrackingController::class, 'overrideReceive'])->name('override');

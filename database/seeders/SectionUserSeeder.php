@@ -17,12 +17,13 @@ class SectionUserSeeder extends Seeder
 
     public function seedWithPassword(string $plainPassword, bool $forceResetPassword = false): array
     {
+        // one user per departments table row (id 1..11)
         $users = [
             [
                 'name' => 'Assistant Registrar',
                 'email' => 'assistant.registrar@writ.local',
                 'login_id' => 'CARD-AR-0001',
-                'department' => 'Registrar',
+                'department_id' => 1, // Assistant Registrar Office
                 'user_type' => 'admin',
                 'role' => 'Admin',
             ],
@@ -30,7 +31,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Filing Operator',
                 'email' => 'filing.section@writ.local',
                 'login_id' => 'CARD-FIL-0001',
-                'department' => 'Filing Section',
+                'department_id' => 2, // Filing Section
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -38,7 +39,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Affidavit Operator',
                 'email' => 'affidavit.section@writ.local',
                 'login_id' => 'CARD-AFF-0001',
-                'department' => 'Affidavit Section',
+                'department_id' => 3, // Affidavit Section
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -46,7 +47,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Requisite Operator',
                 'email' => 'requisite.section@writ.local',
                 'login_id' => 'CARD-REQ-0001',
-                'department' => 'Requisite',
+                'department_id' => 4, // Requisite Section
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -54,7 +55,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Put-Up Operator',
                 'email' => 'putup.section@writ.local',
                 'login_id' => 'CARD-PUT-0001',
-                'department' => 'Put-Up',
+                'department_id' => 5, // Put-Up Section
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -62,7 +63,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Typing Operator',
                 'email' => 'typing.section@writ.local',
                 'login_id' => 'CARD-TYP-0001',
-                'department' => 'Typing',
+                'department_id' => 6, // Typing Section
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -70,31 +71,39 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Compare Operator',
                 'email' => 'compare.section@writ.local',
                 'login_id' => 'CARD-CMP-0001',
-                'department' => 'Compare',
+                'department_id' => 7, // Compare Section
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
             [
                 'name' => 'Superintendent Operator',
-                'email' => 'superintendent.section@writ.local',
+                'email' => 'superintendent@writ.local',
                 'login_id' => 'CARD-SUP-0001',
-                'department' => 'Superintendent',
+                'department_id' => 8, // Superintendent
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
             [
                 'name' => 'Ready Table Operator',
-                'email' => 'readytable.section@writ.local',
+                'email' => 'ready.table@writ.local',
                 'login_id' => 'CARD-RDY-0001',
-                'department' => 'Ready Table',
+                'department_id' => 9, // Ready Table
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
             [
                 'name' => 'Record Room Operator',
-                'email' => 'recordroom.section@writ.local',
+                'email' => 'record.room@writ.local',
                 'login_id' => 'CARD-RRM-0001',
-                'department' => 'Record Room',
+                'department_id' => 10, // Record Room
+                'user_type' => 'staff',
+                'role' => 'Staff',
+            ],
+            [
+                'name' => 'Others Operator',
+                'email' => 'others@writ.local',
+                'login_id' => 'CARD-OTH-0001',
+                'department_id' => 11, // Others
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -104,14 +113,18 @@ class SectionUserSeeder extends Seeder
         $staffRole = $this->resolveRoleName('Staff');
 
         $result = [];
+
         foreach ($users as $row) {
-            $department = Department::firstOrCreate(['name' => $row['department']]);
+            $department = Department::query()->findOrFail($row['department_id']);
 
             $user = User::firstOrNew(['email' => $row['email']]);
             $user->name = $row['name'];
             $user->email = $row['email'];
             $user->login_id = $row['login_id'];
+
+            // department column stores departments.id
             $user->department = (string) $department->id;
+
             $user->user_type = $row['user_type'];
             $user->is_active = true;
 
@@ -121,17 +134,16 @@ class SectionUserSeeder extends Seeder
 
             $user->save();
 
-            if ($row['role'] === 'Admin') {
-                $user->syncRoles([$adminRole]);
-            } else {
-                $user->syncRoles([$staffRole]);
-            }
+            $user->syncRoles([
+                $row['role'] === 'Admin' ? $adminRole : $staffRole
+            ]);
 
             $result[] = [
                 'name' => $user->name,
                 'email' => $user->email,
                 'login_id' => $user->login_id,
-                'department' => $department->name,
+                'department_id' => (int) $department->id,
+                'department_name' => $department->name,
                 'user_type' => $user->user_type,
                 'role' => $user->roles()->pluck('name')->implode(', '),
             ];
