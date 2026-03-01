@@ -126,8 +126,11 @@
                     <li class="nav-item"><a class="nav-link" href="#process">{{ __('writ.nav.process') }}</a></li>
                     <li class="nav-item"><a class="nav-link" href="#benefits">{{ __('writ.nav.benefits') }}</a></li>
                     <li class="nav-item"><a class="nav-link" href="#faq">{{ __('writ.nav.faq') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#faq">Logout</a></li>
                     <li class="nav-item ms-lg-3">
-                        <a class="btn btn-gold btn-sm" href="{{ route('lawyer.login') }}">{{ __('writ.nav.login') }}</a>
+                        <a href="{{ route('logout.all') }}" class="text-danger">
+    Logout All Devices
+</a>
                     </li>
                     <!-- Add inside your <ul class="navbar-nav ms-auto align-items-lg-center">, preferably before the login button -->
                     <li class="nav-item dropdown ms-lg-3">

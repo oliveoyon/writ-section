@@ -18,6 +18,26 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WebController;
 use Illuminate\Support\Facades\Route;
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/logout-all', function () {
+
+    if (Auth::check()) {
+
+        DB::table('sessions')
+            ->where('user_id', Auth::id())
+            ->delete();
+
+        Auth::logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+    }
+
+    return redirect('/login');
+
+})->middleware('auth')->name('logout.all');
+
 
 Route::get('language/{locale}', [LanguageController::class, 'setLocale'])->name('locale.set');
 Route::get('/', [WebController::class, 'index'])->name('web.home');
@@ -89,6 +109,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin,staff'])->group(function () {
     Route::prefix('tracking')->name('tracking.')->group(function () {
+        Route::get('register-report', [RegistrarTrackingController::class, 'registerReport'])->name('register-report');
+        Route::get('register-report/pdf', [RegistrarTrackingController::class, 'registerReportPdf'])->name('register-report.pdf');
+
         Route::middleware('ensureDepartment:Filing Section,Filing')->group(function () {
             Route::get('filing', [FilingController::class, 'index'])->name('filing.index');
             Route::get('filing/scan-temp', [FilingController::class, 'showTempScan'])->name('filing.scan-temp');

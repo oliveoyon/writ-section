@@ -70,17 +70,24 @@
                     $currentUser = $isLoggedIn ? auth()->user() : null;
                     $currentType = $currentUser?->user_type;
                     $departmentName = strtolower((string) ($currentUser?->departmentRelation?->name ?? ''));
+                    $sectionTrackingKeywords = ['affidavit', 'requisite', 'put-up', 'put up', 'typing', 'compare', 'superintendent', 'ready table', 'record room'];
 
                     $canSeeAdminMenu = $isLoggedIn && $currentType === 'admin';
                     $canSeeFilingMenu = $isLoggedIn && str_contains($departmentName, 'filing');
-                    $canSeeAffidavitMenu = $isLoggedIn && str_contains($departmentName, 'affidavit');
+                    $canSeeRegistrarMenu = $isLoggedIn && str_contains($departmentName, 'registrar');
+                    $canSeeSectionReceiveMenu = $isLoggedIn && collect($sectionTrackingKeywords)->contains(
+                        fn ($keyword) => str_contains($departmentName, $keyword)
+                    );
+                    $isAffidavitSection = str_contains($departmentName, 'affidavit');
 
                     $brandRoute = '#';
                     if ($canSeeAdminMenu) {
                         $brandRoute = route('admin.dashboard');
                     } elseif ($canSeeFilingMenu) {
                         $brandRoute = route('admin.tracking.filing.index');
-                    } elseif ($canSeeAffidavitMenu) {
+                    } elseif ($canSeeRegistrarMenu) {
+                        $brandRoute = route('admin.tracking.lookup');
+                    } elseif ($canSeeSectionReceiveMenu) {
                         $brandRoute = route('admin.tracking.section.receive');
                     }
                 @endphp
@@ -133,13 +140,30 @@
                         </li>
                     @endif
 
-                    @if($canSeeAffidavitMenu)
+                    @if($canSeeSectionReceiveMenu)
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                <i class="bi bi-upc-scan"></i> {{ __('messages.affidavit_menu') }}
+                                <i class="bi bi-upc-scan"></i> {{ $isAffidavitSection ? __('messages.affidavit_menu') : __('messages.section_menu') }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.section.receive') }}">{{ __('messages.affidavit_receive') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.section.receive') }}">{{ $isAffidavitSection ? __('messages.affidavit_receive') : __('messages.section_receive') }}</a></li>
+                            </ul>
+                        </li>
+                    @endif
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('admin.tracking.register-report') }}">
+                            <i class="bi bi-printer"></i> {{ __('messages.register_report') }}
+                        </a>
+                    </li>
+
+                    @if($canSeeRegistrarMenu)
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="bi bi-journal-text"></i> {{ __('messages.registrar_menu') }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.lookup') }}">{{ __('messages.registrar_lookup') }}</a></li>
                             </ul>
                         </li>
                     @endif
@@ -194,8 +218,12 @@
                         @if($canSeeFilingMenu)
                             <li><a href="{{ route('admin.tracking.filing.index') }}">{{ __('messages.filing_module') }}</a></li>
                         @endif
-                        @if($canSeeAffidavitMenu)
-                            <li><a href="{{ route('admin.tracking.section.receive') }}">{{ __('messages.affidavit_receive') }}</a></li>
+                        @if($canSeeSectionReceiveMenu)
+                            <li><a href="{{ route('admin.tracking.section.receive') }}">{{ $isAffidavitSection ? __('messages.affidavit_receive') : __('messages.section_receive') }}</a></li>
+                        @endif
+                        <li><a href="{{ route('admin.tracking.register-report') }}">{{ __('messages.register_report') }}</a></li>
+                        @if($canSeeRegistrarMenu)
+                            <li><a href="{{ route('admin.tracking.lookup') }}">{{ __('messages.registrar_lookup') }}</a></li>
                         @endif
                     </ul>
                 </div>
