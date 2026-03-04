@@ -16,7 +16,7 @@ return [
         'details_title' => 'Filing Case Details',
         'back_to_module' => 'Back to Filing Module',
         'scan_title' => 'Filing: Receive Temp ID',
-        'scan_subtitle' => 'Scan temporary barcode to convert into permanent writ file.',
+        'scan_subtitle' => 'Scan temporary barcode to filing writ petition.',
         'search_temp_case' => 'Search Temporary Case',
         'lookup_button' => 'Load Case',
         'case_not_found' => 'Temporary barcode not found.',

@@ -73,41 +73,36 @@
 
         <div class="row">
 
-            <!-- Sidebar (Desktop Only) -->
             @include('website.lawyer.sidebar')
 
-            <!-- Main Content -->
             <div class="col-md-9">
+                @php
+                    $localPic = $lawyer->picture ?? null;
+                    $apiPic = $lawyer->api_picture ?? null;
+                    if ($localPic) {
+                        $displaySrc = str_starts_with($localPic, 'http') ? $localPic : asset($localPic);
+                    } elseif ($apiPic) {
+                        $displaySrc = $apiPic;
+                    } else {
+                        $displaySrc = 'https://via.placeholder.com/110x110?text=' . urlencode(__('lawyer.placeholder.photo'));
+                    }
+                @endphp
 
-                <!-- Profile Header -->
                 <div class="profile-header d-flex align-items-center">
-                    @php
-                        $localPic = auth()->user()->lawyer->picture ?? null; // uploaded image in storage
-                        $apiPic = auth()->user()->lawyer->api_picture ?? null; // picture from API
-                        if ($localPic) {
-                            $displaySrc = asset($localPic); // use local uploaded image
-                        } elseif ($apiPic) {
-                            $displaySrc = $apiPic; // use API link
-                        } else {
-                            $displaySrc = 'https://via.placeholder.com/110x110?text=Photo'; // placeholder
-                        }
-                    @endphp
-
-                    <img src="{{ $displaySrc }}" class="me-3" alt="Lawyer Photo"
+                    <img src="{{ $displaySrc }}" class="me-3" alt="{{ __('lawyer.alt.profile_photo') }}"
                         style="width:110px; height:110px; border-radius:50%; object-fit:cover;">
 
                     <div>
-                        <h4 class="mb-1">{{ auth()->user()->lawyer->full_name ?? '' }}</h4>
+                        <h4 class="mb-1">{{ $lawyer->full_name ?? ($user->name ?? __('lawyer.meta.not_available')) }}</h4>
                         <p class="mb-1">{{ __('lawyer.label.bar_council_id') }}:
-                            <span class="gold-text">{{ auth()->user()->lawyer->bar_council_id ?? '' }}</span>
+                            <span class="gold-text">{{ $lawyer->bar_council_id ?? __('lawyer.meta.not_available') }}</span>
                         </p>
-                        {{-- <p class="mb-0">{{ __('lawyer.label.member_since') }}:
-                            {{ auth()->user()->lawyer->barDateOfEnrollment ? date('Y', strtotime(auth()->user()->lawyer->barDateOfEnrollment)) : '' }}
-                        </p> --}}
+                        <p class="mb-0">{{ __('lawyer.label.member_since') }}:
+                            {{ !empty($lawyer?->barDateOfEnrollment) ? date('Y', strtotime($lawyer->barDateOfEnrollment)) : __('lawyer.meta.not_available') }}
+                        </p>
                     </div>
                 </div>
 
-                <!-- Basic Info -->
                 <div class="card lawyer-card mb-4">
                     <div class="card-body">
                         <h5 class="profile-section-title">{{ __('lawyer.section.basic_info') }}</h5>
@@ -115,36 +110,40 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <strong>{{ __('lawyer.label.full_name') }}:</strong>
-                                <p class="mb-0">{{ auth()->user()->lawyer->full_name ?? '' }}</p>
+                                <p class="mb-0">{{ $lawyer->full_name ?? ($user->name ?? __('lawyer.meta.not_available')) }}</p>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <strong>{{ __('lawyer.label.email') }}:</strong>
-                                <p class="mb-0">{{ auth()->user()->email ?? '' }}</p>
+                                <p class="mb-0">{{ $user->email ?? __('lawyer.meta.not_available') }}</p>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <strong>{{ __('lawyer.label.phone') }}:</strong>
-                                <p class="mb-0">{{ auth()->user()->lawyer->phone ?? '' }}</p>
+                                <p class="mb-0">{{ $lawyer->phone ?? __('lawyer.meta.not_available') }}</p>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <strong>{{ __('lawyer.label.enrolmentCourt') }}:</strong>
-                                <p class="mb-0">{{ auth()->user()->lawyer->barCourtType ?? '' }}</p>
+                                <p class="mb-0">{{ $lawyer->barCourtType ?? __('lawyer.meta.not_available') }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-
-
-                <!-- Recent Cases -->
                 <div class="card lawyer-card">
                     <div class="card-body">
                         <h5 class="profile-section-title">{{ __('lawyer.section.recent_cases') }}</h5>
-                        <ul class="mb-0">
-                            <li>Case #001 – Property Dispute (Ongoing)</li>
-                            <li>Case #002 – Family Law (Resolved)</li>
-                            <li>Case #003 – Contract Dispute (Ongoing)</li>
-                            <li>Case #004 – Criminal Appeal (New)</li>
-                        </ul>
+                        @if($recentCases->isEmpty())
+                            <p class="mb-0">{{ __('lawyer.meta.no_recent_cases') }}</p>
+                        @else
+                            <ul class="mb-0">
+                                @foreach($recentCases as $case)
+                                    <li>
+                                        {{ __('lawyer.meta.case_no') }} {{ $case->final_case_number ?? ('TEMP-' . ($case->temporary_barcode ?? $case->id)) }}
+                                        - {{ $case->subject ?? __('lawyer.meta.not_available') }}
+                                        ({{ $case->status ?? __('lawyer.meta.status_unknown') }})
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
                     </div>
                 </div>
 

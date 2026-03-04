@@ -18,7 +18,7 @@ class LawyerController extends Controller
     // Show registration form
     public function dashboard()
     {
-        return view('website.lawyer.profile');
+        return view('website.lawyer.profile', $this->profileViewData());
     }
 
     public function myCases()
@@ -44,12 +44,12 @@ class LawyerController extends Controller
 
     public function messages()
     {
-        return view('website.lawyer.profile');
+        return view('website.lawyer.profile', $this->profileViewData());
     }
 
     public function documents()
     {
-        return view('website.lawyer.profile');
+        return view('website.lawyer.profile', $this->profileViewData());
     }
 
     public function settings()
@@ -123,5 +123,21 @@ class LawyerController extends Controller
         $lawyer->save();
 
         return back()->with('success', __('Settings updated successfully.'));
+    }
+
+    private function profileViewData(): array
+    {
+        $user = auth()->user();
+        $lawyer = $user?->lawyer;
+
+        $recentCases = collect();
+        if ($lawyer) {
+            $recentCases = CourtCase::where('lawyer_id', $lawyer->id)
+                ->orderByDesc('created_at')
+                ->limit(5)
+                ->get();
+        }
+
+        return compact('user', 'lawyer', 'recentCases');
     }
 }

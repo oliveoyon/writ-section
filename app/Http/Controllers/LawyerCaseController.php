@@ -8,6 +8,8 @@ use App\Models\CaseRespondent;
 use App\Models\CaseFile;
 use App\Models\CourtCase;
 use Mpdf\Mpdf;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Illuminate\Support\Facades\Storage;
 
@@ -231,15 +233,50 @@ class LawyerCaseController extends Controller
     public function printTopSheet(CourtCase $case)
     {
         $this->ensureCaseOwner($case);
+
         if (!$case->temporary_barcode) {
             return redirect()->back()->with('error', 'No temporary barcode available for this case.');
         }
+
+        $case->loadMissing(['lawyer', 'petitioners', 'respondents']);
+
         $generator = new BarcodeGeneratorPNG();
-        $barcode = base64_encode($generator->getBarcode($case->temporary_barcode, $generator::TYPE_CODE_128, 2, 50));
+        $barcode = base64_encode(
+            $generator->getBarcode($case->temporary_barcode, $generator::TYPE_CODE_128, 2, 50)
+        );
 
         $html = view('website.lawyer.top_sheet', compact('case', 'barcode'))->render();
 
-        $mpdf = new Mpdf(['format' => 'A4']);
+        $defaultConfig = (new ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
+
+        $defaultFontConfig = (new FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
+
+        $mpdf = new Mpdf([
+            'format' => 'A4',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+
+            'fontDir' => array_merge($fontDirs, [public_path('assets/font')]),
+            'fontdata' => $fontData + [
+                'solaimanlipi' => [
+                    'R' => 'SolaimanLipi.ttf',
+                ],
+            ],
+            'default_font' => 'solaimanlipi',
+
+            'mode' => 'utf-8',
+            'autoScriptToLang' => true,
+            'autoLangToFont' => true,
+
+            // recommended extras
+            'useKerning' => true,
+            'useSubstitutions' => true,
+        ]);
+
         $mpdf->WriteHTML($html);
 
         return $mpdf->Output('TopSheet_' . $case->temporary_barcode . '.pdf', 'I');

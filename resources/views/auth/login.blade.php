@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Writ Filing System | Login</title>
+    <title>Real Time File Tracking System | Login</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -318,8 +318,8 @@
             <i class="bi bi-folder2-open fs-4"></i>
         </div>
         <div class="title">
-            <h1>Writ Section Management System</h1>
-            <p>সহজ লগইন পোর্টাল | Easy Login</p>
+            <h1>Real Time File Tracking System</h1>
+            <p>লগইন পোর্টাল | Login Portal</p>
         </div>
     </div>
 
@@ -336,7 +336,7 @@
             <div class="left">
                 <div class="hero">
                     <div>
-                        <h2><i class="bi bi-upc-scan me-1"></i> Proximity Card Login</h2>
+                        <h2><i class="bi bi-upc-scan me-1"></i> কার্ড লগইন | Card Login</h2>
                         <p>কার্ড পাঞ্চ করুন এবং লগইন করুন — Card number will be hidden</p>
                     </div>
                     <span class="status-pill status-live" id="focusPill">
@@ -359,6 +359,7 @@
                         </div>
                         <div>
                             <p class="big mb-0">কার্ড পাঞ্চ করুন / Tap Your Card</p>
+                            <p class="sub mb-0">শুধু আপনার কার্ড স্ক্যান করুন - স্বয়ংক্রিয়ভাবে লগইন হবে।</p>
                             <p class="sub mb-0">Just scan your card to login. No typing needed.</p>
                         </div>
                     </div>
@@ -384,10 +385,10 @@
                     @enderror
 
                     <div class="micro">
-                        Tip: Click anywhere if cursor is not blinking — focus returns automatically.
+                        Tip: টিপস: কার্সর না দেখালে যেকোনো জায়গায় ক্লিক করুন এবং কার্ড পাঞ্চ করুন।<br>Click anywhere if cursor is not blinking - focus returns automatically.
                     </div>
 
-                    <div class="mt-3">
+                    {{-- <div class="mt-3">
                         <button type="button" class="btn-linkish" id="togglePinBtn" aria-controls="pinWrap" aria-expanded="false">
                             Need PIN? (ঐচ্ছিক পিন)
                         </button>
@@ -396,10 +397,10 @@
                     <div class="mt-2 pin-wrap" id="pinWrap" hidden>
                         <label for="pin" class="form-label">PIN (Optional) / পিন (ঐচ্ছিক)</label>
                         <input type="password" id="pin" name="pin" class="form-control" placeholder="Optional PIN (if needed)">
-                    </div>
+                    </div> --}}
 
                     <button type="submit" class="btn btn-primaryish w-100 mt-3" id="cardLoginButton">
-                        <span id="cardBtnText"><i class="bi bi-box-arrow-in-right me-1"></i> Login by Card</span>
+                        <span id="cardBtnText" style="color:#ffffff"><i class="bi bi-box-arrow-in-right me-1"></i> কার্ড দিয়ে লগইন করুন - Login by Card</span>
                         <span id="cardBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                     </button>
                 </form>
@@ -440,9 +441,9 @@
                             <i class="bi bi-3-circle fs-4"></i>
                         </div>
                         <div>
-                            <div class="fw-bold" style="font-weight: 950; color: var(--navy);">If needed, use PIN</div>
+                            <div class="fw-bold" style="font-weight: 950; color: var(--navy);">If needed, Contact Assistant Registrar Office</div>
                             <div class="text-muted" style="color: var(--muted) !important; font-weight: 700;">
-                                প্রয়োজন হলে PIN দিন (ঐচ্ছিক)
+                                প্রয়োজন হলে এসিস্ট্যান্ট রেজিস্ট্রার অফিসে যোগাযোগ করুন
                             </div>
                         </div>
                     </div>

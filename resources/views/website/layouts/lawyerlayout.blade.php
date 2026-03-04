@@ -126,12 +126,12 @@
                             {{ Auth::user()->name ?? __('lawyer.nav.lawyer') }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end mobile-expand" aria-labelledby="lawyerMenu">
-                            <li><a class="dropdown-item" href="#">{{ __('lawyer.nav.dashboard') }}</a></li>
-                            <li><a class="dropdown-item" href="#">{{ __('lawyer.nav.my_cases') }}</a></li>
-                            <li><a class="dropdown-item" href="#">{{ __('lawyer.nav.notifications') }}</a></li>
-                            <li><a class="dropdown-item" href="#">{{ __('lawyer.nav.messages') }}</a></li>
-                            <li><a class="dropdown-item" href="#">{{ __('lawyer.nav.documents') }}</a></li>
-                            <li><a class="dropdown-item" href="#">{{ __('lawyer.nav.settings') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('lawyer.dashboard') }}">{{ __('lawyer.nav.dashboard') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('lawyer.my_cases') }}">{{ __('lawyer.nav.my_cases') }}</a></li>
+                            {{-- <li><a class="dropdown-item" href="{{ route('lawyer.notifications') }}">{{ __('lawyer.nav.notifications') }}</a></li> --}}
+                            {{-- <li><a class="dropdown-item" href="{{ route('lawyer.messages') }}">{{ __('lawyer.nav.messages') }}</a></li> --}}
+                            <li><a class="dropdown-item" href="{{ route('lawyer.documents') }}">{{ __('lawyer.nav.documents') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('lawyer.settings') }}">{{ __('lawyer.nav.settings') }}</a></li>
                         </ul>
                     </li>
 
@@ -176,11 +176,11 @@
                 </div>
                 <div class="col-md-4 mb-3">
                     <h5>{{ __('lawyer.footer.quick_links') }}</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="#">{{ __('lawyer.nav.dashboard') }}</a></li>
-                        <li><a href="#">{{ __('lawyer.nav.my_cases') }}</a></li>
-                        <li><a href="#">{{ __('lawyer.nav.messages') }}</a></li>
-                    </ul>
+                        <ul class="list-unstyled">
+                            <li><a href="{{ route('lawyer.dashboard') }}">{{ __('lawyer.nav.dashboard') }}</a></li>
+                            <li><a href="{{ route('lawyer.my_cases') }}">{{ __('lawyer.nav.my_cases') }}</a></li>
+                            <li><a href="{{ route('lawyer.messages') }}">{{ __('lawyer.nav.messages') }}</a></li>
+                        </ul>
                 </div>
                 <div class="col-md-4 mb-3">
                     <h5>{{ __('lawyer.footer.follow_us') }}</h5>

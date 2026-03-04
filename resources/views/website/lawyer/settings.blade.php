@@ -200,7 +200,7 @@
                     </div>
 
 
-                    <button type="submit" class="btn btn-gold mt-3">{{ __('Save Changes') }}</button>
+                    <button type="submit" class="btn btn-gold mt-3">{{ __('lawyer.button.save_changes') }}</button>
                 </form>
 
             </div>

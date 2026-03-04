@@ -11,13 +11,13 @@
                     <a href="{{ route('lawyer.my_cases') }}" class="{{ Route::is('lawyer.my_cases') ? 'active' : '' }}">
                         {{ __('lawyer.nav.my_cases') }}
                     </a>
-                    <a href="{{ route('lawyer.notifications') }}"
+                    {{-- <a href="{{ route('lawyer.notifications') }}"
                         class="{{ Route::is('lawyer.notifications') ? 'active' : '' }}">
                         {{ __('lawyer.nav.notifications') }}
                     </a>
                     <a href="{{ route('lawyer.messages') }}" class="{{ Route::is('lawyer.messages') ? 'active' : '' }}">
                         {{ __('lawyer.nav.messages') }}
-                    </a>
+                    </a> --}}
                     <a href="{{ route('lawyer.documents') }}" class="{{ Route::is('lawyer.documents') ? 'active' : '' }}">
                         {{ __('lawyer.nav.documents') }}
                     </a>
@@ -25,7 +25,10 @@
                         {{ __('lawyer.nav.settings') }}
                     </a>
 
-                    <a href="#" class="text-danger">{{ __('lawyer.nav.logout') }}</a>
+                    <form method="POST" action="{{ route('logout') }}" class="px-3 mt-2">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-danger w-100">{{ __('lawyer.nav.logout') }}</button>
+                    </form>
 
                 </div>
             </div>

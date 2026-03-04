@@ -50,6 +50,11 @@
                 {{ $case->lawyer?->full_name ?? __('tracking.lookup.na') }}
             </p>
 
+            <p class="mb-3">
+                <strong>{{ __('tracking.filing.lawyer_member_id') }}:</strong>
+                {{ $case->lawyer?->bar_council_id ?? __('tracking.lookup.na') }} 
+            </p>
+
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label class="form-label">{{ __('tracking.filing.case_type') }}</label>

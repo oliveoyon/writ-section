@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 return [
 
@@ -75,9 +75,24 @@ return [
     'helper' => [
         'upload_new_image' => 'নতুন ছবি আপলোড করুন (bar_council_id_timestamp.ext হিসেবে সংরক্ষিত হবে)',
     ],
+    'meta' => [
+        'case_no' => 'কেস নম্বর',
+        'no_recent_cases' => 'সাম্প্রতিক কোনো মামলা পাওয়া যায়নি।',
+        'status_unknown' => 'অবস্থা নির্ধারিত নয়',
+        'not_available' => 'প্রযোজ্য নয়',
+    ],
+    'button' => [
+        'save_changes' => 'পরিবর্তন সংরক্ষণ করুন',
+    ],
 
     'case' => [
-        'top_sheet' => 'টপ শিট',
+        
+        'top_sheet_official' => 'টপ শীট',
+        'top_sheet_subtitle' => 'রিট পিটিশন ফাইলিং সারসংক্ষেপ',
+        'temp_id' => 'অস্থায়ী আইডি',
+        'barcode' => 'বারকোড',
+        'generated_at' => 'প্রস্তুতের সময়',
+        'bar_council_id' => 'বার কাউন্সিল আইডি',
         'lawyer' => 'আইনজীবী',
         'case_type' => 'মামলার ধরন',
         'subject' => 'বিষয়',
@@ -90,6 +105,27 @@ return [
         'nid' => 'জাতীয় পরিচয়পত্র',
         'designation' => 'পদবী',
         'organization' => 'সংস্থা',
+        'id' => 'আইডি',
+        'create_new' => 'নতুন তৈরি করুন',
+        'status' => 'স্ট্যাটাস',
+        'actions' => 'কার্যক্রম',
+        'create_title' => 'শিরোনাম তৈরি করুন',
+        'basic_info' => 'মৌলিক তথ্য',
+        'description' => 'বিবরণ',
+        'name_or_organization' => 'নাম / প্রতিষ্ঠান',
+        
+        'no_data' => 'কোনো তথ্য পাওয়া যায়নি',
+        'lawyer_signature' => 'আইনজীবীর স্বাক্ষর',
+        'filing_signature' => 'ফাইলিং সেকশনের স্বাক্ষর',
+        'upload_files' => 'ফাইল আপলোড করুন',
+        'submit' => 'জমা দিন',
+        'print_top_sheet' => 'টপ শীট প্রিন্ট করুন',
+        'edit_case' => 'মামলা সম্পাদনা করুন',
+        'edit_title' => 'শিরোনাম সম্পাদনা করুন',
+        'update' => 'আপডেট করুন',
+        'summary_title' => 'সারসংক্ষেপ শিরোনাম',
     ],
 
 ];
+
+
