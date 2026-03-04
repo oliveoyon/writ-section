@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,7 +14,7 @@ class EnsureDepartment
         $user = $request->user();
 
         if (!$user) {
-            abort(403, 'Unauthorized.');
+            return redirect()->route('login');
         }
 
         $departmentName = $user->departmentRelation?->name ?? $user->department;
@@ -26,7 +27,7 @@ class EnsureDepartment
         $allowed = array_map(fn ($d) => $this->normalize($d), $allowedDepartments);
 
         if (!in_array($normalizedCurrent, $allowed, true)) {
-            abort(403, 'Unauthorized department access.');
+            return redirect()->route($this->landingRouteName($user));
         }
 
         return $next($request);
@@ -35,5 +36,42 @@ class EnsureDepartment
     private function normalize(string $value): string
     {
         return strtolower(trim(preg_replace('/\s+/', ' ', str_replace(['_', '-'], ' ', $value))));
+    }
+
+    private function landingRouteName(User $user): string
+    {
+        if ($user->user_type === 'lawyer') {
+            return 'lawyer.dashboard';
+        }
+
+        $department = strtolower((string) ($user->departmentRelation?->name ?? ''));
+
+        if (str_contains($department, 'filing')) {
+            return 'admin.tracking.filing.scan-temp';
+        }
+
+        if (str_contains($department, 'office assistant')) {
+            return 'admin.tracking.court.dispatch.index';
+        }
+
+        if (
+            str_contains($department, 'affidavit') ||
+            str_contains($department, 'requisite') ||
+            str_contains($department, 'put-up') ||
+            str_contains($department, 'put up') ||
+            str_contains($department, 'typing') ||
+            str_contains($department, 'compare') ||
+            str_contains($department, 'superintendent') ||
+            str_contains($department, 'ready table') ||
+            str_contains($department, 'record room')
+        ) {
+            return 'admin.tracking.section.receive';
+        }
+
+        if (str_contains($department, 'registrar')) {
+            return 'admin.tracking.lookup';
+        }
+
+        return 'admin.dashboard';
     }
 }

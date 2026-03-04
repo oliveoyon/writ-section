@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\FilingController;
+use App\Http\Controllers\Admin\CourtDispatchController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PermissionGroupController;
 use App\Http\Controllers\Admin\PermissionManagerController;
@@ -111,6 +112,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
     Route::prefix('tracking')->name('tracking.')->group(function () {
         Route::get('register-report', [RegistrarTrackingController::class, 'registerReport'])->name('register-report');
         Route::get('register-report/pdf', [RegistrarTrackingController::class, 'registerReportPdf'])->name('register-report.pdf');
+        Route::middleware('ensureDepartment:Office Assistant,Assistant Registrar Office')->group(function () {
+            Route::get('court/dispatch', [CourtDispatchController::class, 'dispatchIndex'])->name('court.dispatch.index');
+            Route::post('court/dispatch', [CourtDispatchController::class, 'dispatchStore'])->name('court.dispatch.store');
+            Route::get('court/return', [CourtDispatchController::class, 'returnIndex'])->name('court.return.index');
+            Route::post('court/return', [CourtDispatchController::class, 'returnStore'])->name('court.return.store');
+            Route::get('court/batches/{batch}/pdf', [CourtDispatchController::class, 'batchPdf'])->name('court.batch.pdf');
+        });
 
         Route::middleware('ensureDepartment:Filing Section')->group(function () {
             Route::get('filing', [FilingController::class, 'index'])->name('filing.index');

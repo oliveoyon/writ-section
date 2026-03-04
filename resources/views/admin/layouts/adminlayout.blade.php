@@ -70,11 +70,15 @@
                     $currentUser = $isLoggedIn ? auth()->user() : null;
                     $currentType = $currentUser?->user_type;
                     $departmentName = strtolower((string) ($currentUser?->departmentRelation?->name ?? ''));
-                    $sectionTrackingKeywords = ['affidavit', 'requisite', 'put-up', 'put up', 'typing', 'compare', 'superintendent', 'ready table', 'record room'];
+                    $sectionTrackingKeywords = ['affidavit', 'requisite', 'put-up', 'put up', 'typing', 'compare', 'superintendent', 'ready table', 'record room', 'court'];
 
                     $canSeeAdminMenu = $isLoggedIn && $currentType === 'admin';
                     $canSeeFilingMenu = $isLoggedIn && str_contains($departmentName, 'filing');
                     $canSeeRegistrarMenu = $isLoggedIn && str_contains($departmentName, 'registrar');
+                    $canSeeCourtMenu = $isLoggedIn && (
+                        str_contains($departmentName, 'office assistant') ||
+                        str_contains($departmentName, 'assistant registrar')
+                    );
                     $canSeeSectionReceiveMenu = $isLoggedIn && collect($sectionTrackingKeywords)->contains(
                         fn ($keyword) => str_contains($departmentName, $keyword)
                     );
@@ -87,6 +91,8 @@
                         $brandRoute = route('admin.tracking.filing.index');
                     } elseif ($canSeeRegistrarMenu) {
                         $brandRoute = route('admin.tracking.lookup');
+                    } elseif ($canSeeCourtMenu) {
+                        $brandRoute = route('admin.tracking.court.dispatch.index');
                     } elseif ($canSeeSectionReceiveMenu) {
                         $brandRoute = route('admin.tracking.section.receive');
                     }
@@ -157,6 +163,18 @@
                         </a>
                     </li>
 
+                    @if($canSeeCourtMenu)
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="bi bi-building"></i> {{ __('messages.court_menu') }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.court.dispatch.index') }}">{{ __('messages.court_dispatch') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.court.return.index') }}">{{ __('messages.court_return') }}</a></li>
+                            </ul>
+                        </li>
+                    @endif
+
                     @if($canSeeRegistrarMenu)
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
@@ -222,6 +240,10 @@
                             <li><a href="{{ route('admin.tracking.section.receive') }}">{{ $isAffidavitSection ? __('messages.affidavit_receive') : __('messages.section_receive') }}</a></li>
                         @endif
                         <li><a href="{{ route('admin.tracking.register-report') }}">{{ __('messages.register_report') }}</a></li>
+                        @if($canSeeCourtMenu)
+                            <li><a href="{{ route('admin.tracking.court.dispatch.index') }}">{{ __('messages.court_dispatch') }}</a></li>
+                            <li><a href="{{ route('admin.tracking.court.return.index') }}">{{ __('messages.court_return') }}</a></li>
+                        @endif
                         @if($canSeeRegistrarMenu)
                             <li><a href="{{ route('admin.tracking.lookup') }}">{{ __('messages.registrar_lookup') }}</a></li>
                         @endif

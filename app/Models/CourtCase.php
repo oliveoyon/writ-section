@@ -77,6 +77,11 @@ class CourtCase extends Model
         return $this->hasMany(FileMovement::class, 'case_id');
     }
 
+    public function courtDispatchItems()
+    {
+        return $this->hasMany(CourtDispatchBatchItem::class, 'case_id');
+    }
+
     public function latestMovement()
     {
         return $this->hasOne(FileMovement::class, 'case_id')->latestOfMany();

@@ -68,6 +68,8 @@
                     <option value="receive" @selected($movementType === 'receive')>{{ __('tracking.receive.receive') }}</option>
                     <option value="reject" @selected($movementType === 'reject')>{{ __('tracking.receive.reject') }}</option>
                     <option value="override_receive" @selected($movementType === 'override_receive')>{{ __('tracking.register.override_receive') }}</option>
+                    <option value="dispatch_to_court" @selected($movementType === 'dispatch_to_court')>{{ __('tracking.register.dispatch_to_court') }}</option>
+                    <option value="returned_from_court_handover" @selected($movementType === 'returned_from_court_handover')>{{ __('tracking.register.returned_from_court_handover') }}</option>
                 </select>
             </div>
             <div class="col-md-3">

@@ -23,15 +23,23 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Assistant Registrar',
                 'email' => 'assistant.registrar@writ.local',
                 'login_id' => 'CARD-AR-0001',
-                'department_id' => 1, // Assistant Registrar Office
+                'department_name' => 'Assistant Registrar Office',
                 'user_type' => 'admin',
                 'role' => 'Admin',
+            ],
+            [
+                'name' => 'Office Assistant',
+                'email' => 'office.assistant@writ.local',
+                'login_id' => 'CARD-OFF-0001',
+                'department_name' => 'Office Assistant',
+                'user_type' => 'staff',
+                'role' => 'Staff',
             ],
             [
                 'name' => 'Filing Operator',
                 'email' => 'filing.section@writ.local',
                 'login_id' => 'CARD-FIL-0001',
-                'department_id' => 2, // Filing Section
+                'department_name' => 'Filing Section',
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -39,7 +47,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Affidavit Operator',
                 'email' => 'affidavit.section@writ.local',
                 'login_id' => 'CARD-AFF-0001',
-                'department_id' => 3, // Affidavit Section
+                'department_name' => 'Affidavit Section',
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -47,7 +55,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Requisite Operator',
                 'email' => 'requisite.section@writ.local',
                 'login_id' => 'CARD-REQ-0001',
-                'department_id' => 4, // Requisite Section
+                'department_name' => 'Requisite Section',
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -55,7 +63,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Put-Up Operator',
                 'email' => 'putup.section@writ.local',
                 'login_id' => 'CARD-PUT-0001',
-                'department_id' => 5, // Put-Up Section
+                'department_name' => 'Put-Up Section',
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -63,7 +71,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Typing Operator',
                 'email' => 'typing.section@writ.local',
                 'login_id' => 'CARD-TYP-0001',
-                'department_id' => 6, // Typing Section
+                'department_name' => 'Typing Section',
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -71,7 +79,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Compare Operator',
                 'email' => 'compare.section@writ.local',
                 'login_id' => 'CARD-CMP-0001',
-                'department_id' => 7, // Compare Section
+                'department_name' => 'Compare Section',
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -79,7 +87,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Superintendent Operator',
                 'email' => 'superintendent@writ.local',
                 'login_id' => 'CARD-SUP-0001',
-                'department_id' => 8, // Superintendent
+                'department_name' => 'Superintendent',
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -87,7 +95,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Ready Table Operator',
                 'email' => 'ready.table@writ.local',
                 'login_id' => 'CARD-RDY-0001',
-                'department_id' => 9, // Ready Table
+                'department_name' => 'Ready Table',
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -95,15 +103,7 @@ class SectionUserSeeder extends Seeder
                 'name' => 'Record Room Operator',
                 'email' => 'record.room@writ.local',
                 'login_id' => 'CARD-RRM-0001',
-                'department_id' => 10, // Record Room
-                'user_type' => 'staff',
-                'role' => 'Staff',
-            ],
-            [
-                'name' => 'Others Operator',
-                'email' => 'others@writ.local',
-                'login_id' => 'CARD-OTH-0001',
-                'department_id' => 11, // Others
+                'department_name' => 'Record Room',
                 'user_type' => 'staff',
                 'role' => 'Staff',
             ],
@@ -115,7 +115,7 @@ class SectionUserSeeder extends Seeder
         $result = [];
 
         foreach ($users as $row) {
-            $department = Department::query()->findOrFail($row['department_id']);
+            $department = Department::firstOrCreate(['name' => $row['department_name']]);
 
             $user = User::firstOrNew(['email' => $row['email']]);
             $user->name = $row['name'];
@@ -148,6 +148,11 @@ class SectionUserSeeder extends Seeder
                 'role' => $user->roles()->pluck('name')->implode(', '),
             ];
         }
+
+        // Legacy account cleanup: keep historical references intact but disable login.
+        User::query()
+            ->where('email', 'court.operator@writ.local')
+            ->update(['is_active' => false]);
 
         return $result;
     }

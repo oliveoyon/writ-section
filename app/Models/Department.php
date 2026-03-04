@@ -12,12 +12,14 @@ class Department extends Model
     protected $fillable = ['name'];
 
     public const CANONICAL_NAMES = [
+        'Assistant Registrar Office',
+        'Office Assistant',
         'Filing Section',
         'Affidavit Section',
-        'Requisite',
-        'Put-Up',
-        'Typing',
-        'Compare',
+        'Requisite Section',
+        'Put-Up Section',
+        'Typing Section',
+        'Compare Section',
         'Superintendent',
         'Ready Table',
         'Record Room',

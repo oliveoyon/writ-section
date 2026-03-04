@@ -24,8 +24,31 @@
                 <h5 class="mb-2">{{ __('tracking.receive.bulk_title') }}</h5>
                 <p class="text-muted mb-3">{{ __('tracking.receive.bulk_subtitle') }}</p>
 
-                <label for="barcodes" class="form-label">{{ __('tracking.receive.bulk_input_label') }}</label>
-                <textarea id="barcodes" name="barcodes" class="form-control form-control-lg" rows="7" placeholder="{{ __('tracking.receive.bulk_placeholder') }}" autofocus>{{ old('barcodes') }}</textarea>
+                <label for="barcode_input" class="form-label">{{ __('tracking.receive.bulk_input_label') }}</label>
+                <div class="input-group">
+                    <input type="text" id="barcode_input" class="form-control form-control-lg" placeholder="{{ __('tracking.receive.barcode_placeholder') }}" autofocus>
+                    <button type="button" id="addBarcodeBtn" class="btn btn-brand">{{ __('tracking.receive.add_barcode') }}</button>
+                </div>
+                <small class="text-muted">{{ __('tracking.receive.bulk_placeholder') }}</small>
+
+                <input type="hidden" id="barcodes" name="barcodes" value="{{ old('barcodes') }}">
+
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">#</th>
+                                <th>{{ __('tracking.receive.barcode') }}</th>
+                                <th style="width: 120px;">{{ __('tracking.receive.action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="barcodeRows">
+                            <tr id="emptyRow">
+                                <td colspan="3" class="text-center text-muted">{{ __('tracking.receive.none') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <div class="mt-3">
                     <label for="reason_receive" class="form-label">{{ __('tracking.receive.reason_optional') }}</label>
@@ -166,4 +189,107 @@
         #receivePrintArea { border: 0 !important; box-shadow: none !important; }
     }
 </style>
+@endpush
+
+@push('js')
+<script>
+    (function () {
+        const barcodeInput = document.getElementById('barcode_input');
+        const addBtn = document.getElementById('addBarcodeBtn');
+        const rows = document.getElementById('barcodeRows');
+        const hiddenBarcodes = document.getElementById('barcodes');
+        const receiveForm = hiddenBarcodes.closest('form');
+        const emptyRowId = 'emptyRow';
+        const barcodes = [];
+
+        function syncHiddenField() {
+            hiddenBarcodes.value = barcodes.join('\n');
+        }
+
+        function drawRows() {
+            rows.innerHTML = '';
+
+            if (barcodes.length === 0) {
+                const tr = document.createElement('tr');
+                tr.id = emptyRowId;
+                tr.innerHTML = '<td colspan="3" class="text-center text-muted">{{ __('tracking.receive.none') }}</td>';
+                rows.appendChild(tr);
+                return;
+            }
+
+            barcodes.forEach((code, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${code}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger removeBarcodeBtn" data-index="${index}">
+                            {{ __('tracking.receive.remove_barcode') }}
+                        </button>
+                    </td>
+                `;
+                rows.appendChild(tr);
+            });
+        }
+
+        function addBarcode(raw) {
+            const code = (raw || '').trim();
+            if (!code) return;
+            if (barcodes.includes(code)) {
+                barcodeInput.value = '';
+                barcodeInput.focus();
+                return;
+            }
+
+            barcodes.push(code);
+            syncHiddenField();
+            drawRows();
+            barcodeInput.value = '';
+            barcodeInput.focus();
+        }
+
+        function seedFromOldInput() {
+            const oldValue = @json(old('barcodes', ''));
+            if (!oldValue) return;
+            oldValue.split(/[\r\n,\t ]+/).forEach(code => {
+                const c = code.trim();
+                if (c && !barcodes.includes(c)) barcodes.push(c);
+            });
+            syncHiddenField();
+            drawRows();
+        }
+
+        addBtn.addEventListener('click', function () {
+            addBarcode(barcodeInput.value);
+        });
+
+        barcodeInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addBarcode(barcodeInput.value);
+            }
+        });
+
+        rows.addEventListener('click', function (e) {
+            const btn = e.target.closest('.removeBarcodeBtn');
+            if (!btn) return;
+            const idx = Number(btn.getAttribute('data-index'));
+            if (Number.isNaN(idx)) return;
+            barcodes.splice(idx, 1);
+            syncHiddenField();
+            drawRows();
+            barcodeInput.focus();
+        });
+
+        receiveForm.addEventListener('submit', function (e) {
+            if (barcodes.length === 0) {
+                e.preventDefault();
+                alert(@json(__('tracking.receive.at_least_one')));
+                barcodeInput.focus();
+            }
+        });
+
+        seedFromOldInput();
+    })();
+</script>
 @endpush

@@ -11,6 +11,8 @@ class FileMovement extends Model
 
     protected $fillable = [
         'case_id',
+        'court_id',
+        'court_dispatch_batch_id',
         'barcode_scanned',
         'from_section',
         'to_section',
@@ -35,5 +37,15 @@ class FileMovement extends Model
     public function receivedBy()
     {
         return $this->belongsTo(User::class, 'received_by_user_id');
+    }
+
+    public function court()
+    {
+        return $this->belongsTo(Court::class, 'court_id');
+    }
+
+    public function dispatchBatch()
+    {
+        return $this->belongsTo(CourtDispatchBatch::class, 'court_dispatch_batch_id');
     }
 }

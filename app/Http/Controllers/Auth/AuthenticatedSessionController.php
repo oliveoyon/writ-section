@@ -29,8 +29,9 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        $request->session()->put('last_activity_at', time());
 
-        return redirect()->intended($this->redirectPathFor($request->user()));
+        return redirect()->to($this->redirectPathFor($request->user()));
     }
 
     public function proximityLogin(Request $request): RedirectResponse
@@ -58,8 +59,9 @@ class AuthenticatedSessionController extends Controller
 
         Auth::login($user, true);
         $request->session()->regenerate();
+        $request->session()->put('last_activity_at', time());
 
-        return redirect()->intended($this->redirectPathFor($user));
+        return redirect()->to($this->redirectPathFor($user));
     }
 
     /**
@@ -69,11 +71,12 @@ class AuthenticatedSessionController extends Controller
     {
         Auth::guard('web')->logout();
 
+        $request->session()->forget('last_activity_at');
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     }
 
     private function redirectPathFor(?User $user): string
@@ -92,15 +95,21 @@ class AuthenticatedSessionController extends Controller
             return route('admin.tracking.filing.scan-temp');
         }
 
+        if (str_contains($department, 'office assistant')) {
+            return route('admin.tracking.court.dispatch.index');
+        }
+
         if (
             str_contains($department, 'affidavit') ||
             str_contains($department, 'requisite') ||
+            str_contains($department, 'put-up') ||
             str_contains($department, 'put up') ||
             str_contains($department, 'typing') ||
             str_contains($department, 'compare') ||
             str_contains($department, 'superintendent') ||
             str_contains($department, 'ready table') ||
-            str_contains($department, 'record room')
+            str_contains($department, 'record room') ||
+            str_contains($department, 'court')
         ) {
             return route('admin.tracking.section.receive');
         }

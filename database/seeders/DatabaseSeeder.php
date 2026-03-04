@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             DepartmentSeeder::class,
+            CourtSeeder::class,
         ]);
 
         // User::factory(10)->create();
