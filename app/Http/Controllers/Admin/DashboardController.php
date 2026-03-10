@@ -63,6 +63,7 @@ class DashboardController extends Controller
         $todayCourtDispatch = (clone $todayMovements)->where('movement_type', 'dispatch_to_court')->count();
         $todayCourtReturn = (clone $todayMovements)->where('movement_type', 'returned_from_court_handover')->count();
         $todayOverride = (clone $todayMovements)->where('is_override', true)->count();
+        $todayCasesCount = CourtCase::query()->whereDate('created_at', now()->toDateString())->count();
 
         $pendingTempCount = CourtCase::query()
             ->whereNotNull('temporary_barcode')
@@ -186,6 +187,7 @@ class DashboardController extends Controller
             'todayCourtDispatch' => $todayCourtDispatch,
             'todayCourtReturn' => $todayCourtReturn,
             'todayOverride' => $todayOverride,
+            'todayCasesCount' => $todayCasesCount,
             'pendingTempCount' => $pendingTempCount,
             'inCourtCount' => $inCourtCount,
             'returnedToLawyerCount' => $returnedToLawyerCount,

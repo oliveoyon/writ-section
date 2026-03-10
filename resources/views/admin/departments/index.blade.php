@@ -8,11 +8,9 @@
             style="background:#00284d; color:#fff;">
             <h4 class="mb-0 profile-section-title">Departments</h4>
 
-            @can('Create Department')
-                <button class="btn btn-gold btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
-                    <i class="bi bi-plus-circle"></i> Add Department
-                </button>
-            @endcan
+            <button class="btn btn-gold btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+                <i class="bi bi-plus-circle"></i> Add Department
+            </button>
         </div>
 
         <!-- Table Card -->
@@ -32,16 +30,12 @@
                                 <td>{{ $index + 1 }}</td>
                                 <td class="fw-bold text-dark">{{ $department->name }}</td>
                                 <td>
-                                    @can('Edit Department')
-                                        <button class="btn btn-info btn-sm me-1 edit-btn">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                    @endcan
-                                    @can('Delete Department')
-                                        <button class="btn btn-danger btn-sm delete-btn">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    @endcan
+                                    <button class="btn btn-info btn-sm me-1 edit-btn">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm delete-btn">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                         @endforeach

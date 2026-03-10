@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CourtCase;
 use App\Models\FileMovement;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,17 +16,95 @@ class RegistrarTrackingController extends Controller
     public function lookup(Request $request)
     {
         $case = null;
+        $cases = collect();
 
         if ($request->filled('q')) {
             $query = trim((string) $request->q);
-            $case = CourtCase::with(['latestMovement.receivedBy', 'currentHolder'])
-                ->where('temporary_barcode', $query)
-                ->orWhere('permanent_barcode', $query)
-                ->orWhere('final_case_number', $query)
-                ->first();
+            $cases = $this->buildLookupQuery($query)
+                ->with(['latestMovement.receivedBy', 'currentHolder', 'petitioners', 'lawyer'])
+                ->latest('id')
+                ->limit(30)
+                ->get();
+            $case = $cases->first();
         }
 
-        return view('admin.tracking.lookup', compact('case'));
+        return view('admin.tracking.lookup', compact('case', 'cases'));
+    }
+
+    public function lookupSuggest(Request $request)
+    {
+        $query = trim((string) $request->input('q', ''));
+
+        if (mb_strlen($query) < 3) {
+            return response()->json(['items' => []]);
+        }
+
+        $cases = $this->buildLookupQuery($query)
+            ->with(['petitioners', 'lawyer'])
+            ->latest('id')
+            ->limit(8)
+            ->get();
+
+        $items = $cases->map(function (CourtCase $case) {
+            $title = $case->final_case_number
+                ?: $case->permanent_barcode
+                ?: $case->temporary_barcode
+                ?: ('CASE-' . $case->id);
+
+            $petitioner = $case->petitioners->first()?->name_or_organization;
+            $lawyer = $case->lawyer?->full_name;
+            $section = $case->current_section ?: 'N/A';
+
+            $parts = array_values(array_filter([$petitioner, $lawyer, $section]));
+
+            return [
+                'id' => $case->id,
+                'title' => $title,
+                'subtitle' => implode(' | ', $parts),
+                'url' => route('admin.tracking.lookup', ['q' => $title]),
+            ];
+        })->values();
+
+        return response()->json(['items' => $items]);
+    }
+
+    private function buildLookupQuery(string $query): Builder
+    {
+        $query = trim(preg_replace('/\s+/', ' ', $query) ?? '');
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
+
+        return CourtCase::query()
+            ->where(function ($q) use ($query, $like) {
+                $q->where('temporary_barcode', $query)
+                    ->orWhere('permanent_barcode', $query)
+                    ->orWhere('final_case_number', $query)
+                    ->orWhere('temporary_barcode', 'like', $like)
+                    ->orWhere('permanent_barcode', 'like', $like)
+                    ->orWhere('final_case_number', 'like', $like)
+                    ->orWhere('subject', 'like', $like)
+                    ->orWhere('description', 'like', $like)
+                    ->orWhere('case_type', 'like', $like)
+                    ->orWhereHas('petitioners', function ($p) use ($like) {
+                        $p->where('name_or_organization', 'like', $like)
+                            ->orWhere('represented_by', 'like', $like)
+                            ->orWhere('phone', 'like', $like);
+                    })
+                    ->orWhereHas('respondents', function ($r) use ($like) {
+                        $r->where('name', 'like', $like)
+                            ->orWhere('designation', 'like', $like)
+                            ->orWhere('organization', 'like', $like)
+                            ->orWhere('address', 'like', $like);
+                    })
+                    ->orWhereHas('lawyer', function ($l) use ($like) {
+                        $l->where('full_name', 'like', $like)
+                            ->orWhere('bar_council_id', 'like', $like)
+                            ->orWhere('phone', 'like', $like);
+                    });
+
+                if (ctype_digit($query)) {
+                    $q->orWhere('id', (int) $query);
+                }
+            });
     }
 
     public function timeline(CourtCase $case)
@@ -46,17 +125,50 @@ class RegistrarTrackingController extends Controller
         $data['generatedAt'] = now();
 
         $html = view('admin.tracking.register-report-pdf', $data)->render();
-        $mpdf = new Mpdf([
+
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
+
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
+
+        $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4-L',
             'margin_left' => 8,
             'margin_right' => 8,
             'margin_top' => 8,
             'margin_bottom' => 8,
+
+            // Add font folder
+            'fontDir' => array_merge($fontDirs, [
+                public_path('assets/font'), // put SolaimanLipi.ttf here
+            ]),
+
+            // Register font with OTL settings (your proven working pattern)
+            'fontdata' => array_merge($fontData, [
+                'solaimanlipi' => [
+                    'R' => 'SolaimanLipi.ttf',
+                    'useOTL' => 0xFF,
+                    'useKashida' => 75,
+                ],
+            ]),
+
+            // Default font
+            'default_font' => 'solaimanlipi',
+
+            // Optional but helpful
+            'autoScriptToLang' => true,
+            'autoLangToFont'   => true,
         ]);
+
         $mpdf->WriteHTML($html);
 
-        $filename = 'MovementRegister_' . ($data['dateFrom'] ?? now()->toDateString()) . '_to_' . ($data['dateTo'] ?? now()->toDateString()) . '.pdf';
+        $filename = 'MovementRegister_' .
+            ($data['dateFrom'] ?? now()->toDateString()) .
+            '_to_' .
+            ($data['dateTo'] ?? now()->toDateString()) .
+            '.pdf';
 
         return response($mpdf->Output($filename, 'S'))
             ->header('Content-Type', 'application/pdf')
@@ -161,9 +273,9 @@ class RegistrarTrackingController extends Controller
         }
 
         $movementsQuery = FileMovement::with(['courtCase', 'receivedBy'])
-            ->when($dateFrom !== '', fn ($q) => $q->whereDate('received_at', '>=', $dateFrom))
-            ->when($dateTo !== '', fn ($q) => $q->whereDate('received_at', '<=', $dateTo))
-            ->when($movementType !== '', fn ($q) => $q->where('movement_type', $movementType));
+            ->when($dateFrom !== '', fn($q) => $q->whereDate('received_at', '>=', $dateFrom))
+            ->when($dateTo !== '', fn($q) => $q->whereDate('received_at', '<=', $dateTo))
+            ->when($movementType !== '', fn($q) => $q->where('movement_type', $movementType));
 
         if (!$canViewAllSections && $userSection !== '') {
             if ($movementScope === 'in') {

@@ -108,28 +108,16 @@
                             </a>
                         </li>
 
-                        @canany(['View Permission Group', 'View Permission', 'View Roles', 'View Users'])
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                    <i class="bi bi-people"></i> {{ __('messages.admin_menu') }}
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    @can('View Users')
-                                        <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">{{ __('messages.users') }}</a></li>
-                                    @endcan
-                                    @can('View Roles')
-                                        <li><a class="dropdown-item" href="{{ route('admin.roles.index') }}">{{ __('messages.roles') }}</a></li>
-                                    @endcan
-                                    @can('View Permission')
-                                        <li><a class="dropdown-item" href="{{ route('admin.permissions.index') }}">{{ __('messages.permissions') }}</a></li>
-                                    @endcan
-                                    @can('View Permission Group')
-                                        <li><a class="dropdown-item" href="{{ route('admin.permission-groups.index') }}">{{ __('messages.permission_groups') }}</a></li>
-                                    @endcan
-                                    <li><a class="dropdown-item" href="{{ route('admin.departments.index') }}">{{ __('messages.departments') }}</a></li>
-                                </ul>
-                            </li>
-                        @endcanany
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="bi bi-people"></i> {{ __('messages.admin_menu') }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">{{ __('messages.users') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.departments.index') }}">{{ __('messages.departments') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.courts.index') }}">{{ __('messages.courts') }}</a></li>
+                            </ul>
+                        </li>
                     @endif
 
                     @if($canSeeFilingMenu)
@@ -176,13 +164,10 @@
                     @endif
 
                     @if($canSeeRegistrarMenu)
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                <i class="bi bi-journal-text"></i> {{ __('messages.registrar_menu') }}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('admin.tracking.lookup') }}">
+                                <i class="bi bi-search"></i> {{ __('messages.registrar_lookup') }}
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.lookup') }}">{{ __('messages.registrar_lookup') }}</a></li>
-                            </ul>
                         </li>
                     @endif
 

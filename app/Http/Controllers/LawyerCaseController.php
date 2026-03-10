@@ -240,43 +240,45 @@ class LawyerCaseController extends Controller
 
         $case->loadMissing(['lawyer', 'petitioners', 'respondents']);
 
-        $generator = new BarcodeGeneratorPNG();
+        $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
         $barcode = base64_encode(
             $generator->getBarcode($case->temporary_barcode, $generator::TYPE_CODE_128, 2, 50)
         );
 
-        $html = view('website.lawyer.top_sheet', compact('case', 'barcode'))->render();
-
-        $defaultConfig = (new ConfigVariables())->getDefaults();
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
         $fontDirs = $defaultConfig['fontDir'];
 
-        $defaultFontConfig = (new FontVariables())->getDefaults();
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
 
-        $mpdf = new Mpdf([
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
             'format' => 'A4',
             'margin_left' => 10,
             'margin_right' => 10,
             'margin_top' => 10,
             'margin_bottom' => 10,
 
-            'fontDir' => array_merge($fontDirs, [public_path('assets/font')]),
-            'fontdata' => $fontData + [
+            'fontDir' => array_merge($fontDirs, [
+                public_path('assets/font'), // contains SolaimanLipi.ttf
+            ]),
+
+            'fontdata' => array_merge($fontData, [
                 'solaimanlipi' => [
                     'R' => 'SolaimanLipi.ttf',
+
+                    // ✅ THIS is what makes Bangla stable (from your working sample)
+                    'useOTL' => 0xFF,
+                    'useKashida' => 75,
                 ],
-            ],
+            ]),
+
             'default_font' => 'solaimanlipi',
-
-            'mode' => 'utf-8',
             'autoScriptToLang' => true,
-            'autoLangToFont' => true,
-
-            // recommended extras
-            'useKerning' => true,
-            'useSubstitutions' => true,
+            'autoLangToFont'   => true,
         ]);
 
+        $html = view('website.lawyer.top_sheet', compact('case', 'barcode'))->render();
         $mpdf->WriteHTML($html);
 
         return $mpdf->Output('TopSheet_' . $case->temporary_barcode . '.pdf', 'I');

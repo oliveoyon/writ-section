@@ -2,13 +2,10 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\CourtController;
 use App\Http\Controllers\Admin\FilingController;
 use App\Http\Controllers\Admin\CourtDispatchController;
-use App\Http\Controllers\Admin\PermissionController;
-use App\Http\Controllers\Admin\PermissionGroupController;
-use App\Http\Controllers\Admin\PermissionManagerController;
 use App\Http\Controllers\Admin\RegistrarTrackingController;
-use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SectionReceiveController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\LanguageController;
@@ -82,29 +79,10 @@ Route::middleware('auth')->group(function () {
 
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin'])->group(function () {
-    Route::get('/homes', [DashboardController::class, 'homes'])->name('dashboard.homes');
-    
     Route::get('/home', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/home-test', [DashboardController::class, 'test'])->name('dashboard.test');
-    Route::resource('permission-groups', PermissionGroupController::class)->except(['show']);
-    Route::resource('permissions', PermissionController::class)->except(['show']);
-    Route::resource('roles', RoleController::class)->except(['show']);
-    Route::get('roles/{role}/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
-    Route::post('roles/{role}/assign-permissions', [RoleController::class, 'assignPermissions'])->name('roles.assignPermissions');
-
-    
-    Route::get('permission-manager', [PermissionManagerController::class, 'index'])->name('permission-manager.index');
-    Route::get('permission-manager/{group}/permissions', [PermissionManagerController::class, 'groupPermissions'])->name('permission-manager.permissions');
-    Route::post('permission-manager/group', [PermissionManagerController::class, 'storeGroup'])->name('permission-manager.group.store');
-    Route::put('permission-manager/group/{id}', [PermissionManagerController::class, 'updateGroup'])->name('permission-manager.group.update');
-    Route::delete('permission-manager/group/{id}', [PermissionManagerController::class, 'destroyGroup'])->name('permission-manager.group.destroy');
-    Route::post('permission-manager/permission', [PermissionManagerController::class, 'storePermission'])->name('permission-manager.permission.store');
-    Route::put('permission-manager/permission/{id}', [PermissionManagerController::class, 'updatePermission'])->name('permission-manager.permission.update');
-    Route::delete('permission-manager/permission/{id}', [PermissionManagerController::class, 'destroyPermission'])->name('permission-manager.permission.destroy');
-    Route::resource('departments', DepartmentController::class)->except(['show']);
-
-
-    Route::resource('users', UserController::class);
+    Route::resource('departments', DepartmentController::class)->except(['show', 'create']);
+    Route::resource('courts', CourtController::class)->except(['show', 'create']);
+    Route::resource('users', UserController::class)->except(['show']);
 
 });
 
@@ -141,6 +119,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
 
         Route::middleware('ensureDepartment:Assistant Registrar Office')->group(function () {
             Route::get('lookup', [RegistrarTrackingController::class, 'lookup'])->name('lookup');
+            Route::get('lookup/suggest', [RegistrarTrackingController::class, 'lookupSuggest'])->name('lookup.suggest');
             Route::get('cases/{case}/timeline', [RegistrarTrackingController::class, 'timeline'])->name('timeline');
             Route::post('cases/{case}/override-receive', [RegistrarTrackingController::class, 'overrideReceive'])->name('override');
         });

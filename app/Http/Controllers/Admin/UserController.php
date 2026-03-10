@@ -7,49 +7,21 @@ use App\Models\Department;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
-use App\Models\PermissionGroup;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\PermissionRegistrar;
 
 class UserController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:View Users')->only(['index']);
-        $this->middleware('permission:Create Users')->only(['create', 'store']);
-        $this->middleware('permission:Edit Users')->only(['edit', 'update']);
-        $this->middleware('permission:Delete Users')->only(['destroy']);
-        $this->middleware('permission:View User Permissions')->only(['destroy']);
-    }
-
     public function index()
     {
-        $users = User::with('roles', 'permissions')->get();
+        $users = User::with(['roles', 'departmentRelation'])->get();
         return view('admin.rbac.users.index', compact('users'));
     }
 
     public function create()
     {
-        $loggedInUser = Auth::user();
         $departments = Department::get();
-
-        $roles = $loggedInUser->hasRole('Super Admin')
-            ? Role::all()
-            : Role::where('name', '!=', 'Super Admin')->get();
-
-        $permissionGroups = PermissionGroup::with('permissions')->get();
-
-        $userRoles = [];
-        $directPermissions = [];
-
-        return view('admin.rbac.users.create_edit', compact(
-            'roles',
-            'permissionGroups',
-            'userRoles',
-            'directPermissions',
-            'departments'
-        ));
+        return view('admin.rbac.users.create_edit', compact('departments'));
     }
 
     public function store(Request $request)
@@ -61,8 +33,6 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'department' => 'nullable|exists:departments,id', // validate FK
             'user_type' => 'required|in:admin,staff',
-            'roles' => 'array',
-            'permissions' => 'array',
         ]);
 
         $user = new User();
@@ -75,9 +45,8 @@ class UserController extends Controller
         $user->user_type = $request->user_type;
         $user->save();
 
-        $roles = $this->resolveRolesForUserType($request);
+        $roles = $this->resolveRolesForUserType($request->input('user_type'));
         $user->syncRoles($roles);
-        $user->givePermissionTo($request->permissions ?? []);
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
@@ -88,25 +57,8 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        $loggedInUser = Auth::user();
         $departments = Department::get();
-
-        $roles = $loggedInUser->hasRole('Super Admin')
-            ? Role::all()
-            : Role::where('name', '!=', 'Super Admin')->get();
-
-        $permissionGroups = PermissionGroup::with('permissions')->get();
-        $userRoles = $user->roles->pluck('name')->toArray();
-        $directPermissions = $user->permissions->pluck('name')->toArray();
-
-        return view('admin.rbac.users.create_edit', compact(
-            'user',
-            'roles',
-            'permissionGroups',
-            'userRoles',
-            'directPermissions',
-            'departments'
-        ));
+        return view('admin.rbac.users.create_edit', compact('user', 'departments'));
     }
 
     public function update(Request $request, User $user)
@@ -118,8 +70,6 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'department' => 'nullable|exists:departments,id', // validate FK
             'user_type' => 'required|in:admin,staff',
-            'roles' => 'array',
-            'permissions' => 'array',
         ]);
 
         $user->name = $request->name;
@@ -133,9 +83,8 @@ class UserController extends Controller
         $user->user_type = $request->user_type;
         $user->save();
 
-        $roles = $this->resolveRolesForUserType($request);
+        $roles = $this->resolveRolesForUserType($request->input('user_type'));
         $user->syncRoles($roles);
-        $user->syncPermissions($request->permissions ?? []);
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
@@ -156,22 +105,10 @@ class UserController extends Controller
             ->with('swal-success', 'User deleted successfully.');
     }
 
-    private function resolveRolesForUserType(Request $request): array
+    private function resolveRolesForUserType(string $userType): array
     {
-        $requestedRoles = collect($request->input('roles', []))
-            ->filter()
-            ->values()
-            ->all();
-
-        if ($request->user_type === 'staff') {
+        if ($userType === 'staff') {
             return [Role::whereRaw('LOWER(name) = ?', ['staff'])->value('name') ?? 'Staff'];
-        }
-
-        $hasSuperAdminSelected = collect($requestedRoles)
-            ->contains(fn ($roleName) => strtolower((string) $roleName) === 'super admin');
-
-        if ($hasSuperAdminSelected) {
-            return [Role::whereRaw('LOWER(name) = ?', ['super admin'])->value('name') ?? 'Super Admin'];
         }
 
         return [Role::whereRaw('LOWER(name) = ?', ['admin'])->value('name') ?? 'Admin'];

@@ -9,14 +9,6 @@ use Illuminate\Validation\Rule;
 
 class DepartmentController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:View Departments')->only(['index']);
-        $this->middleware('permission:Create Departments')->only(['create', 'store']);
-        $this->middleware('permission:Edit Departments')->only(['edit', 'update']);
-        $this->middleware('permission:Delete Departments')->only(['destroy']);
-    }
-
     public function index()
     {
         $departments = Department::all();

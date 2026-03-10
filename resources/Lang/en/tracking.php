@@ -114,7 +114,7 @@ return [
     ],
     'lookup' => [
         'title' => 'Registrar: File Lookup',
-        'search_label' => 'Case Number / Temporary Barcode / Permanent Barcode',
+        'search_label' => 'Search by Case No, Temporary Barcode, Permanent Barcode, Petitioner, Lawyer, Subject',
         'search' => 'Search',
         'current_location' => 'Current Location',
         'case' => 'Case',
