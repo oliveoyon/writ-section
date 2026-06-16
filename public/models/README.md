@@ -1,0 +1,1 @@
+Place face-api.js model files in this directory. Required:\n- tiny_face_detector_model-weights_manifest.json + shard\n- face_landmark_68_model-weights_manifest.json + shard\n- face_recognition_model-weights_manifest.json + shards\n

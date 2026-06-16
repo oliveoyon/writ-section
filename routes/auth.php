@@ -23,6 +23,10 @@ Route::middleware('guest')->group(function () {
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
     ->middleware(['guest', 'throttle:5,1']);
 
+    Route::post('login-face', [AuthenticatedSessionController::class, 'faceLogin'])
+        ->name('login.face')
+        ->middleware(['guest', 'throttle:10,1']);
+
     Route::post('proximity-login', [AuthenticatedSessionController::class, 'proximityLogin'])
         ->name('proximity.login')
         ->middleware(['guest', 'throttle:10,1']);

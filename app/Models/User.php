@@ -26,6 +26,7 @@ class User extends Authenticatable
         'is_active',
         'login_id',
         'department', // stores the FK (departments.id)
+        'face_descriptor',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'face_descriptor' => 'array',
         ];
     }
 

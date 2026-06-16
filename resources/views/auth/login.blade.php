@@ -404,7 +404,7 @@
                         <span id="cardBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                     </button>
                 </form>
-            </div>
+</div>
 
             <!-- RIGHT: Minimal help / guidance -->
             <div class="right">
@@ -467,20 +467,23 @@
     </div>
     <div class="offcanvas-body">
         <p class="text-muted" style="color: var(--muted) !important; font-weight: 700;">
-            For filing/affidavit/registrar or admin users who prefer email & password.
+            For admin/staff users: login with Login ID + password, or Login ID + face.
         </p>
+        @if(session('admin_login_notice'))
+            <div class="alert alert-info py-2">{{ session('admin_login_notice') }}</div>
+        @endif
 
         <form method="POST" action="{{ route('login') }}" id="passwordForm" onsubmit="handlePasswordSubmit(event)">
             @csrf
 
             <div class="mb-3">
-                <label for="email" class="form-label">Email Address / ইমেইল</label>
-                <input type="email" id="email" name="email"
-                       class="form-control @error('email') is-invalid @enderror"
-                       value="{{ old('email') }}"
-                       placeholder="Enter your email"
+                <label for="admin_login_id" class="form-label">Login ID / Card Number</label>
+                <input type="text" id="admin_login_id" name="login_id"
+                       class="form-control @error('login_id') is-invalid @enderror"
+                       value="{{ old('login_id') }}"
+                       placeholder="Enter your login ID"
                        required>
-                @error('email')
+                @error('login_id')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
@@ -512,10 +515,107 @@
                 <a class="sub-link" href="{{ route('password.request') }}">Forgot your password?</a>
             </div>
         </form>
+        <hr>
+
+        <form method="POST" action="{{ route('login.face') }}" id="faceForm" onsubmit="handleFaceSubmit(event)">
+            @csrf
+            <div class="mb-3">
+                <label for="face_login_id" class="form-label">Login ID / Card Number</label>
+                <input type="text" id="face_login_id" name="login_id" class="form-control" value="{{ old('login_id') }}" placeholder="Enter login ID for face login" required>
+            </div>
+
+            @error('face_login')
+                <div class="alert alert-danger py-2">{{ $message }}</div>
+            @enderror
+
+            <div class="mb-3">
+                <video id="faceLoginVideo" class="w-100 rounded border bg-dark" autoplay muted playsinline style="min-height:220px; object-fit:cover;"></video>
+            </div>
+
+            <div id="faceLoginStatus" class="small mb-3 text-muted">Load models, start camera, then login with face.</div>
+
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-secondaryish" id="startFaceLoginCameraBtn">
+                    <i class="bi bi-camera-video me-1"></i> Start Camera
+                </button>
+                <button type="submit" class="btn btn-primaryish" id="faceLoginButton">
+                    <span id="faceBtnText"><i class="bi bi-person-bounding-box me-1"></i> Login with Face</span>
+                    <span id="faceBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
+@if(session('show_admin_login'))
+<div class="modal fade" id="quickLoginModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius:20px; border:1px solid var(--border);">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-shield-lock me-1"></i> Quick Admin/Staff Login</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 mb-3">{{ session('admin_login_notice') }}</div>
+
+                <div class="d-flex gap-2 mb-3">
+                    <button type="button" id="quickUseFaceBtn" class="btn btn-primaryish flex-fill">Use Face</button>
+                    <button type="button" id="quickUsePasswordBtn" class="btn btn-secondaryish flex-fill">Use Password</button>
+                </div>
+
+                <div id="quickFacePane">
+                    <form method="POST" action="{{ route('login.face') }}" id="inlineFaceForm" onsubmit="handleInlineFaceSubmit(event)">
+                        @csrf
+                        <input type="hidden" name="login_id" value="{{ session('admin_login_id_prefill') }}">
+                        <div class="mb-2">
+                            <label class="form-label">Login ID</label>
+                            <input type="text" class="form-control" value="{{ session('admin_login_id_prefill') }}" readonly>
+                        </div>
+                        <div class="mb-2">
+                            <video id="inlineFaceLoginVideo" class="w-100 rounded border bg-dark" autoplay muted playsinline style="min-height:220px; object-fit:cover;"></video>
+                        </div>
+                        <div id="inlineFaceLoginStatus" class="small mb-2 text-muted">Camera will auto-start. Keep your face centered.</div>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-secondaryish" id="startInlineFaceCameraBtn">
+                                <i class="bi bi-camera-video me-1"></i> Retry Camera
+                            </button>
+                            <button type="submit" class="btn btn-primaryish" id="inlineFaceLoginButton">
+                                <span id="inlineFaceBtnText"><i class="bi bi-person-bounding-box me-1"></i> Login with Face</span>
+                                <span id="inlineFaceBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="quickPasswordPane" class="d-none">
+                    <form method="POST" action="{{ route('login') }}" id="inlinePasswordForm" onsubmit="handleInlinePasswordSubmit(event)">
+                        @csrf
+                        <input type="hidden" name="login_id" value="{{ session('admin_login_id_prefill') }}">
+                        <div class="mb-2">
+                            <label class="form-label">Login ID</label>
+                            <input type="text" class="form-control" value="{{ session('admin_login_id_prefill') }}" readonly>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" id="quickPasswordInput" class="form-control" required>
+                        </div>
+                        <div class="mb-2 form-check">
+                            <input type="checkbox" class="form-check-input" id="inlineRemember" name="remember">
+                            <label class="form-check-label" for="inlineRemember">Remember Me</label>
+                        </div>
+                        <button type="submit" class="btn btn-primaryish w-100" id="inlinePasswordLoginButton">
+                            <span id="inlinePasswordBtnText"><i class="bi bi-box-arrow-in-right me-1"></i> Login with Password</span>
+                            <span id="inlinePasswordBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
     // ===== Button loading state (no backend changes) =====
@@ -524,6 +624,362 @@
         document.getElementById('passwordBtnText').textContent = 'Logging in...';
         document.getElementById('passwordBtnSpinner').classList.remove('d-none');
         button.disabled = true;
+    }
+
+    function handleInlinePasswordSubmit() {
+        const button = document.getElementById('inlinePasswordLoginButton');
+        if (!button) return;
+        document.getElementById('inlinePasswordBtnText').textContent = 'Logging in...';
+        document.getElementById('inlinePasswordBtnSpinner').classList.remove('d-none');
+        button.disabled = true;
+    }
+
+    const faceLogin = {
+        video: null,
+        statusEl: null,
+        modelsLoaded: false,
+        stream: null
+    };
+
+    function setFaceLoginStatus(message, type = 'muted') {
+        if (!faceLogin.statusEl) return;
+        faceLogin.statusEl.textContent = message;
+        faceLogin.statusEl.className = 'small mb-3';
+        if (type === 'success') {
+            faceLogin.statusEl.classList.add('text-success');
+            return;
+        }
+        if (type === 'error') {
+            faceLogin.statusEl.classList.add('text-danger');
+            return;
+        }
+        faceLogin.statusEl.classList.add('text-muted');
+    }
+
+    async function ensureFaceModelsLoaded() {
+        if (faceLogin.modelsLoaded) return;
+        if (!window.faceapi) {
+            throw new Error('face-api.js failed to load.');
+        }
+
+        setFaceLoginStatus('Loading face models...');
+        await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+            faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+            faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+        ]);
+        faceLogin.modelsLoaded = true;
+        setFaceLoginStatus('Models loaded. Start camera.', 'success');
+    }
+
+    async function startFaceLoginCamera() {
+        try {
+            await ensureFaceModelsLoaded();
+
+            if (faceLogin.stream) {
+                faceLogin.video.srcObject = faceLogin.stream;
+                await faceLogin.video.play();
+                return true;
+            }
+
+            faceLogin.stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' },
+                audio: false
+            });
+            faceLogin.video.srcObject = faceLogin.stream;
+            await faceLogin.video.play();
+            setFaceLoginStatus('Camera started. Keep one face in frame.', 'success');
+            return true;
+        } catch (error) {
+            setFaceLoginStatus(error.message || 'Could not start camera.', 'error');
+            return false;
+        }
+    }
+
+    async function captureFaceDescriptorForLogin() {
+        if (!faceLogin.video) {
+            throw new Error('Face login video is not available.');
+        }
+
+        if (!faceLogin.video.srcObject) {
+            const started = await startFaceLoginCamera();
+            if (!started || !faceLogin.video.srcObject) {
+                throw new Error('Camera permission is required for face login.');
+            }
+        }
+
+        setFaceLoginStatus('Detecting face...');
+        const tinyOptions = new faceapi.TinyFaceDetectorOptions();
+        const allFaces = await faceapi.detectAllFaces(faceLogin.video, tinyOptions);
+
+        if (allFaces.length === 0) {
+            throw new Error('No face detected.');
+        }
+
+        if (allFaces.length > 1) {
+            throw new Error('Multiple faces detected.');
+        }
+
+        const detection = await faceapi
+            .detectSingleFace(faceLogin.video, tinyOptions)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+        if (!detection || !detection.descriptor) {
+            throw new Error('Could not capture face descriptor.');
+        }
+
+        setFaceLoginStatus('Face captured. Logging in...', 'success');
+        return Array.from(detection.descriptor);
+    }
+
+    async function handleFaceSubmit(event) {
+        event.preventDefault();
+
+        const button = document.getElementById('faceLoginButton');
+        const text = document.getElementById('faceBtnText');
+        const spinner = document.getElementById('faceBtnSpinner');
+        const loginIdInput = document.getElementById('face_login_id');
+        const form = event.target;
+
+        if (!loginIdInput.value.trim()) {
+            setFaceLoginStatus('Login ID is required for face login.', 'error');
+            return;
+        }
+
+        form.querySelectorAll('input[data-face-descriptor=\"1\"]').forEach((node) => node.remove());
+
+        button.disabled = true;
+        text.textContent = 'Matching face...';
+        spinner.classList.remove('d-none');
+
+        try {
+            const descriptor = await captureFaceDescriptorForLogin();
+
+            descriptor.forEach((value, index) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `descriptor[${index}]`;
+                input.value = String(value);
+                input.setAttribute('data-face-descriptor', '1');
+                form.appendChild(input);
+            });
+
+            form.submit();
+        } catch (error) {
+            setFaceLoginStatus(error.message || 'Face login failed.', 'error');
+            button.disabled = false;
+            text.innerHTML = '<i class=\"bi bi-person-bounding-box me-1\"></i> Login with Face';
+            spinner.classList.add('d-none');
+        }
+    }
+
+    const inlineFaceLogin = {
+        video: null,
+        statusEl: null,
+        modelsLoaded: false,
+        stream: null,
+        autoDetectTimer: null,
+        submitting: false
+    };
+
+    function setInlineFaceStatus(message, type = 'muted') {
+        if (!inlineFaceLogin.statusEl) return;
+        inlineFaceLogin.statusEl.textContent = message;
+        inlineFaceLogin.statusEl.className = 'small mb-2';
+        if (type === 'success') {
+            inlineFaceLogin.statusEl.classList.add('text-success');
+            return;
+        }
+        if (type === 'error') {
+            inlineFaceLogin.statusEl.classList.add('text-danger');
+            return;
+        }
+        inlineFaceLogin.statusEl.classList.add('text-muted');
+    }
+
+    async function ensureInlineFaceModelsLoaded() {
+        if (inlineFaceLogin.modelsLoaded) return;
+        if (!window.faceapi) {
+            throw new Error('face-api.js failed to load.');
+        }
+
+        setInlineFaceStatus('Loading face models...');
+        await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+            faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+            faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+        ]);
+        inlineFaceLogin.modelsLoaded = true;
+        setInlineFaceStatus('Models loaded. Start camera.', 'success');
+    }
+
+    async function startInlineFaceCamera() {
+        try {
+            await ensureInlineFaceModelsLoaded();
+
+            if (inlineFaceLogin.stream) {
+                inlineFaceLogin.video.srcObject = inlineFaceLogin.stream;
+                await inlineFaceLogin.video.play();
+                return true;
+            }
+
+            inlineFaceLogin.stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' },
+                audio: false
+            });
+            inlineFaceLogin.video.srcObject = inlineFaceLogin.stream;
+            await inlineFaceLogin.video.play();
+            setInlineFaceStatus('Camera started. Keep one face in frame.', 'success');
+            return true;
+        } catch (error) {
+            setInlineFaceStatus(error.message || 'Could not start camera.', 'error');
+            return false;
+        }
+    }
+
+    function stopInlineAutoDetection() {
+        if (!inlineFaceLogin.autoDetectTimer) {
+            return;
+        }
+
+        clearInterval(inlineFaceLogin.autoDetectTimer);
+        inlineFaceLogin.autoDetectTimer = null;
+    }
+
+    async function captureInlineFaceDescriptor() {
+        if (!inlineFaceLogin.video) {
+            throw new Error('Face login video is not available.');
+        }
+
+        if (!inlineFaceLogin.video.srcObject) {
+            const started = await startInlineFaceCamera();
+            if (!started || !inlineFaceLogin.video.srcObject) {
+                throw new Error('Camera permission is required for face login.');
+            }
+        }
+
+        setInlineFaceStatus('Detecting face...');
+        const tinyOptions = new faceapi.TinyFaceDetectorOptions();
+        const allFaces = await faceapi.detectAllFaces(inlineFaceLogin.video, tinyOptions);
+
+        if (allFaces.length === 0) {
+            throw new Error('No face detected.');
+        }
+
+        if (allFaces.length > 1) {
+            throw new Error('Multiple faces detected.');
+        }
+
+        const detection = await faceapi
+            .detectSingleFace(inlineFaceLogin.video, tinyOptions)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+        if (!detection || !detection.descriptor) {
+            throw new Error('Could not capture face descriptor.');
+        }
+
+        setInlineFaceStatus('Face captured. Logging in...', 'success');
+        return Array.from(detection.descriptor);
+    }
+
+    async function submitInlineFaceWithDescriptor(form, descriptor) {
+        const button = document.getElementById('inlineFaceLoginButton');
+        const text = document.getElementById('inlineFaceBtnText');
+        const spinner = document.getElementById('inlineFaceBtnSpinner');
+
+        if (!button || !text || !spinner) {
+            return;
+        }
+
+        if (inlineFaceLogin.submitting) {
+            return;
+        }
+
+        inlineFaceLogin.submitting = true;
+        form.querySelectorAll('input[data-inline-face-descriptor=\"1\"]').forEach((node) => node.remove());
+
+        button.disabled = true;
+        text.textContent = 'Matching face...';
+        spinner.classList.remove('d-none');
+
+        try {
+            descriptor.forEach((value, index) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `descriptor[${index}]`;
+                input.value = String(value);
+                input.setAttribute('data-inline-face-descriptor', '1');
+                form.appendChild(input);
+            });
+
+            form.submit();
+        } catch (error) {
+            setInlineFaceStatus(error.message || 'Face login failed.', 'error');
+            button.disabled = false;
+            text.innerHTML = '<i class=\"bi bi-person-bounding-box me-1\"></i> Login with Face';
+            spinner.classList.add('d-none');
+            inlineFaceLogin.submitting = false;
+        }
+    }
+
+    async function handleInlineFaceSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+
+        try {
+            const descriptor = await captureInlineFaceDescriptor();
+            await submitInlineFaceWithDescriptor(form, descriptor);
+        } catch (error) {
+            setInlineFaceStatus(error.message || 'Face login failed.', 'error');
+        }
+    }
+
+    async function autoDetectAndSubmitInlineFace() {
+        if (inlineFaceLogin.submitting) {
+            return;
+        }
+
+        const form = document.getElementById('inlineFaceForm');
+        const facePane = document.getElementById('quickFacePane');
+        if (!form || !facePane || facePane.classList.contains('d-none')) {
+            return;
+        }
+
+        try {
+            if (!inlineFaceLogin.video || !inlineFaceLogin.video.srcObject) {
+                return;
+            }
+
+            const tinyOptions = new faceapi.TinyFaceDetectorOptions();
+            const allFaces = await faceapi.detectAllFaces(inlineFaceLogin.video, tinyOptions);
+
+            if (allFaces.length === 0) {
+                setInlineFaceStatus('Looking for face...');
+                return;
+            }
+
+            if (allFaces.length > 1) {
+                setInlineFaceStatus('Multiple faces detected. Keep only one face in frame.', 'error');
+                return;
+            }
+
+            const detection = await faceapi
+                .detectSingleFace(inlineFaceLogin.video, tinyOptions)
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!detection || !detection.descriptor) {
+                setInlineFaceStatus('Face found but descriptor failed. Adjust light/angle.', 'error');
+                return;
+            }
+
+            setInlineFaceStatus('Face detected. Logging in...', 'success');
+            await submitInlineFaceWithDescriptor(form, Array.from(detection.descriptor));
+        } catch (error) {
+            setInlineFaceStatus(error.message || 'Auto face detection failed.', 'error');
+        }
     }
 
     function handleCardSubmit() {
@@ -561,7 +1017,11 @@
         const isPasswordArea = (el) => {
             if (!el) return false;
             const id = el.id || '';
-            return ['email', 'password', 'remember'].includes(id) || el.closest('#passwordForm');
+            return ['admin_login_id', 'face_login_id', 'password', 'remember'].includes(id)
+                || el.closest('#passwordForm')
+                || el.closest('#faceForm')
+                || el.closest('#inlinePasswordForm')
+                || el.closest('#inlineFaceForm');
         };
 
         const setPill = (focused) => {
@@ -656,6 +1116,95 @@
                 setTimeout(() => focusCard(), 250);
             });
         }
+    })();
+
+    (function () {
+        faceLogin.video = document.getElementById('faceLoginVideo');
+        faceLogin.statusEl = document.getElementById('faceLoginStatus');
+        const startBtn = document.getElementById('startFaceLoginCameraBtn');
+
+        if (!faceLogin.video || !faceLogin.statusEl || !startBtn) {
+            return;
+        }
+
+        startBtn.addEventListener('click', startFaceLoginCamera);
+        ensureFaceModelsLoaded().catch((error) => {
+            setFaceLoginStatus(error.message || 'Failed to load face models.', 'error');
+        });
+    })();
+
+    (function () {
+        const prefillLoginId = @json((string) session('admin_login_id_prefill', ''));
+        const adminLoginIdInput = document.getElementById('admin_login_id');
+        const faceLoginIdInput = document.getElementById('face_login_id');
+
+        if (prefillLoginId) {
+            if (adminLoginIdInput) adminLoginIdInput.value = prefillLoginId;
+            if (faceLoginIdInput) faceLoginIdInput.value = prefillLoginId;
+        }
+    })();
+
+    (function () {
+        inlineFaceLogin.video = document.getElementById('inlineFaceLoginVideo');
+        inlineFaceLogin.statusEl = document.getElementById('inlineFaceLoginStatus');
+        const inlineStartBtn = document.getElementById('startInlineFaceCameraBtn');
+
+        if (!inlineFaceLogin.video || !inlineFaceLogin.statusEl || !inlineStartBtn) {
+            return;
+        }
+
+        inlineStartBtn.addEventListener('click', startInlineFaceCamera);
+        ensureInlineFaceModelsLoaded().catch((error) => {
+            setInlineFaceStatus(error.message || 'Failed to load face models.', 'error');
+        });
+    })();
+
+    (function () {
+        const shouldShowQuickModal = @json((bool) session('show_admin_login'));
+        const modalEl = document.getElementById('quickLoginModal');
+        const facePane = document.getElementById('quickFacePane');
+        const passwordPane = document.getElementById('quickPasswordPane');
+        const useFaceBtn = document.getElementById('quickUseFaceBtn');
+        const usePasswordBtn = document.getElementById('quickUsePasswordBtn');
+        const passwordInput = document.getElementById('quickPasswordInput');
+
+        if (!modalEl || !facePane || !passwordPane || !useFaceBtn || !usePasswordBtn) {
+            return;
+        }
+
+        const showPane = (mode) => {
+            const useFace = mode === 'face';
+
+            facePane.classList.toggle('d-none', !useFace);
+            passwordPane.classList.toggle('d-none', useFace);
+
+            useFaceBtn.classList.toggle('btn-primaryish', useFace);
+            useFaceBtn.classList.toggle('btn-secondaryish', !useFace);
+            usePasswordBtn.classList.toggle('btn-primaryish', !useFace);
+            usePasswordBtn.classList.toggle('btn-secondaryish', useFace);
+
+            if (useFace) {
+                startInlineFaceCamera();
+                stopInlineAutoDetection();
+                inlineFaceLogin.autoDetectTimer = setInterval(autoDetectAndSubmitInlineFace, 1200);
+                return;
+            }
+
+            stopInlineAutoDetection();
+            setTimeout(() => passwordInput?.focus(), 120);
+        };
+
+        useFaceBtn.addEventListener('click', () => showPane('face'));
+        usePasswordBtn.addEventListener('click', () => showPane('password'));
+
+        if (!shouldShowQuickModal || !window.bootstrap || !window.bootstrap.Modal) {
+            return;
+        }
+
+        const modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+        modalEl.addEventListener('hidden.bs.modal', () => stopInlineAutoDetection());
+        modalEl.addEventListener('shown.bs.modal', () => showPane('face'), { once: true });
+        modal.show();
     })();
 </script>
 </body>
