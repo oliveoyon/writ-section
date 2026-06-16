@@ -90,6 +90,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
     Route::prefix('tracking')->name('tracking.')->group(function () {
         Route::get('register-report', [RegistrarTrackingController::class, 'registerReport'])->name('register-report');
         Route::get('register-report/pdf', [RegistrarTrackingController::class, 'registerReportPdf'])->name('register-report.pdf');
+        Route::get('filing/print', [FilingController::class, 'printIndex'])->name('filing.print-index');
+        Route::get('filing/print/{case}', [FilingController::class, 'printLabel'])->name('filing.print-label');
+        Route::get('filing/print/{case}/pdf', [FilingController::class, 'printLabelPdf'])->name('filing.print-label-pdf');
+        Route::get('filing/print/{case}/tspl', [FilingController::class, 'printLabelTspl'])->name('filing.print-label-tspl');
+        Route::post('filing/print/{case}/direct', [FilingController::class, 'printLabelDirect'])->name('filing.print-label-direct');
+
         Route::middleware('ensureDepartment:Office Assistant,Assistant Registrar Office')->group(function () {
             Route::get('court/dispatch', [CourtDispatchController::class, 'dispatchIndex'])->name('court.dispatch.index');
             Route::post('court/dispatch', [CourtDispatchController::class, 'dispatchStore'])->name('court.dispatch.store');
@@ -107,9 +113,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
             Route::get('filing/direct-create', [FilingController::class, 'showDirectCreate'])->name('filing.direct-create');
             Route::post('filing/direct-create', [FilingController::class, 'storeDirectCreate'])->name('filing.store-direct');
             Route::get('filing/cases/{case}', [FilingController::class, 'show'])->name('filing.show');
-            Route::get('filing/print', [FilingController::class, 'printIndex'])->name('filing.print-index');
-            Route::get('filing/print/{case}', [FilingController::class, 'printLabel'])->name('filing.print-label');
-            Route::get('filing/print/{case}/pdf', [FilingController::class, 'printLabelPdf'])->name('filing.print-label-pdf');
         });
 
         Route::middleware('ensureDepartment:Affidavit Section,Requisite Section,Put-Up Section,Typing Section,Compare Section,Superintendent,Ready Table,Record Room')->group(function () {

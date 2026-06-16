@@ -11,10 +11,11 @@ return new class extends Migration
         Schema::create('cases', function (Blueprint $table) {
             $table->id();
 
-            // linked to lawyers table
+            // Linked to lawyers table; nullable for staff-created/legacy filings.
             $table->foreignId('lawyer_id')
+                ->nullable()
                 ->constrained('lawyers')
-                ->cascadeOnDelete();
+                ->nullOnDelete();
 
             // basic case info
             $table->string('case_type')->nullable();
@@ -39,11 +40,11 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // add foreign key to admin_users
+        // Verified by a section user.
         Schema::table('cases', function (Blueprint $table) {
             $table->foreign('section_verified_by')
                 ->references('id')
-                ->on('admin_users')
+                ->on('users')
                 ->nullOnDelete();
         });
     }

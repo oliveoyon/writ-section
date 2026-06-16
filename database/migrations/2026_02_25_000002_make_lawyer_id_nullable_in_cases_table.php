@@ -13,12 +13,20 @@ return new class extends Migration
             return;
         }
 
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement('ALTER TABLE cases MODIFY lawyer_id BIGINT UNSIGNED NULL');
     }
 
     public function down(): void
     {
         if (!Schema::hasColumn('cases', 'lawyer_id')) {
+            return;
+        }
+
+        if (DB::getDriverName() === 'sqlite') {
             return;
         }
 

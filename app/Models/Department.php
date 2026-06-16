@@ -23,6 +23,8 @@ class Department extends Model
         'Superintendent',
         'Ready Table',
         'Record Room',
+        'Others',
+        'Court Operator',
         'Registrar',
     ];
 }

@@ -2,38 +2,60 @@
 <html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
+    @php
+        $pageWidthMm = max(20, $widthMm - 2);
+        $pageHeightMm = max(20, $heightMm - 3);
+        $printPageWidthMm = min($widthMm, $heightMm);
+        $printPageHeightMm = max($widthMm, $heightMm);
+    @endphp
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ __('tracking.filing.print_label_title') }}</title>
     <style>
         @page {
-            size: {{ $widthMm }}mm {{ $heightMm }}mm;
-            margin: 2mm;
+            size: {{ $pageWidthMm }}mm {{ $pageHeightMm }}mm;
+            margin: 0;
         }
 
         * { box-sizing: border-box; }
+        html {
+            width: {{ $widthMm }}mm;
+            height: {{ $heightMm }}mm;
+        }
         body {
             margin: 0;
             font-family: Arial, sans-serif;
+            width: {{ $widthMm }}mm;
+            height: {{ $heightMm }}mm;
+            overflow: hidden;
+        }
+        .print-sheet {
+            width: {{ $widthMm }}mm;
+            height: {{ $heightMm }}mm;
+            position: relative;
         }
         .label {
-            width: {{ $widthMm - 4 }}mm;
-            height: {{ $heightMm - 4 }}mm;
+            width: {{ $widthMm }}mm;
+            height: {{ $heightMm }}mm;
             border: 1px dashed #777;
-            padding: 2mm;
+            padding: 6mm 8mm;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             justify-content: center;
             align-items: center;
             text-align: center;
+            cursor: pointer;
         }
-        .code {
-            font-size: 10px;
-            margin-top: 2mm;
-            word-break: break-all;
+        .barcode-svg {
+            width: 34mm;
+            max-width: 100%;
+            height: 10mm;
+            display: block;
         }
-        .meta {
-            font-size: 9px;
-            margin-top: 1.5mm;
+        .barcode-svg svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            shape-rendering: crispEdges;
         }
         .actions {
             position: fixed;
@@ -64,9 +86,43 @@
             display: none;
         }
         @media print {
+            @page {
+                size: {{ $printPageWidthMm }}mm {{ $printPageHeightMm }}mm;
+                margin: 0;
+            }
             .actions { display: none; }
             .hint { display: none !important; }
-            .label { border: none; }
+            body {
+                width: {{ $printPageWidthMm }}mm;
+                height: {{ $printPageHeightMm }}mm;
+                margin: 0;
+                overflow: hidden;
+            }
+            .print-sheet {
+                width: {{ $printPageWidthMm }}mm;
+                height: {{ $printPageHeightMm }}mm;
+                position: relative;
+                overflow: hidden;
+                page-break-after: avoid;
+                break-after: avoid;
+            }
+            .label {
+                width: 34mm;
+                height: 10mm;
+                border: none;
+                padding: 0;
+                position: absolute;
+                top: 8mm;
+                left: 18mm;
+                transform: rotate(90deg);
+                transform-origin: top left;
+                page-break-after: avoid;
+                break-after: avoid;
+            }
+            .barcode-svg {
+                width: 34mm;
+                height: 10mm;
+            }
         }
     </style>
 </head>
@@ -76,17 +132,27 @@
         <a href="{{ route('admin.tracking.filing.print-label-pdf', ['case' => $case->id, 'width_mm' => $widthMm, 'height_mm' => $heightMm]) }}" target="_blank">
             {{ __('tracking.filing.print_pdf') }}
         </a>
+        <a href="{{ route('admin.tracking.filing.print-label-tspl', ['case' => $case->id, 'width_mm' => $widthMm, 'height_mm' => $heightMm]) }}">
+            GS 2406T File
+        </a>
+        <form method="POST"
+              action="{{ route('admin.tracking.filing.print-label-direct', ['case' => $case->id]) }}"
+              style="display:inline;">
+            @csrf
+            <input type="hidden" name="width_mm" value="{{ $widthMm }}">
+            <input type="hidden" name="height_mm" value="{{ $heightMm }}">
+            <button type="submit">Direct Print GS2406T</button>
+        </form>
         @if(!empty($next))
             <a href="{{ $next }}">{{ __('tracking.filing.back_after_print') }}</a>
         @endif
     </div>
     <div class="hint" id="printHint">{{ __('tracking.filing.print_hint') }}</div>
 
-    <div class="label">
-        <div><strong>{{ $case->final_case_number ?? '-' }}</strong></div>
-        <img src="data:image/png;base64,{{ $barcodePng }}" alt="barcode" style="max-width: 100%; height: auto;">
-        <div class="code">{{ $case->permanent_barcode }}</div>
-        <div class="meta">{{ $case->subject }}</div>
+    <div class="print-sheet">
+        <div class="label" id="printableLabel" title="{{ __('tracking.filing.print_now') }}">
+            <div class="barcode-svg" aria-label="barcode">{!! $barcodeSvg !!}</div>
+        </div>
     </div>
 
     <script>
@@ -105,16 +171,23 @@
                 return;
             }
 
-            try {
-                window.focus();
-                window.print();
-                hasPrinted = true;
-            } catch (e) {
-                showHint();
-            }
+            waitForBarcode().then(function () {
+                try {
+                    window.focus();
+                    window.print();
+                    hasPrinted = true;
+                } catch (e) {
+                    showHint();
+                }
+            });
+        }
+
+        function waitForBarcode() {
+            return Promise.resolve();
         }
 
         const printButton = document.getElementById('printButton');
+        const printableLabel = document.getElementById('printableLabel');
         if (printButton) {
             printButton.addEventListener('click', function (event) {
                 event.preventDefault();
@@ -126,6 +199,9 @@
                 }, 800);
             });
         }
+        if (printableLabel) {
+            printableLabel.addEventListener('click', triggerPrint);
+        }
 
         @if(!empty($next))
         window.onafterprint = function () {
@@ -133,17 +209,6 @@
         };
         @endif
 
-        @if($autoPrint)
-        window.addEventListener('load', function () {
-            setTimeout(triggerPrint, 250);
-            setTimeout(function () {
-                if (!hasPrinted) {
-                    triggerPrint();
-                    showHint();
-                }
-            }, 1200);
-        });
-        @endif
     </script>
 </body>
 </html>

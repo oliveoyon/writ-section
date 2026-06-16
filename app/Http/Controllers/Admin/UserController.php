@@ -33,13 +33,7 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'department' => 'nullable|exists:departments,id', // validate FK
             'user_type' => 'required|in:admin,staff',
-            'face_descriptor' => 'nullable|string',
         ]);
-
-        $faceDescriptor = $this->parseFaceDescriptor($request->input('face_descriptor'));
-        if ($request->filled('face_descriptor') && $faceDescriptor === null) {
-            return back()->withErrors(['face_descriptor' => 'Invalid face descriptor payload.'])->withInput();
-        }
 
         $user = new User();
         $user->name = $request->name;
@@ -49,7 +43,6 @@ class UserController extends Controller
         $user->password = Hash::make($request->password);
         $user->is_active = $request->has('is_active');
         $user->user_type = $request->user_type;
-        $user->face_descriptor = $faceDescriptor;
         $user->save();
 
         $roles = $this->resolveRolesForUserType($request->input('user_type'));
@@ -77,13 +70,7 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'department' => 'nullable|exists:departments,id', // validate FK
             'user_type' => 'required|in:admin,staff',
-            'face_descriptor' => 'nullable|string',
         ]);
-
-        $faceDescriptor = $this->parseFaceDescriptor($request->input('face_descriptor'));
-        if ($request->filled('face_descriptor') && $faceDescriptor === null) {
-            return back()->withErrors(['face_descriptor' => 'Invalid face descriptor payload.'])->withInput();
-        }
 
         $user->name = $request->name;
         $user->login_id = $request->login_id;
@@ -94,7 +81,6 @@ class UserController extends Controller
         }
         $user->is_active = $request->has('is_active');
         $user->user_type = $request->user_type;
-        $user->face_descriptor = $faceDescriptor;
         $user->save();
 
         $roles = $this->resolveRolesForUserType($request->input('user_type'));
@@ -128,26 +114,4 @@ class UserController extends Controller
         return [Role::whereRaw('LOWER(name) = ?', ['admin'])->value('name') ?? 'Admin'];
     }
 
-    private function parseFaceDescriptor(?string $json): ?array
-    {
-        if ($json === null || trim($json) === '') {
-            return null;
-        }
-
-        $decoded = json_decode($json, true);
-
-        if (!is_array($decoded) || count($decoded) !== 128) {
-            return null;
-        }
-
-        $normalized = [];
-        foreach ($decoded as $value) {
-            if (!is_numeric($value)) {
-                return null;
-            }
-            $normalized[] = (float) $value;
-        }
-
-        return $normalized;
-    }
 }

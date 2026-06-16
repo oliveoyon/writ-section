@@ -5,11 +5,9 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
-use App\Services\FaceRecognitionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -39,7 +37,6 @@ class AuthenticatedSessionController extends Controller
     {
         $request->validate([
             'login_id' => ['required', 'string', 'max:255'],
-            'pin' => ['nullable', 'string'],
         ]);
 
         $user = User::where('login_id', trim((string) $request->login_id))
@@ -50,66 +47,6 @@ class AuthenticatedSessionController extends Controller
             return back()->withErrors([
                 'login_id' => 'Invalid proximity card login.',
             ])->onlyInput('login_id');
-        }
-
-        if (in_array((string) $user->user_type, ['admin', 'staff'], true)) {
-            return redirect()->route('login')->with([
-                'show_admin_login' => true,
-                'admin_login_id_prefill' => (string) $user->login_id,
-                'admin_login_notice' => 'Admin/Staff detected. Continue with Login ID + Password or Login ID + Face.',
-            ]);
-        }
-
-        if ($request->filled('pin') && !Hash::check((string) $request->pin, $user->password)) {
-            return back()->withErrors([
-                'login_id' => 'Card scanned but PIN is invalid.',
-            ])->onlyInput('login_id');
-        }
-
-        Auth::login($user, true);
-        $request->session()->regenerate();
-        $request->session()->put('last_activity_at', time());
-
-        return redirect()->to($this->redirectPathFor($user));
-    }
-
-    public function faceLogin(Request $request, FaceRecognitionService $faceRecognitionService): RedirectResponse
-    {
-        $request->validate([
-            'login_id' => ['required', 'string', 'max:255'],
-            'descriptor' => ['required', 'array', 'size:128'],
-            'descriptor.*' => ['required', 'numeric'],
-        ]);
-
-        $user = User::query()
-            ->where('login_id', trim((string) $request->input('login_id')))
-            ->whereIn('user_type', ['admin', 'staff'])
-            ->where('is_active', true)
-            ->first();
-
-        if (!$user) {
-            return back()->withErrors([
-                'face_login' => 'Invalid login ID for admin/staff user.',
-            ])->withInput();
-        }
-
-        if (empty($user->face_descriptor) || !is_array($user->face_descriptor)) {
-            return back()->withErrors([
-                'face_login' => 'No face is enrolled for this user. Contact admin.',
-            ])->withInput();
-        }
-
-        $distance = $faceRecognitionService->distance(
-            (array) $request->input('descriptor', []),
-            (array) $user->face_descriptor
-        );
-
-        $threshold = (float) config('face.match_threshold', 0.42);
-
-        if ($distance === null || $distance >= $threshold) {
-            return back()->withErrors([
-                'face_login' => 'Face not recognized for this login ID.',
-            ])->withInput();
         }
 
         Auth::login($user, true);

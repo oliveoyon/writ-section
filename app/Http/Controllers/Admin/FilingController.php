@@ -12,12 +12,16 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Mpdf\Mpdf;
-use Picqer\Barcode\BarcodeGeneratorPNG;
+use Illuminate\Support\Facades\Log;
+use Picqer\Barcode\BarcodeGeneratorSVG;
+use Picqer\Barcode\Types\TypeCode128;
+use Symfony\Component\Process\Process;
 use Illuminate\Support\Str;
 
 class FilingController extends Controller
 {
+    private const DEFAULT_GS2406T_SHARE = '\\\\localhost\\GS2406T';
+
     public function index()
     {
         $section = $this->resolveSection(request()->user());
@@ -357,15 +361,13 @@ class FilingController extends Controller
         }
 
         [$widthMm, $heightMm] = $this->resolvePrintSize($request);
-        $generator = new BarcodeGeneratorPNG();
-        $barcodePng = base64_encode(
-            $generator->getBarcode($case->permanent_barcode, $generator::TYPE_CODE_128, 2, 60)
-        );
+        $generator = new BarcodeGeneratorSVG();
+        $barcodeSvg = $generator->getBarcode($case->permanent_barcode, $generator::TYPE_CODE_128, 2, 70);
 
         $autoPrint = (bool) $request->boolean('auto', false);
         $next = $request->query('next');
 
-        return view('admin.tracking.filing-print-label', compact('case', 'barcodePng', 'widthMm', 'heightMm', 'autoPrint', 'next'));
+        return view('admin.tracking.filing-print-label', compact('case', 'barcodeSvg', 'widthMm', 'heightMm', 'autoPrint', 'next'));
     }
 
     public function printLabelPdf(Request $request, CourtCase $case)
@@ -375,25 +377,231 @@ class FilingController extends Controller
         }
 
         [$widthMm, $heightMm] = $this->resolvePrintSize($request);
-        $generator = new BarcodeGeneratorPNG();
-        $barcodePng = base64_encode(
-            $generator->getBarcode($case->permanent_barcode, $generator::TYPE_CODE_128, 2, 60)
-        );
+        $pdf = $this->buildBarcodeLabelPdf($case, $widthMm, $heightMm, (string) $request->query('orientation', 'normal'));
 
-        $html = view('admin.tracking.filing-print-label-pdf', compact('case', 'barcodePng', 'widthMm', 'heightMm'))->render();
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => [$widthMm, $heightMm],
-            'margin_left' => 2,
-            'margin_right' => 2,
-            'margin_top' => 2,
-            'margin_bottom' => 2,
-        ]);
-        $mpdf->WriteHTML($html);
-
-        return response($mpdf->Output('BarcodeLabel_' . $case->permanent_barcode . '.pdf', 'S'))
+        return response($pdf)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="BarcodeLabel_' . $case->permanent_barcode . '.pdf"');
+            ->header('Content-Disposition', 'inline; filename="BarcodeLabel_' . $case->permanent_barcode . '.pdf"')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
+    }
+
+    public function printLabelTspl(Request $request, CourtCase $case)
+    {
+        if (empty($case->permanent_barcode)) {
+            return redirect()->route('admin.tracking.filing.index')->with('error', 'No permanent barcode found for this case.');
+        }
+
+        [$widthMm, $heightMm] = $this->resolvePrintSize($request);
+        $tspl = $this->buildTsplLabel($case, $widthMm, $heightMm);
+
+        return response($tspl)
+            ->header('Content-Type', 'text/plain; charset=US-ASCII')
+            ->header('Content-Disposition', 'attachment; filename="BarcodeLabel_' . $case->permanent_barcode . '.prn"');
+    }
+
+    public function printLabelDirect(Request $request, CourtCase $case)
+    {
+        if (empty($case->permanent_barcode)) {
+            return redirect()->route('admin.tracking.filing.index')->with('error', 'No permanent barcode found for this case.');
+        }
+
+        [$widthMm, $heightMm] = $this->resolvePrintSize($request);
+        $tspl = $this->buildTsplLabel($case, $widthMm, $heightMm);
+        $result = $this->sendRawToGs2406t($tspl);
+
+        if (!$result['ok']) {
+            return back()->with('error', 'Direct print failed: ' . $result['message']);
+        }
+
+        return back()->with('success', 'Label sent directly to GS2406T printer.');
+    }
+
+    private function buildTsplLabel(CourtCase $case, float $widthMm, float $heightMm): string
+    {
+        $barcode = str_replace('"', '', (string) $case->permanent_barcode);
+        $widthMm = $this->tsplNumber($widthMm);
+        $heightMm = $this->tsplNumber($heightMm);
+
+        return implode("\r\n", [
+            "SIZE {$widthMm} mm,{$heightMm} mm",
+            'GAP 2 mm,0 mm',
+            'DIRECTION 1',
+            'REFERENCE 0,0',
+            'SPEED 4',
+            'DENSITY 8',
+            'SET TEAR ON',
+            'CLS',
+            'BARCODE 28,42,"128",76,0,0,2,4,"' . $barcode . '"',
+            'PRINT 1,1',
+            '',
+        ]);
+    }
+
+    private function sendRawToGs2406t(string $tspl): array
+    {
+        $dir = storage_path('app/labels');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+
+        $file = $dir . DIRECTORY_SEPARATOR . 'label_' . uniqid('', true) . '.prn';
+        file_put_contents($file, $tspl);
+
+        try {
+            $errors = [];
+
+            foreach ($this->printerShares() as $share) {
+                $process = new Process([$this->windowsCommandPath(), '/C', 'copy', '/B', $file, $share]);
+                $process->setTimeout(10);
+                $process->run();
+
+                $message = trim($process->getErrorOutput() ?: $process->getOutput());
+
+                if ($process->isSuccessful()) {
+                    Log::info('Barcode label sent to printer.', [
+                        'printer_share' => $share,
+                        'message' => $message,
+                    ]);
+
+                    return ['ok' => true, 'message' => $message];
+                }
+
+                $errors[] = $share . ': ' . ($message ?: 'Windows rejected the printer copy command.');
+            }
+
+            Log::warning('Barcode direct print failed.', [
+                'printer_errors' => $errors,
+            ]);
+
+            return [
+                'ok' => false,
+                'message' => implode(' | ', $errors),
+            ];
+        } finally {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
+    }
+
+    private function printerShares(): array
+    {
+        return array_values(array_unique(array_filter([
+            config('services.barcode_printer.share'),
+            config('services.barcode_printer.fallback_share'),
+            self::DEFAULT_GS2406T_SHARE,
+        ])));
+    }
+
+    private function windowsCommandPath(): string
+    {
+        $systemRoot = getenv('SystemRoot') ?: 'C:\\Windows';
+
+        return $systemRoot . '\\System32\\cmd.exe';
+    }
+
+    private function tsplNumber(float $number): string
+    {
+        return rtrim(rtrim(number_format($number, 1, '.', ''), '0'), '.');
+    }
+
+    private function buildBarcodeLabelPdf(CourtCase $case, float $widthMm, float $heightMm, string $orientation = 'normal'): string
+    {
+        $pageWidth = $this->mmToPoint($widthMm);
+        $pageHeight = $this->mmToPoint($heightMm);
+        $rotated = in_array($orientation, ['clockwise', 'counter'], true);
+        $labelWidth = $rotated ? $pageHeight : $pageWidth;
+        $labelHeight = $rotated ? $pageWidth : $pageHeight;
+        $barcodeText = (string) $case->permanent_barcode;
+        $barcode = (new TypeCode128())->getBarcode($barcodeText);
+
+        $safeMarginX = $this->mmToPoint(6);
+        $safeMarginY = $this->mmToPoint(8);
+        $barcodeWidth = min($this->mmToPoint(34), $labelWidth - ($safeMarginX * 2));
+        $barcodeHeight = min($this->mmToPoint(9), $labelHeight - ($safeMarginY * 2));
+        $barcodeX = ($labelWidth - $barcodeWidth) / 2;
+        $barcodeY = ($labelHeight - $barcodeHeight) / 2;
+        $moduleWidth = $barcodeWidth / max(1, $barcode->getWidth());
+
+        $content = [];
+        $content[] = 'q';
+        $content[] = '1 1 1 rg 0 0 ' . $this->pdfNumber($pageWidth) . ' ' . $this->pdfNumber($pageHeight) . ' re f';
+        if ($orientation === 'clockwise') {
+            $content[] = '0 1 -1 0 ' . $this->pdfNumber($pageWidth) . ' 0 cm';
+        } elseif ($orientation === 'counter') {
+            $content[] = '0 -1 1 0 0 ' . $this->pdfNumber($pageHeight) . ' cm';
+        }
+        $content[] = '0 0 0 rg';
+
+        $x = $barcodeX;
+        foreach ($barcode->getBars() as $bar) {
+            $barWidth = $bar->getWidth() * $moduleWidth;
+            if ($bar->isBar()) {
+                $content[] = $this->pdfNumber($x) . ' ' . $this->pdfNumber($barcodeY) . ' ' . $this->pdfNumber($barWidth) . ' ' . $this->pdfNumber($barcodeHeight) . ' re f';
+            }
+            $x += $barWidth;
+        }
+
+        $content[] = 'Q';
+
+        return $this->buildPdfDocument($pageWidth, $pageHeight, implode("\n", $content) . "\n");
+    }
+
+    private function buildPdfDocument(float $pageWidth, float $pageHeight, string $content): string
+    {
+        $objects = [
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {$this->pdfNumber($pageWidth)} {$this->pdfNumber($pageHeight)}] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n",
+            "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+            "5 0 obj\n<< /Length " . strlen($content) . " >>\nstream\n{$content}endstream\nendobj\n",
+        ];
+
+        $pdf = "%PDF-1.4\n";
+        $offsets = [0];
+        foreach ($objects as $object) {
+            $offsets[] = strlen($pdf);
+            $pdf .= $object;
+        }
+
+        $xrefAt = strlen($pdf);
+        $pdf .= "xref\n0 " . (count($objects) + 1) . "\n";
+        $pdf .= "0000000000 65535 f \n";
+        for ($i = 1; $i <= count($objects); $i++) {
+            $pdf .= str_pad((string) $offsets[$i], 10, '0', STR_PAD_LEFT) . " 00000 n \n";
+        }
+        $pdf .= "trailer\n<< /Size " . (count($objects) + 1) . " /Root 1 0 R >>\n";
+        $pdf .= "startxref\n{$xrefAt}\n%%EOF\n";
+
+        return $pdf;
+    }
+
+    private function pdfText(string $text, float $fontSize, float $x, float $y): string
+    {
+        return 'BT /F1 ' . $this->pdfNumber($fontSize) . ' Tf ' . $this->pdfNumber($x) . ' ' . $this->pdfNumber($y) . ' Td (' . $this->pdfEscape($text) . ') Tj ET';
+    }
+
+    private function centerTextX(string $text, float $fontSize, float $pageWidth): float
+    {
+        $estimatedWidth = strlen($text) * $fontSize * 0.48;
+
+        return max($this->mmToPoint(1), ($pageWidth - $estimatedWidth) / 2);
+    }
+
+    private function pdfEscape(string $text): string
+    {
+        return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $text);
+    }
+
+    private function pdfNumber(float $number): string
+    {
+        return rtrim(rtrim(number_format($number, 3, '.', ''), '0'), '.');
+    }
+
+    private function mmToPoint(float $mm): float
+    {
+        return $mm * 72 / 25.4;
     }
 
     private function findOrCreateLawyer(Request $request): Lawyer
@@ -502,10 +710,10 @@ class FilingController extends Controller
 
     private function resolvePrintSize(Request $request): array
     {
-        $widthMm = (float) $request->query('width_mm', 60);
-        $heightMm = (float) $request->query('height_mm', 40);
+        $widthMm = (float) $request->query('width_mm', 50);
+        $heightMm = (float) $request->query('height_mm', 25);
 
-        $widthMm = max(30, min(110, $widthMm));
+        $widthMm = max(20, min(110, $widthMm));
         $heightMm = max(20, min(150, $heightMm));
 
         return [$widthMm, $heightMm];

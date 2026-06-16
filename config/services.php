@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'barcode_printer' => [
+        'share' => env('BARCODE_PRINTER_SHARE', '\\\\localhost\\GS2406T'),
+        'fallback_share' => env('BARCODE_PRINTER_FALLBACK_SHARE', '\\\\127.0.0.1\\GS2406T'),
+    ],
+
 ];

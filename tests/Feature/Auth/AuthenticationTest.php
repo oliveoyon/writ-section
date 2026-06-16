@@ -22,12 +22,60 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->post('/login', [
-            'email' => $user->email,
+            'login_id' => $user->login_id,
             'password' => 'password',
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('admin.dashboard', absolute: false));
+    }
+
+    public function test_admin_users_can_authenticate_with_email_and_password(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->post('/login', [
+            'login_id' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('admin.dashboard', absolute: false));
+    }
+
+    public function test_card_punch_logs_active_user_in_directly(): void
+    {
+        $user = User::factory()->create([
+            'is_active' => true,
+        ]);
+
+        $response = $this->post('/proximity-login', [
+            'login_id' => $user->login_id,
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('admin.dashboard', absolute: false));
+    }
+
+    public function test_card_punch_rejects_inactive_user(): void
+    {
+        $user = User::factory()->create([
+            'is_active' => false,
+        ]);
+
+        $this->post('/proximity-login', [
+            'login_id' => $user->login_id,
+        ]);
+
+        $this->assertGuest();
+    }
+
+    public function test_face_login_route_is_disabled(): void
+    {
+        $this->post('/login-face', [
+            'login_id' => 'SUPER-ADMIN',
+            'descriptor' => [],
+        ])->assertNotFound();
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
@@ -35,7 +83,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $this->post('/login', [
-            'email' => $user->email,
+            'login_id' => $user->login_id,
             'password' => 'wrong-password',
         ]);
 
@@ -49,6 +97,6 @@ class AuthenticationTest extends TestCase
         $response = $this->actingAs($user)->post('/logout');
 
         $this->assertGuest();
-        $response->assertRedirect('/');
+        $response->assertRedirect('/login');
     }
 }

@@ -43,8 +43,13 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        $login = trim((string) $this->input('login_id'));
+
         $user = User::query()
-            ->where('login_id', trim((string) $this->input('login_id')))
+            ->where(function ($query) use ($login) {
+                $query->where('login_id', $login)
+                    ->orWhere('email', $login);
+            })
             ->whereIn('user_type', ['admin', 'staff'])
             ->where('is_active', true)
             ->first();
