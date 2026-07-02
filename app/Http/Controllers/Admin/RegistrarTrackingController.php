@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CourtCase;
 use App\Models\FileMovement;
+use App\Services\RtftsCaseReference;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
@@ -46,7 +47,7 @@ class RegistrarTrackingController extends Controller
             ->get();
 
         $items = $cases->map(function (CourtCase $case) {
-            $title = $case->final_case_number
+            $title = $case->case_reference
                 ?: $case->permanent_barcode
                 ?: $case->temporary_barcode
                 ?: ('CASE-' . $case->id);
@@ -71,10 +72,11 @@ class RegistrarTrackingController extends Controller
     private function buildLookupQuery(string $query): Builder
     {
         $query = trim(preg_replace('/\s+/', ' ', $query) ?? '');
+        $normalizedBarcode = RtftsCaseReference::barcodeFromSearch($query);
         $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
 
         return CourtCase::query()
-            ->where(function ($q) use ($query, $like) {
+            ->where(function ($q) use ($query, $like, $normalizedBarcode) {
                 $q->where('temporary_barcode', $query)
                     ->orWhere('permanent_barcode', $query)
                     ->orWhere('final_case_number', $query)
@@ -100,6 +102,10 @@ class RegistrarTrackingController extends Controller
                             ->orWhere('bar_council_id', 'like', $like)
                             ->orWhere('phone', 'like', $like);
                     });
+
+                if ($normalizedBarcode) {
+                    $q->orWhere('permanent_barcode', $normalizedBarcode);
+                }
 
                 if (ctype_digit($query)) {
                     $q->orWhere('id', (int) $query);

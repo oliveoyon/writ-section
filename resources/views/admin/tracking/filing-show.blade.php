@@ -18,7 +18,7 @@
 
     <div class="card p-3 mb-3">
         <div class="row g-2">
-            <div class="col-md-4"><strong>{{ __('tracking.filing.case_no') }}:</strong> {{ $case->final_case_number ?? '-' }}</div>
+            <div class="col-md-4"><strong>{{ __('tracking.filing.case_no') }}:</strong> {{ $case->case_reference ?? '-' }}</div>
             <div class="col-md-4"><strong>{{ __('tracking.lookup.permanent_barcode') }}:</strong> {{ $case->permanent_barcode ?? '-' }}</div>
             <div class="col-md-4"><strong>{{ __('tracking.lookup.current_section') }}:</strong> {{ $case->current_section ?? '-' }}</div>
             <div class="col-md-6"><strong>{{ __('tracking.filing.subject') }}:</strong> {{ $case->subject ?? '-' }}</div>

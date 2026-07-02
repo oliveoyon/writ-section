@@ -1,0 +1,131 @@
+﻿<?php
+
+return [
+
+    'title' => 'আইনজীবী প্যানেল',
+
+    'nav' => [
+        'brand'        => 'আইনজীবী প্যানেল',
+        'lawyer'       => 'আইনজীবী',
+        'dashboard'    => 'ড্যাশবোর্ড',
+        'my_cases'     => 'আমার মামলাসমূহ',
+        'notifications' => 'নোটিফিকেশন',
+        'messages'     => 'বার্তা',
+        'documents'    => 'নথিপত্র',
+        'settings'     => 'সেটিংস',
+        'logout'       => 'লগআউট',
+    ],
+
+    'section' => [
+        'basic_info'   => 'মৌলিক তথ্য',
+        'about_me'     => 'আমার সম্পর্কে',
+        'recent_cases' => 'সাম্প্রতিক মামলাসমূহ',
+        'change_password' => 'পাসওয়ার্ড পরিবর্তন',
+        'profile_picture' => 'প্রোফাইল ছবি',
+        'basic_info' => 'মৌলিক তথ্য',
+        'recent_cases' => 'সাম্প্রতিক মামলা',
+        'case_filing' => 'নতুন মামলা দায়ের করুন',
+    ],
+
+    'label' => [
+        'full_name'     => 'পূর্ণ নাম',
+        'email'         => 'ইমেইল',
+        'phone'         => 'মোবাইল নম্বর',
+        'enrolmentCourt' => 'নিবন্ধিত কোর্ট',
+        'bar_council_id' => 'বার কাউন্সিল আইডি',
+        'member_since'  => 'সদস্য হয়েছেন',
+        'current_password' => 'বর্তমান পাসওয়ার্ড',
+        'new_password' => 'নতুন পাসওয়ার্ড',
+        'confirm_new_password' => 'নতুন পাসওয়ার্ড নিশ্চিত করুন',
+        'full_name' => 'পূর্ণ নাম',
+        'email' => 'ইমেইল',
+        'phone' => 'ফোন',
+        'bar_council_id' => 'বার কাউন্সিল আইডি',
+        'enrolmentCourt' => 'নিবন্ধনকৃত আদালত',
+        'case_type' => 'মামলার ধরন',
+        'subject' => 'বিষয়',
+        'description' => 'বিবরণ',
+        'file' => 'ফাইল',
+        'petitioners' => 'বাদী',
+        'respondents' => 'বিবাদী',
+        'name' => 'নাম',
+        'address' => 'ঠিকানা',
+        'nid' => 'জাতীয় পরিচয়পত্র',
+        'designation' => 'পদবী',
+        'organization' => 'সংস্থা',
+    ],
+
+    'footer' => [
+        'contact'   => 'যোগাযোগ করুন',
+        'email'     => 'ইমেইল: info@example.com',
+        'phone'     => 'ফোন: +৮৮০ ১২৩৪ ৫৬৭৮৯০',
+        'quick_links' => 'দ্রুত লিংক',
+        'follow_us'   => 'আমাদের অনুসরণ করুন',
+        'copyright'    => '© ' . date('Y') . ' সর্বস্বত্ব সংরক্ষিত.',
+    ],
+    'placeholder' => [
+        'current_password' => 'বর্তমান পাসওয়ার্ড লিখুন',
+        'new_password' => 'নতুন পাসওয়ার্ড লিখুন',
+        'confirm_new_password' => 'নতুন পাসওয়ার্ড আবার লিখুন',
+        'photo' => 'ছবি',
+    ],
+    'alt' => [
+        'profile_photo' => 'প্রোফাইল ছবি',
+    ],
+    'helper' => [
+        'upload_new_image' => 'নতুন ছবি আপলোড করুন (bar_council_id_timestamp.ext হিসেবে সংরক্ষিত হবে)',
+    ],
+    'meta' => [
+        'case_no' => 'কেস নম্বর',
+        'no_recent_cases' => 'সাম্প্রতিক কোনো মামলা পাওয়া যায়নি।',
+        'status_unknown' => 'অবস্থা নির্ধারিত নয়',
+        'not_available' => 'প্রযোজ্য নয়',
+    ],
+    'button' => [
+        'save_changes' => 'পরিবর্তন সংরক্ষণ করুন',
+    ],
+
+    'case' => [
+        
+        'top_sheet_official' => 'টপ শীট',
+        'top_sheet_subtitle' => 'রিট পিটিশন ফাইলিং সারসংক্ষেপ',
+        'temp_id' => 'অস্থায়ী আইডি',
+        'barcode' => 'বারকোড',
+        'generated_at' => 'প্রস্তুতের সময়',
+        'bar_council_id' => 'বার কাউন্সিল আইডি',
+        'lawyer' => 'আইনজীবী',
+        'case_type' => 'মামলার ধরন',
+        'subject' => 'বিষয়',
+        'petitioners' => 'বাদী',
+        'respondents' => 'বিবাদী',
+        'name' => 'নাম',
+        'address' => 'ঠিকানা',
+        'phone' => 'ফোন',
+        'email' => 'ইমেইল',
+        'nid' => 'জাতীয় পরিচয়পত্র',
+        'designation' => 'পদবী',
+        'organization' => 'সংস্থা',
+        'id' => 'আইডি',
+        'create_new' => 'নতুন তৈরি করুন',
+        'status' => 'স্ট্যাটাস',
+        'actions' => 'কার্যক্রম',
+        'create_title' => 'শিরোনাম তৈরি করুন',
+        'basic_info' => 'মৌলিক তথ্য',
+        'description' => 'বিবরণ',
+        'name_or_organization' => 'নাম / প্রতিষ্ঠান',
+        
+        'no_data' => 'কোনো তথ্য পাওয়া যায়নি',
+        'lawyer_signature' => 'আইনজীবীর স্বাক্ষর',
+        'filing_signature' => 'ফাইলিং সেকশনের স্বাক্ষর',
+        'upload_files' => 'ফাইল আপলোড করুন',
+        'submit' => 'জমা দিন',
+        'print_top_sheet' => 'টপ শীট প্রিন্ট করুন',
+        'edit_case' => 'মামলা সম্পাদনা করুন',
+        'edit_title' => 'শিরোনাম সম্পাদনা করুন',
+        'update' => 'আপডেট করুন',
+        'summary_title' => 'সারসংক্ষেপ শিরোনাম',
+    ],
+
+];
+
+

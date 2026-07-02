@@ -46,7 +46,7 @@
                 <tbody>
                     @forelse($recentCases as $item)
                         <tr>
-                            <td>{{ $item->final_case_number ?? '-' }}</td>
+                            <td>{{ $item->case_reference ?? '-' }}</td>
                             <td>{{ $item->subject ?? '-' }}</td>
                             <td>{{ $item->lawyer?->full_name ?? '-' }}</td>
                             <td>{{ $item->currentHolder?->name ?? '-' }}</td>

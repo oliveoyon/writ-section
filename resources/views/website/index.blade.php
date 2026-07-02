@@ -109,19 +109,29 @@
     <section id="faq" class="py-5 bg-light">
         <div class="container" data-aos="fade-up">
             <h2 class="section-title text-center mb-4">{{ __('writ.faq.title') }}</h2>
+            @php
+                $faqItems = __('writ.faq.items');
+                if (! is_array($faqItems)) {
+                    $faqItems = [
+                        ['q' => 'How do I register as a lawyer?', 'a' => 'Use the register button and fill in the required information.'],
+                        ['q' => 'Can I track writ file status online?', 'a' => 'Yes, authorized users can track file movement and status updates.'],
+                        ['q' => 'Is file movement recorded?', 'a' => 'Yes, each movement is recorded for tracking and accountability.'],
+                    ];
+                }
+            @endphp
             <div class="accordion" id="faqAccordion">
-                @foreach (__('writ.faq.items') as $key => $faq)
+                @foreach ($faqItems as $key => $faq)
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="faq{{ $loop->index }}">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                 data-bs-target="#collapse{{ $loop->index }}">
-                                {{ $faq['q'] }}
+                                {{ $faq['q'] ?? '' }}
                             </button>
                         </h2>
                         <div id="collapse{{ $loop->index }}" class="accordion-collapse collapse"
                             data-bs-parent="#faqAccordion">
                             <div class="accordion-body">
-                                {{ $faq['a'] }}
+                                {{ $faq['a'] ?? '' }}
                             </div>
                         </div>
                     </div>

@@ -9,6 +9,7 @@ use App\Models\CourtCase;
 use App\Models\FileMovement;
 use App\Models\Lawyer;
 use App\Models\User;
+use App\Services\RtftsCaseReference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -20,7 +21,9 @@ use Illuminate\Support\Str;
 
 class FilingController extends Controller
 {
-    private const DEFAULT_GS2406T_SHARE = '\\\\localhost\\GS2406T';
+    public function __construct(private readonly RtftsCaseReference $rtftsReference)
+    {
+    }
 
     public function index()
     {
@@ -92,8 +95,7 @@ class FilingController extends Controller
 
         DB::transaction(function () use ($case, $request, $user, $section, $petitioners, $respondents) {
             $caseYear = (string) now()->year;
-            $finalCaseNumber = 'WR-' . $caseYear . '-' . str_pad((string) $case->id, 6, '0', STR_PAD_LEFT);
-            $permanentBarcode = 'WRIT-' . $caseYear . '-' . str_pad((string) $case->id, 8, '0', STR_PAD_LEFT);
+            $registration = $this->rtftsReference->issue($caseYear);
 
             $latest = $case->latestMovement;
 
@@ -102,9 +104,10 @@ class FilingController extends Controller
                 'subject' => $request->subject,
                 'description' => $request->description,
                 'status' => 'filed',
-                'final_case_number' => $finalCaseNumber,
+                'final_case_number' => $registration['reference'],
                 'final_case_year' => $caseYear,
-                'permanent_barcode' => $permanentBarcode,
+                'registration_serial' => $registration['serial'],
+                'permanent_barcode' => $registration['barcode'],
                 'permanent_barcode_generated_at' => now(),
                 'section_verified_at' => now(),
                 'section_verified_by' => $user->id,
@@ -294,13 +297,13 @@ class FilingController extends Controller
             ]);
 
             $caseYear = (string) now()->year;
-            $finalCaseNumber = 'WR-' . $caseYear . '-' . str_pad((string) $case->id, 6, '0', STR_PAD_LEFT);
-            $permanentBarcode = 'WRIT-' . $caseYear . '-' . str_pad((string) $case->id, 8, '0', STR_PAD_LEFT);
+            $registration = $this->rtftsReference->issue($caseYear);
 
             $case->update([
-                'final_case_number' => $finalCaseNumber,
+                'final_case_number' => $registration['reference'],
                 'final_case_year' => $caseYear,
-                'permanent_barcode' => $permanentBarcode,
+                'registration_serial' => $registration['serial'],
+                'permanent_barcode' => $registration['barcode'],
                 'permanent_barcode_generated_at' => now(),
                 'section_verified_at' => now(),
                 'section_verified_by' => $user->id,
@@ -312,7 +315,7 @@ class FilingController extends Controller
 
             FileMovement::create([
                 'case_id' => $case->id,
-                'barcode_scanned' => $permanentBarcode,
+                'barcode_scanned' => $registration['barcode'],
                 'from_section' => null,
                 'to_section' => $section,
                 'movement_type' => 'receive',
@@ -346,7 +349,18 @@ class FilingController extends Controller
         $case = null;
 
         if ($barcode !== '') {
-            $case = CourtCase::where('permanent_barcode', $barcode)->first();
+            $normalizedBarcode = RtftsCaseReference::barcodeFromSearch($barcode);
+
+            $case = CourtCase::query()
+                ->where(function ($query) use ($barcode, $normalizedBarcode) {
+                    $query->where('permanent_barcode', $barcode)
+                        ->orWhere('final_case_number', $barcode);
+
+                    if ($normalizedBarcode) {
+                        $query->orWhere('permanent_barcode', $normalizedBarcode);
+                    }
+                })
+                ->first();
         }
 
         [$widthMm, $heightMm] = $this->resolvePrintSize($request);
@@ -420,6 +434,9 @@ class FilingController extends Controller
     private function buildTsplLabel(CourtCase $case, float $widthMm, float $heightMm): string
     {
         $barcode = str_replace('"', '', (string) $case->permanent_barcode);
+        $reference = str_replace('"', '', (string) $case->case_reference);
+        $referenceX = max(8, (int) ((400 - (strlen($reference) * 16)) / 2));
+        $barcodeTextX = max(8, (int) ((400 - (strlen($barcode) * 16)) / 2));
         $widthMm = $this->tsplNumber($widthMm);
         $heightMm = $this->tsplNumber($heightMm);
 
@@ -432,7 +449,11 @@ class FilingController extends Controller
             'DENSITY 8',
             'SET TEAR ON',
             'CLS',
-            'BARCODE 28,42,"128",76,0,0,2,4,"' . $barcode . '"',
+            'TEXT ' . $referenceX . ',5,"3",0,1,1,"' . $reference . '"',
+            // A one-dot narrow bar keeps the 12-digit RTFTS Code 128 barcode
+            // safely inside a 50 mm (400-dot at 203 dpi) label.
+            'BARCODE 50,35,"128",80,0,0,2,4,"' . $barcode . '"',
+            'TEXT ' . $barcodeTextX . ',132,"3",0,1,1,"' . $barcode . '"',
             'PRINT 1,1',
             '',
         ]);
@@ -451,8 +472,16 @@ class FilingController extends Controller
         try {
             $errors = [];
 
-            foreach ($this->printerShares() as $share) {
-                $process = new Process([$this->windowsCommandPath(), '/C', 'copy', '/B', $file, $share]);
+            foreach ($this->printerShares() as $printerShare) {
+                $batchCommand = base_path('scripts/print-raw.cmd')
+                    . ' "' . str_replace('"', '""', $file) . '"'
+                    . ' "' . str_replace('"', '""', $printerShare) . '"';
+                $process = new Process([
+                    $this->windowsCommandPath(),
+                    '/D',
+                    '/C',
+                    $batchCommand,
+                ]);
                 $process->setTimeout(10);
                 $process->run();
 
@@ -460,14 +489,15 @@ class FilingController extends Controller
 
                 if ($process->isSuccessful()) {
                     Log::info('Barcode label sent to printer.', [
-                        'printer_share' => $share,
+                        'printer_share' => $printerShare,
+                        'label_file' => $file,
                         'message' => $message,
                     ]);
 
                     return ['ok' => true, 'message' => $message];
                 }
 
-                $errors[] = $share . ': ' . ($message ?: 'Windows rejected the printer copy command.');
+                $errors[] = $printerShare . ': ' . ($message ?: 'Windows rejected the raw print job.');
             }
 
             Log::warning('Barcode direct print failed.', [
@@ -490,7 +520,7 @@ class FilingController extends Controller
         return array_values(array_unique(array_filter([
             config('services.barcode_printer.share'),
             config('services.barcode_printer.fallback_share'),
-            self::DEFAULT_GS2406T_SHARE,
+            '\\\\localhost\\GS2406T',
         ])));
     }
 
@@ -514,12 +544,13 @@ class FilingController extends Controller
         $labelWidth = $rotated ? $pageHeight : $pageWidth;
         $labelHeight = $rotated ? $pageWidth : $pageHeight;
         $barcodeText = (string) $case->permanent_barcode;
+        $referenceText = (string) $case->case_reference;
         $barcode = (new TypeCode128())->getBarcode($barcodeText);
 
-        $safeMarginX = $this->mmToPoint(6);
-        $safeMarginY = $this->mmToPoint(8);
-        $barcodeWidth = min($this->mmToPoint(34), $labelWidth - ($safeMarginX * 2));
-        $barcodeHeight = min($this->mmToPoint(9), $labelHeight - ($safeMarginY * 2));
+        $safeMarginX = $this->mmToPoint(4);
+        $safeMarginY = $this->mmToPoint(8.5);
+        $barcodeWidth = min($this->mmToPoint(40), $labelWidth - ($safeMarginX * 2));
+        $barcodeHeight = min($this->mmToPoint(8), $labelHeight - ($safeMarginY * 2));
         $barcodeX = ($labelWidth - $barcodeWidth) / 2;
         $barcodeY = ($labelHeight - $barcodeHeight) / 2;
         $moduleWidth = $barcodeWidth / max(1, $barcode->getWidth());
@@ -533,6 +564,12 @@ class FilingController extends Controller
             $content[] = '0 -1 1 0 0 ' . $this->pdfNumber($pageHeight) . ' cm';
         }
         $content[] = '0 0 0 rg';
+        $content[] = $this->pdfText(
+            $referenceText,
+            9,
+            $this->centerTextX($referenceText, 9, $labelWidth),
+            $labelHeight - $this->mmToPoint(4)
+        );
 
         $x = $barcodeX;
         foreach ($barcode->getBars() as $bar) {
@@ -542,6 +579,13 @@ class FilingController extends Controller
             }
             $x += $barWidth;
         }
+
+        $content[] = $this->pdfText(
+            $barcodeText,
+            8,
+            $this->centerTextX($barcodeText, 8, $labelWidth),
+            $this->mmToPoint(2.2)
+        );
 
         $content[] = 'Q';
 
@@ -710,8 +754,8 @@ class FilingController extends Controller
 
     private function resolvePrintSize(Request $request): array
     {
-        $widthMm = (float) $request->query('width_mm', 50);
-        $heightMm = (float) $request->query('height_mm', 25);
+        $widthMm = (float) $request->input('width_mm', 50);
+        $heightMm = (float) $request->input('height_mm', 25);
 
         $widthMm = max(20, min(110, $widthMm));
         $heightMm = max(20, min(150, $heightMm));

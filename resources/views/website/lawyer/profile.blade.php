@@ -137,7 +137,7 @@
                             <ul class="mb-0">
                                 @foreach($recentCases as $case)
                                     <li>
-                                        {{ __('lawyer.meta.case_no') }} {{ $case->final_case_number ?? ('TEMP-' . ($case->temporary_barcode ?? $case->id)) }}
+                                        {{ __('lawyer.meta.case_no') }} {{ $case->case_reference ?? ('TEMP-' . ($case->temporary_barcode ?? $case->id)) }}
                                         - {{ $case->subject ?? __('lawyer.meta.not_available') }}
                                         ({{ $case->status ?? __('lawyer.meta.status_unknown') }})
                                     </li>

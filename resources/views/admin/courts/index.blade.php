@@ -57,9 +57,11 @@
                                     <button class="btn btn-info btn-sm me-1 edit-btn">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-danger btn-sm delete-btn">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    @unless($court->movements_exists || $court->dispatch_batches_exists)
+                                        <button class="btn btn-danger btn-sm delete-btn" title="Delete unused court">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    @endunless
                                 </td>
                             </tr>
                         @empty

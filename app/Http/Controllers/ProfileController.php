@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
@@ -48,9 +50,20 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        if ($user->hasRole('Super Admin') && User::role('Super Admin')->where('is_active', true)->count() <= 1) {
+            return Redirect::route('profile.edit')->withErrors([
+                'password' => 'The last active Super Admin cannot be deactivated.',
+            ], 'userDeletion');
+        }
+
         Auth::logout();
 
-        $user->delete();
+        $user->forceFill([
+            'is_active' => false,
+            'remember_token' => null,
+        ])->save();
+
+        DB::table('sessions')->where('user_id', $user->id)->delete();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

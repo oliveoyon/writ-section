@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Department;
-use Illuminate\Validation\Rule;
+use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 class DepartmentController extends Controller
 {
     public function index()
     {
         $departments = Department::all();
-        return view('admin.departments.index', compact('departments'));
+        $roles = Role::orderBy('id')->get();
+
+        return view('admin.departments.index', compact('departments', 'roles'));
     }
 
     public function store(Request $request)
@@ -21,7 +24,10 @@ class DepartmentController extends Controller
             'name' => 'required|unique:departments,name',
         ]);
 
-        $department = Department::create($validated);
+        $department = Department::create([
+            'name' => $validated['name'],
+            'display_name' => $validated['name'],
+        ]);
 
         return response()->json([
             'success' => true,
@@ -41,7 +47,7 @@ class DepartmentController extends Controller
         $department = Department::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => ['required', Rule::unique('departments')->ignore($department->id)],
+            'display_name' => ['required', 'string', 'max:125'],
         ]);
 
         $department->update($validated);
@@ -56,6 +62,21 @@ class DepartmentController extends Controller
     public function destroy($id)
     {
         $department = Department::findOrFail($id);
+
+        if (in_array($department->name, Department::CANONICAL_NAMES, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'System departments cannot be deleted. You may change the display name instead.',
+            ], 422);
+        }
+
+        if (User::where('department', $department->id)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This department is assigned to users and cannot be deleted.',
+            ], 422);
+        }
+
         $department->delete();
 
         return response()->json([

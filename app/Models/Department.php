@@ -9,7 +9,12 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'display_name'];
+
+    public function getLabelAttribute(): string
+    {
+        return $this->display_name ?: $this->name;
+    }
 
     public const CANONICAL_NAMES = [
         'Assistant Registrar Office',

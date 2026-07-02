@@ -26,21 +26,33 @@ class FilingPrintAccessTest extends TestCase
             'case_type' => 'Writ',
             'subject' => 'Test label',
             'status' => 'filed',
-            'final_case_number' => 'WR-2026-000001',
+            'final_case_number' => 'WRPET 1/2026',
             'final_case_year' => '2026',
-            'permanent_barcode' => 'WRIT-2026-00000001',
+            'registration_serial' => 1,
+            'permanent_barcode' => '132026000001',
             'permanent_barcode_generated_at' => now(),
         ]);
 
+        foreach ([$case->permanent_barcode, 'WRPET 1/2026', 'WRITPET 1/2026', '1/2026'] as $search) {
+            $this->actingAs($user)
+                ->get(route('admin.tracking.filing.print-index', [
+                    'permanent_barcode' => $search,
+                ]))
+                ->assertOk()
+                ->assertSee('Print Barcode')
+                ->assertSee('WRPET 1/2026')
+                ->assertSee('132026000001');
+        }
+
         $this->actingAs($user)
-            ->get(route('admin.tracking.filing.print-index', [
-                'permanent_barcode' => $case->permanent_barcode,
+            ->get(route('admin.tracking.filing.print-label', [
+                'case' => $case,
+                'width_mm' => 50,
+                'height_mm' => 25,
             ]))
             ->assertOk()
-            ->assertSee('Print Barcode')
-            ->assertSee('width_mm=25&amp;height_mm=50&amp;orientation=counter', false)
-            ->assertDontSee('Print via PDF')
-            ->assertDontSee('GS 2406T File');
+            ->assertSee('WRPET 1/2026')
+            ->assertSee('132026000001');
 
         $this->actingAs($user)
             ->get(route('admin.tracking.filing.print-label-pdf', [
@@ -51,6 +63,8 @@ class FilingPrintAccessTest extends TestCase
             ]))
             ->assertOk()
             ->assertHeader('Content-Type', 'application/pdf')
-            ->assertSee('%PDF-1.4', false);
+            ->assertSee('%PDF-1.4', false)
+            ->assertSee('WRPET 1/2026', false)
+            ->assertSee('132026000001', false);
     }
 }

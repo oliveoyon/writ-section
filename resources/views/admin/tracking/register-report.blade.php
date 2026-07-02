@@ -122,7 +122,7 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>{{ optional($movement->received_at)->format('Y-m-d h:i A') }}</td>
-                            <td>{{ $movement->courtCase?->final_case_number ?? ('CASE-' . ($movement->case_id ?? '')) }}</td>
+                            <td>{{ $movement->courtCase?->case_reference ?? ('CASE-' . ($movement->case_id ?? '')) }}</td>
                             {{-- <td>{{ $movement->barcode_scanned }}</td> --}}
                             <td>{{ $movement->from_section ?? '-' }}</td>
                             <td>{{ $movement->to_section ?? '-' }}</td>

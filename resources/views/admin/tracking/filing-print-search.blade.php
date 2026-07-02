@@ -14,7 +14,7 @@
     <form method="GET" action="{{ route('admin.tracking.filing.print-index') }}" class="card p-3 mb-3 print-card">
         <div class="row g-3">
             <div class="col-md-8">
-                <label class="form-label">{{ __('tracking.filing.permanent_barcode') }}</label>
+                <label class="form-label">Barcode or WRPET Reference</label>
                 <input type="text" name="permanent_barcode" class="form-control" value="{{ $barcode }}" required>
             </div>
             <div class="col-md-4 d-flex align-items-end">
@@ -29,8 +29,9 @@
 
     @if($case)
         <div class="card p-3 print-card">
+            <p class="mb-1"><strong>Reference:</strong> {{ $case->case_reference }}</p>
             <p class="mb-3"><strong>{{ __('tracking.filing.permanent_barcode') }}:</strong> {{ $case->permanent_barcode }}</p>
-            <a href="{{ route('admin.tracking.filing.print-label-pdf', ['case' => $case->id, 'width_mm' => 25, 'height_mm' => 50, 'orientation' => 'counter']) }}"
+            <a href="{{ route('admin.tracking.filing.print-label', ['case' => $case->id, 'width_mm' => 50, 'height_mm' => 25, 'auto' => 1]) }}"
                target="_blank"
                class="btn btn-gold btn-lg">
                 Print Barcode

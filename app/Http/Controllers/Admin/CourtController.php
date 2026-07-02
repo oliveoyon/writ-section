@@ -11,7 +11,10 @@ class CourtController extends Controller
 {
     public function index()
     {
-        $courts = Court::query()->orderBy('id')->get();
+        $courts = Court::query()
+            ->withExists(['movements', 'dispatchBatches'])
+            ->orderBy('id')
+            ->get();
         return view('admin.courts.index', compact('courts'));
     }
 
@@ -52,10 +55,20 @@ class CourtController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
+        $hasHistory = $court->movements()->exists() || $court->dispatchBatches()->exists();
+        $newCode = strtoupper(trim($validated['code']));
+
+        if ($hasHistory && $newCode !== $court->code) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Court code cannot be changed after the court has movement or dispatch history.',
+            ], 422);
+        }
+
         $court->update([
             'name_en' => $validated['name_en'],
             'name_bn' => $validated['name_bn'] ?? null,
-            'code' => strtoupper(trim($validated['code'])),
+            'code' => $newCode,
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ]);
 

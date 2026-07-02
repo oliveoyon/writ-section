@@ -40,11 +40,11 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Department</label>
-                        <select name="department" class="form-select" required>
+                        <select name="department" id="department" class="form-select" required>
                             <option value="">Select Department</option>
                             @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}" {{ old('department', $user->department ?? '') == $dept->id ? 'selected' : '' }}>
-                                    {{ $dept->name }}
+                                <option value="{{ $dept->id }}" data-system-name="{{ $dept->name }}" {{ old('department', $user->department ?? '') == $dept->id ? 'selected' : '' }}>
+                                    {{ $dept->label }}
                                 </option>
                             @endforeach
                         </select>
@@ -52,9 +52,9 @@
 
                     <div class="col-md-6">
                         <label class="form-label">User Type</label>
-                        <select name="user_type" class="form-select" required>
-                            <option value="admin" {{ old('user_type', $user->user_type ?? '') === 'admin' ? 'selected' : '' }}>Admin</option>
-                            <option value="staff" {{ old('user_type', $user->user_type ?? '') === 'staff' ? 'selected' : '' }}>Staff</option>
+                        <select name="user_type" id="user_type" class="form-select" required>
+                            <option value="staff" {{ old('user_type', $user->user_type ?? 'staff') === 'staff' ? 'selected' : '' }}>{{ $userTypeLabels['staff'] }}</option>
+                            <option value="admin" {{ old('user_type', $user->user_type ?? 'staff') === 'admin' ? 'selected' : '' }}>{{ $userTypeLabels['admin'] }}</option>
                         </select>
                     </div>
 
@@ -85,3 +85,26 @@
     </div>
 </div>
 @endsection
+
+@push('js')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const department = document.getElementById('department');
+    const userType = document.getElementById('user_type');
+    const adminOption = userType.querySelector('option[value="admin"]');
+
+    function applyDepartmentAccess() {
+        const selected = department.options[department.selectedIndex];
+        const adminAllowed = selected?.dataset.systemName === 'Assistant Registrar Office';
+
+        adminOption.disabled = !adminAllowed;
+        if (!adminAllowed) {
+            userType.value = 'staff';
+        }
+    }
+
+    department.addEventListener('change', applyDepartmentAccess);
+    applyDepartmentAccess();
+});
+</script>
+@endpush

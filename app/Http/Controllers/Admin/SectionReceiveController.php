@@ -131,7 +131,7 @@ class SectionReceiveController extends Controller
 
             $received[] = [
                 'barcode' => $barcode,
-                'case_no' => $case->final_case_number ?: ('CASE-' . $case->id),
+                'case_no' => $case->case_reference ?: ('CASE-' . $case->id),
                 'from_section' => $fromSection ?: '-',
                 'to_section' => $section,
             ];

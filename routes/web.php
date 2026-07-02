@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CourtController;
 use App\Http\Controllers\Admin\FilingController;
 use App\Http\Controllers\Admin\CourtDispatchController;
 use App\Http\Controllers\Admin\RegistrarTrackingController;
+use App\Http\Controllers\Admin\RoleLabelController;
 use App\Http\Controllers\Admin\SectionReceiveController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\LanguageController;
@@ -83,6 +84,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
     Route::resource('departments', DepartmentController::class)->except(['show', 'create']);
     Route::resource('courts', CourtController::class)->except(['show', 'create']);
     Route::resource('users', UserController::class)->except(['show']);
+    Route::put('roles/{role}/display-name', [RoleLabelController::class, 'update'])->name('roles.display-name.update');
 
 });
 
@@ -115,12 +117,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
             Route::get('filing/cases/{case}', [FilingController::class, 'show'])->name('filing.show');
         });
 
-        Route::middleware('ensureDepartment:Affidavit Section,Requisite Section,Put-Up Section,Typing Section,Compare Section,Superintendent,Ready Table,Record Room')->group(function () {
+        Route::middleware('ensureDepartment:Affidavit Section,Requisite Section,Put-Up Section,Typing Section,Compare Section,Superintendent,Ready Table,Record Room,Court Operator')->group(function () {
             Route::get('section/receive', [SectionReceiveController::class, 'show'])->name('section.receive');
             Route::post('section/receive', [SectionReceiveController::class, 'receive'])->name('section.receive.store');
         });
 
-        Route::middleware('ensureDepartment:Assistant Registrar Office')->group(function () {
+        Route::middleware('ensureDepartment:Assistant Registrar Office,Registrar')->group(function () {
             Route::get('lookup', [RegistrarTrackingController::class, 'lookup'])->name('lookup');
             Route::get('lookup/suggest', [RegistrarTrackingController::class, 'lookupSuggest'])->name('lookup.suggest');
             Route::get('cases/{case}/timeline', [RegistrarTrackingController::class, 'timeline'])->name('timeline');

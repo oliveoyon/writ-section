@@ -20,7 +20,8 @@
                     <thead>
                         <tr style="background:#00284d; color:#fff;">
                             <th width="60">#</th>
-                            <th>Name</th>
+                            <th>Display Name</th>
+                            <th>System Name</th>
                             <th width="180">Action</th>
                         </tr>
                     </thead>
@@ -28,20 +29,46 @@
                         @foreach ($departments as $index => $department)
                             <tr id="row-{{ $department->id }}">
                                 <td>{{ $index + 1 }}</td>
-                                <td class="fw-bold text-dark">{{ $department->name }}</td>
+                                <td class="fw-bold text-dark">{{ $department->label }}</td>
+                                <td><code>{{ $department->name }}</code></td>
                                 <td>
                                     <button class="btn btn-info btn-sm me-1 edit-btn">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-danger btn-sm delete-btn">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    @unless(in_array($department->name, \App\Models\Department::CANONICAL_NAMES, true))
+                                        <button class="btn btn-danger btn-sm delete-btn">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    @endunless
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <div class="department-card p-3">
+            <h5 class="mb-3">Role Display Names</h5>
+            @foreach($roles as $role)
+                <form class="role-label-form row g-2 align-items-end mb-2"
+                      action="{{ route('admin.roles.display-name.update', $role) }}"
+                      method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="col-md-4">
+                        <label class="form-label mb-1">System Name</label>
+                        <input class="form-control" value="{{ $role->name }}" disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label mb-1">Display Name</label>
+                        <input class="form-control" name="display_name" value="{{ $role->display_name ?: $role->name }}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-gold w-100" type="submit">Update</button>
+                    </div>
+                </form>
+            @endforeach
         </div>
 
     </div>
@@ -87,8 +114,8 @@
                     </div>
 
                     <div class="modal-body">
-                        <label class="form-label fw-bold">Department Name</label>
-                        <input type="text" class="form-control" name="name" id="edit_name" required>
+                        <label class="form-label fw-bold">Display Name</label>
+                        <input type="text" class="form-control" name="display_name" id="edit_name" required>
                     </div>
 
                     <div class="modal-footer border-0 pt-0">
@@ -264,7 +291,7 @@
                         .then(res => res.json())
                         .then(data => {
                             document.getElementById("edit_id").value = data.id;
-                            document.getElementById("edit_name").value = data.name;
+                            document.getElementById("edit_name").value = data.display_name || data.name;
                             new bootstrap.Modal(document.getElementById("editDepartmentModal"))
                                 .show();
                         });
@@ -340,6 +367,27 @@
                                 }
                             });
                     });
+                });
+            });
+
+            document.querySelectorAll(".role-label-form").forEach(form => {
+                form.addEventListener("submit", function(e) {
+                    e.preventDefault();
+
+                    fetch(this.action, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                            "X-HTTP-Method-Override": "PUT"
+                        },
+                        body: new FormData(this)
+                    }).then(res => res.json())
+                    .then(data => Swal.fire({
+                        title: data.success ? 'Updated' : 'Error',
+                        text: data.message,
+                        icon: data.success ? 'success' : 'error',
+                        confirmButtonColor: '#d4a017'
+                    }));
                 });
             });
 

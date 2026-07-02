@@ -97,7 +97,7 @@
                         <tbody>
                             @forelse($oldestActiveCases as $case)
                                 <tr>
-                                    <td>{{ $case->final_case_number ?? $case->permanent_barcode ?? $case->temporary_barcode ?? ('CASE-' . $case->id) }}</td>
+                                    <td>{{ $case->case_reference ?? $case->permanent_barcode ?? $case->temporary_barcode ?? ('CASE-' . $case->id) }}</td>
                                     <td>{{ $case->petitioners->first()->name_or_organization ?? '-' }}</td>
                                     <td><span class="flow-pill">{{ $case->current_section ?? 'Unassigned' }}</span></td>
                                     <td>{{ round(optional($case->created_at)->diffInDays(now())) }}d</td>
@@ -123,7 +123,7 @@
                         <thead><tr class="table-head-strong"><th>File</th><th>From -> To</th><th>Type</th><th>By</th><th>Time</th></tr></thead>
                         <tbody>
                             @forelse($recentMovements as $movement)
-                                @php $logCase = $movement->courtCase; $fileNo = $logCase?->final_case_number ?? $logCase?->permanent_barcode ?? $movement->barcode_scanned; @endphp
+                                @php $logCase = $movement->courtCase; $fileNo = $logCase?->case_reference ?? $logCase?->permanent_barcode ?? $movement->barcode_scanned; @endphp
                                 <tr>
                                     <td>{{ $fileNo ?: '-' }}</td>
                                     <td>
@@ -230,4 +230,3 @@
     });
 </script>
 @endsection
-

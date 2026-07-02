@@ -39,6 +39,7 @@ class CheckUserType
         }
 
         $department = strtolower((string) ($user->departmentRelation?->name ?? ''));
+        $isStaff = $user->user_type === 'staff';
 
         if (str_contains($department, 'filing')) {
             return 'admin.tracking.filing.scan-temp';
@@ -57,7 +58,8 @@ class CheckUserType
             str_contains($department, 'compare') ||
             str_contains($department, 'superintendent') ||
             str_contains($department, 'ready table') ||
-            str_contains($department, 'record room')
+            str_contains($department, 'record room') ||
+            str_contains($department, 'court')
         ) {
             return 'admin.tracking.section.receive';
         }
@@ -66,6 +68,6 @@ class CheckUserType
             return 'admin.tracking.lookup';
         }
 
-        return 'admin.dashboard';
+        return $isStaff ? 'admin.tracking.register-report' : 'admin.dashboard';
     }
 }

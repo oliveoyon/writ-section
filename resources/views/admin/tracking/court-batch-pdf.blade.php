@@ -60,7 +60,7 @@
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td>{{ $item->barcode_scanned }}</td>
-                    <td>{{ $item->courtCase?->final_case_number ?? ('CASE-' . ($item->case_id ?? '')) }}</td>
+                    <td>{{ $item->courtCase?->case_reference ?? ('CASE-' . ($item->case_id ?? '')) }}</td>
                     <td>{{ $item->from_section ?? '-' }}</td>
                     <td>{{ $item->to_section ?? '-' }}</td>
                 </tr>
@@ -78,4 +78,3 @@
     </table>
 </body>
 </html>
-

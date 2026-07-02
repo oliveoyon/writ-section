@@ -5,8 +5,8 @@
     @php
         $pageWidthMm = max(20, $widthMm - 2);
         $pageHeightMm = max(20, $heightMm - 3);
-        $printPageWidthMm = min($widthMm, $heightMm);
-        $printPageHeightMm = max($widthMm, $heightMm);
+        $printPageWidthMm = $widthMm;
+        $printPageHeightMm = $heightMm;
     @endphp
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ __('tracking.filing.print_label_title') }}</title>
@@ -37,25 +37,45 @@
             width: {{ $widthMm }}mm;
             height: {{ $heightMm }}mm;
             border: 1px dashed #777;
-            padding: 6mm 8mm;
+            padding: 1mm 3mm;
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
             cursor: pointer;
         }
         .barcode-svg {
-            width: 34mm;
+            width: 42mm;
             max-width: 100%;
-            height: 10mm;
+            height: 11mm;
             display: block;
+            background: #fff;
         }
         .barcode-svg svg {
             width: 100%;
             height: 100%;
             display: block;
             shape-rendering: crispEdges;
+            color-rendering: optimizeSpeed;
+        }
+        .barcode-text {
+            margin-top: 0.8mm;
+            color: #000;
+            font-family: "Courier New", monospace;
+            font-size: 9pt;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: 0.15mm;
+            white-space: nowrap;
+        }
+        .case-reference {
+            margin-bottom: 0.8mm;
+            color: #000;
+            font-size: 10pt;
+            font-weight: 700;
+            line-height: 1;
+            white-space: nowrap;
         }
         .actions {
             position: fixed;
@@ -97,6 +117,8 @@
                 height: {{ $printPageHeightMm }}mm;
                 margin: 0;
                 overflow: hidden;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
             .print-sheet {
                 width: {{ $printPageWidthMm }}mm;
@@ -107,21 +129,19 @@
                 break-after: avoid;
             }
             .label {
-                width: 34mm;
-                height: 10mm;
+                width: {{ $printPageWidthMm }}mm;
+                height: {{ $printPageHeightMm }}mm;
                 border: none;
-                padding: 0;
-                position: absolute;
-                top: 8mm;
-                left: 18mm;
-                transform: rotate(90deg);
-                transform-origin: top left;
+                padding: 0 2.5mm;
+                background: #fff;
+                position: static;
+                transform: none;
                 page-break-after: avoid;
                 break-after: avoid;
             }
             .barcode-svg {
-                width: 34mm;
-                height: 10mm;
+                width: 42mm;
+                height: 11mm;
             }
         }
     </style>
@@ -129,29 +149,14 @@
 <body>
     <div class="actions">
         <button type="button" id="printButton">{{ __('tracking.filing.print_now') }}</button>
-        <a href="{{ route('admin.tracking.filing.print-label-pdf', ['case' => $case->id, 'width_mm' => $widthMm, 'height_mm' => $heightMm]) }}" target="_blank">
-            {{ __('tracking.filing.print_pdf') }}
-        </a>
-        <a href="{{ route('admin.tracking.filing.print-label-tspl', ['case' => $case->id, 'width_mm' => $widthMm, 'height_mm' => $heightMm]) }}">
-            GS 2406T File
-        </a>
-        <form method="POST"
-              action="{{ route('admin.tracking.filing.print-label-direct', ['case' => $case->id]) }}"
-              style="display:inline;">
-            @csrf
-            <input type="hidden" name="width_mm" value="{{ $widthMm }}">
-            <input type="hidden" name="height_mm" value="{{ $heightMm }}">
-            <button type="submit">Direct Print GS2406T</button>
-        </form>
-        @if(!empty($next))
-            <a href="{{ $next }}">{{ __('tracking.filing.back_after_print') }}</a>
-        @endif
     </div>
     <div class="hint" id="printHint">{{ __('tracking.filing.print_hint') }}</div>
 
     <div class="print-sheet">
         <div class="label" id="printableLabel" title="{{ __('tracking.filing.print_now') }}">
+            <div class="case-reference">{{ $case->case_reference }}</div>
             <div class="barcode-svg" aria-label="barcode">{!! $barcodeSvg !!}</div>
+            <div class="barcode-text">{{ $case->permanent_barcode }}</div>
         </div>
     </div>
 
@@ -202,6 +207,12 @@
         if (printableLabel) {
             printableLabel.addEventListener('click', triggerPrint);
         }
+
+        @if($autoPrint)
+        window.addEventListener('load', function () {
+            setTimeout(triggerPrint, 150);
+        });
+        @endif
 
         @if(!empty($next))
         window.onafterprint = function () {

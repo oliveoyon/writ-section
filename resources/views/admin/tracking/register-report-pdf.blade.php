@@ -151,7 +151,7 @@
             <tr>
                 <td class="text-center">{{ $i + 1 }}</td>
                 <td class="mono">{{ optional($movement->received_at)->format('Y-m-d h:i A') }}</td>
-                <td class="wrap">{{ $movement->courtCase?->final_case_number ?? ('CASE-' . ($movement->case_id ?? '')) }}</td>
+                <td class="wrap">{{ $movement->courtCase?->case_reference ?? ('CASE-' . ($movement->case_id ?? '')) }}</td>
                 <td class="mono">{{ $movement->barcode_scanned }}</td>
                 <td class="wrap">{{ $movement->from_section ?? '-' }}</td>
                 <td class="wrap">{{ $movement->to_section ?? '-' }}</td>

@@ -82,6 +82,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         $department = strtolower((string) ($user->departmentRelation?->name ?? ''));
+        $isStaff = $user->user_type === 'staff';
 
         if (str_contains($department, 'filing')) {
             return route('admin.tracking.filing.scan-temp');
@@ -110,6 +111,6 @@ class AuthenticatedSessionController extends Controller
             return route('admin.tracking.lookup');
         }
 
-        return route('admin.dashboard');
+        return $isStaff ? route('admin.tracking.register-report') : route('admin.dashboard');
     }
 }

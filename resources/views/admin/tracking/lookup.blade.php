@@ -54,7 +54,7 @@
     @if ($case)
         <div class="card p-3 mb-3 border-0 shadow-sm">
             <h5 class="mb-2">{{ __('tracking.lookup.current_location') }}</h5>
-            <p class="mb-1"><strong>{{ __('tracking.lookup.case') }}:</strong> {{ $case->final_case_number ?? __('tracking.lookup.na') }}</p>
+            <p class="mb-1"><strong>{{ __('tracking.lookup.case') }}:</strong> {{ $case->case_reference ?? __('tracking.lookup.na') }}</p>
             <p class="mb-1"><strong>{{ __('tracking.lookup.permanent_barcode') }}:</strong> {{ $case->permanent_barcode ?? __('tracking.lookup.na') }}</p>
             <p class="mb-1"><strong>{{ __('tracking.lookup.current_section') }}:</strong> {{ $case->current_section ?? __('tracking.lookup.na') }}</p>
             <p class="mb-3"><strong>{{ __('tracking.lookup.responsible_person') }}:</strong> {{ $case->currentHolder?->name ?? __('tracking.lookup.na') }}</p>
@@ -83,7 +83,7 @@
                         <tbody>
                             @foreach($cases as $item)
                                 <tr>
-                                    <td>{{ $item->final_case_number ?? ('CASE-' . $item->id) }}</td>
+                                    <td>{{ $item->case_reference ?? ('CASE-' . $item->id) }}</td>
                                     <td>{!! $highlight($item->permanent_barcode) !!}</td>
                                     <td>{!! $highlight($item->temporary_barcode) !!}</td>
                                     <td>{!! $highlight($item->petitioners->first()?->name_or_organization) !!}</td>

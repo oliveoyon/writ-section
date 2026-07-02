@@ -2,12 +2,22 @@
 
 namespace App\Models;
 
+use App\Services\RtftsCaseReference;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CourtCase extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::deleting(function (CourtCase $case) {
+            if ($case->status !== 'draft') {
+                throw new \LogicException('Only draft cases may be deleted.');
+            }
+        });
+    }
 
     protected $table = 'cases'; // important because model name is different
 
@@ -27,6 +37,7 @@ class CourtCase extends Model
         'section_verified_by',
         'final_case_number',
         'final_case_year',
+        'registration_serial',
         'current_section',
         'current_holder_user_id',
         'current_holder_at',
@@ -41,7 +52,14 @@ class CourtCase extends Model
         'section_verified_at' => 'datetime',
         'current_holder_at' => 'datetime',
         'returned_at' => 'datetime',
+        'registration_serial' => 'integer',
     ];
+
+    public function getCaseReferenceAttribute(): ?string
+    {
+        return RtftsCaseReference::humanReferenceFromBarcode($this->permanent_barcode)
+            ?? $this->final_case_number;
+    }
 
     // Relationship: CourtCase belongs to a Lawyer
     public function lawyer()

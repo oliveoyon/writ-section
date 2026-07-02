@@ -2,7 +2,6 @@
 
 use App\Models\Department;
 use App\Models\User;
-use Database\Seeders\SectionUserSeeder;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
@@ -207,33 +206,6 @@ Artisan::command('access:sync-user-roles {--apply : Apply changes. Without this 
     $this->info('Role mapping applied successfully.');
     return self::SUCCESS;
 })->purpose('Sync user roles to policy: admin->Admin/Super Admin, staff->Staff, lawyer->no admin/staff roles');
-
-Artisan::command('users:seed-sections {--password=Pass@1234 : Password for created users} {--reset-password : Reset password for existing seeded users}', function () {
-    $password = (string) $this->option('password');
-    $reset = (bool) $this->option('reset-password');
-
-    /** @var SectionUserSeeder $seeder */
-    $seeder = app(SectionUserSeeder::class);
-    $rows = $seeder->seedWithPassword($password, $reset);
-
-    $this->table(
-        ['Name', 'Email', 'Card ID', 'Department', 'Type', 'Role'],
-        array_map(function ($r) {
-            return [
-                $r['name'],
-                $r['email'],
-                $r['login_id'],
-                $r['department'],
-                $r['user_type'],
-                $r['role'],
-            ];
-        }, $rows)
-    );
-
-    $this->info('Section users are ready. Use card login on /login with Card ID.');
-    $this->line('Default password for password login: ' . $password);
-    return self::SUCCESS;
-})->purpose('Create or update one login-ready user for each writ section');
 
 Artisan::command('tracking:health-check', function () {
     $checks = [];

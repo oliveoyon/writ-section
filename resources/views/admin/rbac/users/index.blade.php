@@ -11,6 +11,9 @@
     @if(session('swal-success'))
         <div class="alert alert-success">{{ session('swal-success') }}</div>
     @endif
+    @if($errors->any())
+        <div class="alert alert-danger">{{ $errors->first() }}</div>
+    @endif
 
     <div class="card shadow-sm border-0">
         <div class="card-body">
@@ -33,8 +36,8 @@
                                 <td>{{ $user->name }}</td>
                                 <td>{{ $user->email }}</td>
                                 <td>{{ $user->login_id ?? '-' }}</td>
-                                <td>{{ $user->departmentRelation?->name ?? '-' }}</td>
-                                <td><span class="badge bg-info text-dark">{{ ucfirst($user->user_type) }}</span></td>
+                                <td>{{ $user->departmentRelation?->label ?? '-' }}</td>
+                                <td><span class="badge bg-info text-dark">{{ $userTypeLabels[$user->user_type] ?? ucfirst($user->user_type) }}</span></td>
                                 <td>
                                     <span class="badge {{ $user->is_active ? 'bg-success' : 'bg-danger' }}">
                                         {{ $user->is_active ? 'Active' : 'Inactive' }}
@@ -43,10 +46,10 @@
                                 <td>
                                     <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                                     <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="d-inline"
-                                          onsubmit="return confirm('Delete this user?');">
+                                          onsubmit="return confirm('Deactivate this user? Their history will be preserved.');">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                                        <button class="btn btn-sm btn-outline-danger" type="submit" {{ auth()->id() === $user->id ? 'disabled' : '' }}>Deactivate</button>
                                     </form>
                                 </td>
                             </tr>
@@ -62,4 +65,3 @@
     </div>
 </div>
 @endsection
-

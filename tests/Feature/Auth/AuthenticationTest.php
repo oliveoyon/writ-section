@@ -70,6 +70,23 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_staff_without_recognized_department_does_not_redirect_loop_to_admin_dashboard(): void
+    {
+        $user = User::factory()->create([
+            'department' => null,
+            'user_type' => 'staff',
+            'is_active' => true,
+        ]);
+
+        $response = $this->post('/login', [
+            'login_id' => $user->login_id,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('admin.tracking.register-report', absolute: false));
+    }
+
     public function test_face_login_route_is_disabled(): void
     {
         $this->post('/login-face', [

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container py-4">
-    <h3 class="mb-3">{{ __('tracking.timeline.title') }}: {{ $case->final_case_number ?? __('tracking.timeline.case_prefix').' #'.$case->id }}</h3>
+    <h3 class="mb-3">{{ __('tracking.timeline.title') }}: {{ $case->case_reference ?? __('tracking.timeline.case_prefix').' #'.$case->id }}</h3>
 
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
