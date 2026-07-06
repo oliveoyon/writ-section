@@ -32,6 +32,8 @@ class LawyerRegistrationController extends Controller
             ]);
         }
 
+        $apiDiagnostics = [];
+
         // Call API only if not already registered
         try {
             $ch = curl_init();
@@ -46,6 +48,9 @@ class LawyerRegistrationController extends Controller
                 CURLOPT_SSL_VERIFYHOST => $verifySsl ? 2 : 0,
                 CURLOPT_SSL_CIPHER_LIST => config('services.scba.ssl_cipher_list', 'DEFAULT@SECLEVEL=1'),
                 CURLOPT_HTTPHEADER => ['Accept: application/json'],
+                CURLOPT_ENCODING => '',
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_USERAGENT => 'WritFileTracking/1.0',
             ]);
 
             $response = curl_exec($ch);
@@ -54,12 +59,25 @@ class LawyerRegistrationController extends Controller
                 curl_close($ch);
                 throw new \Exception($curlError);
             }
+            $apiDiagnostics = [
+                'http_status' => curl_getinfo($ch, CURLINFO_HTTP_CODE),
+                'content_type' => curl_getinfo($ch, CURLINFO_CONTENT_TYPE),
+                'response_bytes' => is_string($response) ? strlen($response) : 0,
+            ];
             curl_close($ch);
+
+            if ($apiDiagnostics['http_status'] < 200 || $apiDiagnostics['http_status'] >= 300) {
+                throw new \RuntimeException('SCBA returned HTTP ' . $apiDiagnostics['http_status']);
+            }
+
+            $response = preg_replace('/^\xEF\xBB\xBF/', '', (string) $response);
 
             $data = json_decode($response, true);
 
-            if (!$data) {
-                throw new \Exception(__('writ.lawyer.api_error'));
+            if (!is_array($data)) {
+                $apiDiagnostics['json_error'] = json_last_error_msg();
+                $apiDiagnostics['response_preview'] = mb_substr(trim(strip_tags((string) $response)), 0, 200);
+                throw new \RuntimeException('SCBA returned an invalid JSON response.');
             }
 
             $member = array_filter($data, fn($m) => $m['memberId'] == $memberId);
@@ -80,6 +98,7 @@ class LawyerRegistrationController extends Controller
             Log::warning('SCBA member lookup failed.', [
                 'member_id' => $memberId,
                 'error' => $e->getMessage(),
+                'diagnostics' => $apiDiagnostics,
             ]);
 
             return response()->json([
