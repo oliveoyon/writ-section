@@ -1,8 +1,16 @@
 @extends('admin.layouts.adminlayout')
 
 @section('content')
-<div class="container py-4">
-    <h3 class="mb-3">{{ __('tracking.lookup.title') }}</h3>
+<div class="container py-4 lookup-page">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h3 class="lookup-title mb-0">{{ __('tracking.lookup.title') }}</h3>
+        @if(request()->filled('q'))
+            <a href="{{ route('admin.tracking.lookup') }}" class="btn btn-sm btn-light border" title="Clear search">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+                <span class="visually-hidden">Clear search</span>
+            </a>
+        @endif
+    </div>
     @php
         $searchTerm = trim((string) request('q', ''));
         $highlight = function (?string $value) use ($searchTerm): string {
@@ -14,7 +22,7 @@
                 return e($value);
             }
 
-            $pattern = '/' . preg_quote($searchTerm, '/') . '/iu';
+            $pattern = '/(' . preg_quote($searchTerm, '/') . ')/iu';
             $parts = preg_split($pattern, $value, -1, PREG_SPLIT_DELIM_CAPTURE);
             if ($parts === false) {
                 return e($value);
@@ -30,77 +38,85 @@
         };
     @endphp
 
-    <form method="GET" action="{{ route('admin.tracking.lookup') }}" class="card p-3 mb-3 shadow-sm border-0">
-        <label for="q" class="form-label">{{ __('tracking.lookup.search_label') }}</label>
-        <div class="position-relative">
-            <div class="d-flex gap-2">
+    <form method="GET" action="{{ route('admin.tracking.lookup') }}" class="lookup-search mb-4">
+        <label for="q" class="visually-hidden">{{ __('tracking.lookup.search_label') }}</label>
+        <div class="position-relative lookup-search-box">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-upc-scan" aria-hidden="true"></i>
+                </span>
                 <input
                     type="text"
                     id="q"
                     name="q"
-                    class="form-control"
+                    class="form-control border-start-0 ps-0"
                     value="{{ request('q') }}"
                     autocomplete="off"
-                    placeholder="Case no, permanent barcode, temp barcode, petitioner, lawyer..."
+                    placeholder="Barcode, case number, petitioner or lawyer"
                     required
                 >
-                <button type="submit" class="btn btn-brand">{{ __('tracking.lookup.search') }}</button>
+                <button type="submit" class="btn btn-brand px-3" title="{{ __('tracking.lookup.search') }}">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <span class="visually-hidden">{{ __('tracking.lookup.search') }}</span>
+                </button>
             </div>
             <div id="smartSuggest" class="list-group position-absolute w-100 mt-1 d-none" style="z-index: 1050;"></div>
         </div>
-        <small class="text-muted mt-2">Type at least 3 characters for live suggestions.</small>
     </form>
-
-    @if ($case)
-        <div class="card p-3 mb-3 border-0 shadow-sm">
-            <h5 class="mb-2">{{ __('tracking.lookup.current_location') }}</h5>
-            <p class="mb-1"><strong>{{ __('tracking.lookup.case') }}:</strong> {{ $case->case_reference ?? __('tracking.lookup.na') }}</p>
-            <p class="mb-1"><strong>{{ __('tracking.lookup.permanent_barcode') }}:</strong> {{ $case->permanent_barcode ?? __('tracking.lookup.na') }}</p>
-            <p class="mb-1"><strong>{{ __('tracking.lookup.current_section') }}:</strong> {{ $case->current_section ?? __('tracking.lookup.na') }}</p>
-            <p class="mb-3"><strong>{{ __('tracking.lookup.responsible_person') }}:</strong> {{ $case->currentHolder?->name ?? __('tracking.lookup.na') }}</p>
-            <a href="{{ route('admin.tracking.timeline', $case) }}" class="btn btn-outline-brand">{{ __('tracking.lookup.timeline') }}</a>
-        </div>
-    @endif
 
     @if(request()->filled('q'))
         @if(($cases ?? collect())->isNotEmpty())
-            <div class="card p-3 border-0 shadow-sm">
-                <h5 class="mb-3">Search Results ({{ $cases->count() }})</h5>
+            <section class="lookup-results" aria-labelledby="lookup-results-title">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 id="lookup-results-title" class="mb-0">Results</h5>
+                    <span class="result-count">{{ $cases->count() }}</span>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-sm table-bordered align-middle mb-0">
+                    <table class="table lookup-table align-middle mb-0">
                         <thead>
                             <tr>
-                                <th>Case</th>
-                                <th>Permanent Barcode</th>
-                                <th>Temporary Barcode</th>
-                                <th>Petitioner</th>
-                                <th>Lawyer</th>
-                                <th>Section</th>
-                                <th>Responsible</th>
-                                <th width="90">Action</th>
+                                <th>File</th>
+                                <th>Parties</th>
+                                <th>Current custody</th>
+                                <th class="text-end"><span class="visually-hidden">Action</span></th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($cases as $item)
                                 <tr>
-                                    <td>{{ $item->case_reference ?? ('CASE-' . $item->id) }}</td>
-                                    <td>{!! $highlight($item->permanent_barcode) !!}</td>
-                                    <td>{!! $highlight($item->temporary_barcode) !!}</td>
-                                    <td>{!! $highlight($item->petitioners->first()?->name_or_organization) !!}</td>
-                                    <td>{!! $highlight($item->lawyer?->full_name) !!}</td>
-                                    <td>{!! $highlight($item->current_section) !!}</td>
-                                    <td>{!! $highlight($item->currentHolder?->name) !!}</td>
                                     <td>
-                                        <a href="{{ route('admin.tracking.timeline', $item) }}" class="btn btn-sm btn-outline-brand">Open</a>
+                                        <div class="file-reference">{{ $item->case_reference ?? ('CASE-' . $item->id) }}</div>
+                                        <div class="file-barcode">{!! $highlight($item->permanent_barcode) !!}</div>
+                                    </td>
+                                    <td>
+                                        <div>{!! $highlight($item->petitioners->first()?->name_or_organization) !!}</div>
+                                        @if($item->lawyer?->full_name)
+                                            <div class="table-secondary-text">{!! $highlight($item->lawyer->full_name) !!}</div>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div>{!! $highlight($item->current_section) !!}</div>
+                                        @if($item->currentHolder?->name)
+                                            <div class="table-secondary-text">{!! $highlight($item->currentHolder->name) !!}</div>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ route('admin.tracking.timeline', $item) }}" class="btn btn-sm btn-outline-brand" title="{{ __('tracking.lookup.timeline') }}">
+                                            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                                            <span class="visually-hidden">{{ __('tracking.lookup.timeline') }}</span>
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </section>
         @else
-            <div class="alert alert-warning">{{ __('tracking.lookup.not_found') }}</div>
+            <div class="lookup-empty text-center py-5">
+                <i class="bi bi-file-earmark-x" aria-hidden="true"></i>
+                <p class="mb-0 mt-2">{{ __('tracking.lookup.not_found') }}</p>
+            </div>
         @endif
     @endif
 </div>
@@ -108,6 +124,24 @@
 
 @push('css')
 <style>
+    .lookup-page { max-width: 1100px; }
+    .lookup-title { font-size: 1.35rem; font-weight: 650; color: #1f2937; }
+    .lookup-search { max-width: 760px; }
+    .lookup-search .form-control,
+    .lookup-search .input-group-text,
+    .lookup-search .btn { min-height: 46px; }
+    .lookup-search .form-control:focus { box-shadow: none; border-color: #ced4da; }
+    .lookup-search:focus-within .input-group { box-shadow: 0 0 0 .2rem rgba(0, 40, 77, .12); border-radius: .375rem; }
+    .lookup-results { border-top: 1px solid #e5e7eb; padding-top: 1rem; }
+    .lookup-results h5 { font-size: 1rem; font-weight: 650; color: #374151; }
+    .result-count { min-width: 28px; padding: .15rem .45rem; border-radius: 4px; background: #eef2f6; color: #4b5563; font-size: .8rem; text-align: center; }
+    .lookup-table { font-size: .9rem; }
+    .lookup-table thead th { padding: .65rem .75rem; border-bottom-width: 1px; color: #6b7280; font-size: .75rem; font-weight: 600; text-transform: uppercase; }
+    .lookup-table tbody td { padding: .75rem; border-color: #edf0f2; }
+    .file-reference { font-weight: 650; color: #111827; }
+    .file-barcode, .table-secondary-text { margin-top: .15rem; color: #6b7280; font-size: .8rem; }
+    .lookup-empty { color: #6b7280; border-top: 1px solid #e5e7eb; }
+    .lookup-empty .bi { font-size: 1.75rem; color: #9ca3af; }
     .btn-brand { background: #00284d; color: #fff; border-color: #00284d; }
     .btn-brand:hover { background: #001e3a; color: #fff; border-color: #001e3a; }
     .btn-outline-brand { color: #00284d; border-color: #00284d; }
@@ -137,6 +171,11 @@
     #smartSuggest mark {
         background: #fde68a;
         padding: 0 2px;
+    }
+    .lookup-table mark { background: #fff1a8; padding: 0 1px; }
+    @media (max-width: 767.98px) {
+        .lookup-page { padding-top: 1rem !important; }
+        .lookup-table { min-width: 690px; }
     }
 </style>
 @endpush

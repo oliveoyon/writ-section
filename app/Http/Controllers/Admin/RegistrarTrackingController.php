@@ -4,16 +4,25 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CourtCase;
+use App\Models\Department;
 use App\Models\FileMovement;
 use App\Services\RtftsCaseReference;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Mpdf\Mpdf;
 
 class RegistrarTrackingController extends Controller
 {
+    private const OVERRIDE_REASONS = [
+        'incorrect_section' => 'Correct incorrect section assignment',
+        'missed_scan' => 'Record a missed barcode scan',
+        'misplaced_file' => 'Recover a misplaced file',
+        'administrative_transfer' => 'Authorized administrative transfer',
+    ];
+
     public function lookup(Request $request)
     {
         $case = null;
@@ -49,7 +58,6 @@ class RegistrarTrackingController extends Controller
         $items = $cases->map(function (CourtCase $case) {
             $title = $case->case_reference
                 ?: $case->permanent_barcode
-                ?: $case->temporary_barcode
                 ?: ('CASE-' . $case->id);
 
             $petitioner = $case->petitioners->first()?->name_or_organization;
@@ -77,10 +85,8 @@ class RegistrarTrackingController extends Controller
 
         return CourtCase::query()
             ->where(function ($q) use ($query, $like, $normalizedBarcode) {
-                $q->where('temporary_barcode', $query)
-                    ->orWhere('permanent_barcode', $query)
+                $q->where('permanent_barcode', $query)
                     ->orWhere('final_case_number', $query)
-                    ->orWhere('temporary_barcode', 'like', $like)
                     ->orWhere('permanent_barcode', 'like', $like)
                     ->orWhere('final_case_number', 'like', $like)
                     ->orWhere('subject', 'like', $like)
@@ -116,7 +122,13 @@ class RegistrarTrackingController extends Controller
     public function timeline(CourtCase $case)
     {
         $movements = $case->movements()->with('receivedBy')->orderBy('received_at', 'asc')->get();
-        return view('admin.tracking.timeline', compact('case', 'movements'));
+        $departments = Department::query()
+            ->where('name', '<>', (string) $case->current_section)
+            ->orderByRaw('COALESCE(display_name, name)')
+            ->get();
+        $overrideReasons = self::OVERRIDE_REASONS;
+
+        return view('admin.tracking.timeline', compact('case', 'movements', 'departments', 'overrideReasons'));
     }
 
     public function registerReport(Request $request)
@@ -183,33 +195,44 @@ class RegistrarTrackingController extends Controller
 
     public function overrideReceive(Request $request, CourtCase $case)
     {
+        if (!$case->permanent_barcode) {
+            return back()->with('error', __('tracking.timeline.permanent_barcode_required'));
+        }
+
         $request->validate([
-            'to_section' => 'required|string|max:255',
-            'reason' => 'required|string|max:1000',
+            'to_department_id' => [
+                'required',
+                'integer',
+                Rule::exists('departments', 'id')
+                    ->where(fn ($query) => $query->where('name', '<>', (string) $case->current_section)),
+            ],
+            'reason' => ['required', Rule::in(array_keys(self::OVERRIDE_REASONS))],
         ]);
 
         $user = $request->user();
+        $department = Department::findOrFail((int) $request->to_department_id);
+        $reason = self::OVERRIDE_REASONS[$request->reason];
         $latest = $case->latestMovement;
         $fromSection = $latest?->to_section ?? $case->current_section;
 
-        DB::transaction(function () use ($request, $case, $user, $fromSection) {
+        DB::transaction(function () use ($case, $user, $department, $reason, $fromSection) {
             $case->update([
-                'current_section' => $request->to_section,
-                'current_holder_user_id' => $user->id,
+                'current_section' => $department->name,
+                'current_holder_user_id' => null,
                 'current_holder_at' => now(),
             ]);
 
             FileMovement::create([
                 'case_id' => $case->id,
-                'barcode_scanned' => $case->permanent_barcode ?? $case->temporary_barcode,
+                'barcode_scanned' => $case->permanent_barcode,
                 'from_section' => $fromSection,
-                'to_section' => $request->to_section,
+                'to_section' => $department->name,
                 'movement_type' => 'override_receive',
                 'received_by_user_id' => $user->id,
                 'received_at' => now(),
                 'notes' => 'Registrar override performed.',
                 'is_override' => true,
-                'override_reason' => $request->reason,
+                'override_reason' => $reason,
             ]);
         });
 

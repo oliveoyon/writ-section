@@ -97,6 +97,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
         Route::get('filing/print/{case}/pdf', [FilingController::class, 'printLabelPdf'])->name('filing.print-label-pdf');
         Route::get('filing/print/{case}/tspl', [FilingController::class, 'printLabelTspl'])->name('filing.print-label-tspl');
         Route::post('filing/print/{case}/direct', [FilingController::class, 'printLabelDirect'])->name('filing.print-label-direct');
+        Route::get('movement/validate-identifier', [SectionReceiveController::class, 'validateIdentifier'])->name('movement.validate-identifier');
 
         Route::middleware('ensureDepartment:Office Assistant,Assistant Registrar Office')->group(function () {
             Route::get('court/dispatch', [CourtDispatchController::class, 'dispatchIndex'])->name('court.dispatch.index');
@@ -117,7 +118,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
             Route::get('filing/cases/{case}', [FilingController::class, 'show'])->name('filing.show');
         });
 
-        Route::middleware('ensureDepartment:Affidavit Section,Requisite Section,Put-Up Section,Typing Section,Compare Section,Superintendent,Ready Table,Record Room,Court Operator')->group(function () {
+        Route::middleware('ensureDepartment:Office Assistant,Affidavit Section,Requisite Section,Put-Up Section,Typing Section,Compare Section,Superintendent,Ready Table,Record Room,Court Operator')->group(function () {
             Route::get('section/receive', [SectionReceiveController::class, 'show'])->name('section.receive');
             Route::post('section/receive', [SectionReceiveController::class, 'receive'])->name('section.receive.store');
         });

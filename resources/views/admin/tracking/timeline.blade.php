@@ -19,18 +19,34 @@
 
     <div class="card p-3 mb-3">
         <h5 class="mb-3">{{ __('tracking.timeline.registrar_override') }}</h5>
-        <form method="POST" action="{{ route('admin.tracking.override', $case) }}">
-            @csrf
-            <div class="mb-3">
-                <label for="to_section" class="form-label">{{ __('tracking.timeline.move_to_section') }}</label>
-                <input type="text" id="to_section" name="to_section" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label for="reason" class="form-label">{{ __('tracking.timeline.override_reason') }}</label>
-                <textarea id="reason" name="reason" class="form-control" rows="3" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-gold">{{ __('tracking.timeline.apply_override') }}</button>
-        </form>
+        @if($case->permanent_barcode)
+            <form method="POST" action="{{ route('admin.tracking.override', $case) }}">
+                @csrf
+                <div class="mb-3">
+                    <label for="to_department_id" class="form-label">{{ __('tracking.timeline.move_to_section') }}</label>
+                    <select id="to_department_id" name="to_department_id" class="form-select" required>
+                        <option value="">{{ __('tracking.timeline.select_section') }}</option>
+                        @foreach($departments as $department)
+                            <option value="{{ $department->id }}" @selected((string) old('to_department_id') === (string) $department->id)>
+                                {{ $department->label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="reason" class="form-label">{{ __('tracking.timeline.override_reason') }}</label>
+                    <select id="reason" name="reason" class="form-select" required>
+                        <option value="">{{ __('tracking.timeline.select_reason') }}</option>
+                        @foreach($overrideReasons as $value => $label)
+                            <option value="{{ $value }}" @selected(old('reason') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-gold">{{ __('tracking.timeline.apply_override') }}</button>
+            </form>
+        @else
+            <div class="alert alert-warning mb-0">{{ __('tracking.timeline.permanent_barcode_required') }}</div>
+        @endif
     </div>
 
     <div class="card p-3">

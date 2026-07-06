@@ -52,7 +52,7 @@ class EnsureDepartment
         }
 
         if (str_contains($department, 'office assistant')) {
-            return 'admin.tracking.court.dispatch.index';
+            return 'admin.tracking.section.receive';
         }
 
         if (

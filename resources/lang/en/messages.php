@@ -17,7 +17,7 @@ return [
     'registrar_lookup'  => 'File Search',
     'register_report'   => 'Register Report',
     'court_menu'        => 'Court',
-    'court_dispatch'    => 'Court Dispatch',
+    'court_dispatch'    => 'Send to Court',
     'court_return'      => 'Court Return',
     'departments'       => 'Departments',
     'language'          => 'Language',

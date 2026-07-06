@@ -8,7 +8,6 @@ use App\Models\CourtCase;
 use App\Models\CourtDispatchBatch;
 use App\Models\CourtDispatchBatchItem;
 use App\Models\FileMovement;
-use App\Models\Department;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Mpdf\Mpdf;
@@ -60,12 +59,10 @@ class CourtDispatchController extends Controller
             ]);
 
             foreach ($barcodes as $barcode) {
-                $case = CourtCase::where('permanent_barcode', $barcode)
-                    ->orWhere('temporary_barcode', $barcode)
-                    ->first();
+                $case = $this->findMovementCase($barcode);
 
                 if (!$case) {
-                    $failed[] = ['barcode' => $barcode, 'reason' => __('tracking.court.errors.not_found')];
+                    $failed[] = ['barcode' => $barcode, 'reason' => $this->invalidBarcodeReason($barcode)];
                     continue;
                 }
 
@@ -86,7 +83,7 @@ class CourtDispatchController extends Controller
                 $item = CourtDispatchBatchItem::create([
                     'batch_id' => $batch->id,
                     'case_id' => $case->id,
-                    'barcode_scanned' => $barcode,
+                    'barcode_scanned' => $case->permanent_barcode,
                     'from_section' => $fromSection,
                     'to_section' => 'Court',
                     'processed_at' => now(),
@@ -96,7 +93,7 @@ class CourtDispatchController extends Controller
                     'case_id' => $case->id,
                     'court_id' => $court->id,
                     'court_dispatch_batch_id' => $batch->id,
-                    'barcode_scanned' => $barcode,
+                    'barcode_scanned' => $case->permanent_barcode,
                     'from_section' => $fromSection,
                     'to_section' => 'Court',
                     'movement_type' => 'dispatch_to_court',
@@ -106,7 +103,7 @@ class CourtDispatchController extends Controller
                 ]);
 
                 $processed[] = [
-                    'barcode' => $barcode,
+                    'barcode' => $case->permanent_barcode,
                     'case_no' => $case->case_reference ?: ('CASE-' . $case->id),
                     'from_section' => $fromSection ?: '-',
                     'to_section' => 'Court',
@@ -131,11 +128,9 @@ class CourtDispatchController extends Controller
     public function returnIndex(Request $request)
     {
         $courts = Court::where('is_active', true)->orderBy('name_en')->get();
-        $sections = Department::orderBy('name')->pluck('name');
 
         return view('admin.tracking.court-return', [
             'courts' => $courts,
-            'sections' => $sections,
         ]);
     }
 
@@ -143,7 +138,6 @@ class CourtDispatchController extends Controller
     {
         $request->validate([
             'court_id' => 'required|exists:courts,id',
-            'handover_to_section' => 'required|string|max:255',
             'barcodes' => 'required|string|max:100000',
             'notes' => 'nullable|string|max:2000',
         ]);
@@ -155,29 +149,27 @@ class CourtDispatchController extends Controller
 
         $court = Court::findOrFail((int) $request->court_id);
         $user = $request->user();
-        $handoverTo = trim((string) $request->handover_to_section);
+        $receivingSection = $user->departmentRelation?->name ?? $user->department;
 
         $failed = [];
         $processed = [];
 
-        $batch = DB::transaction(function () use ($barcodes, $court, $request, $user, $handoverTo, &$failed, &$processed) {
+        $batch = DB::transaction(function () use ($barcodes, $court, $request, $user, $receivingSection, &$failed, &$processed) {
             $batch = CourtDispatchBatch::create([
                 'batch_no' => $this->nextBatchNo('RTN'),
                 'court_id' => $court->id,
                 'created_by_user_id' => $user?->id,
                 'type' => 'return',
                 'returned_at' => now(),
-                'handover_to_section' => $handoverTo,
+                'handover_to_section' => $receivingSection,
                 'notes' => $request->notes,
             ]);
 
             foreach ($barcodes as $barcode) {
-                $case = CourtCase::where('permanent_barcode', $barcode)
-                    ->orWhere('temporary_barcode', $barcode)
-                    ->first();
+                $case = $this->findMovementCase($barcode);
 
                 if (!$case) {
-                    $failed[] = ['barcode' => $barcode, 'reason' => __('tracking.court.errors.not_found')];
+                    $failed[] = ['barcode' => $barcode, 'reason' => $this->invalidBarcodeReason($barcode)];
                     continue;
                 }
 
@@ -189,12 +181,19 @@ class CourtDispatchController extends Controller
                     continue;
                 }
 
+                $case->update([
+                    'status' => 'in_progress',
+                    'current_section' => $receivingSection,
+                    'current_holder_user_id' => $user->id,
+                    'current_holder_at' => now(),
+                ]);
+
                 CourtDispatchBatchItem::create([
                     'batch_id' => $batch->id,
                     'case_id' => $case->id,
-                    'barcode_scanned' => $barcode,
+                    'barcode_scanned' => $case->permanent_barcode,
                     'from_section' => 'Court',
-                    'to_section' => $handoverTo,
+                    'to_section' => $receivingSection,
                     'processed_at' => now(),
                 ]);
 
@@ -202,20 +201,20 @@ class CourtDispatchController extends Controller
                     'case_id' => $case->id,
                     'court_id' => $court->id,
                     'court_dispatch_batch_id' => $batch->id,
-                    'barcode_scanned' => $barcode,
+                    'barcode_scanned' => $case->permanent_barcode,
                     'from_section' => 'Court',
-                    'to_section' => 'Court',
+                    'to_section' => $receivingSection,
                     'movement_type' => 'returned_from_court_handover',
                     'received_by_user_id' => $user?->id,
                     'received_at' => now(),
-                    'notes' => __('tracking.court.movement_notes.handover_to_section', ['section' => $handoverTo]),
+                    'notes' => __('tracking.court.movement_notes.received_from_court'),
                 ]);
 
                 $processed[] = [
-                    'barcode' => $barcode,
+                    'barcode' => $case->permanent_barcode,
                     'case_no' => $case->case_reference ?: ('CASE-' . $case->id),
                     'from_section' => 'Court',
-                    'to_section' => $handoverTo,
+                    'to_section' => $receivingSection,
                 ];
             }
 
@@ -262,7 +261,7 @@ class CourtDispatchController extends Controller
 
     private function extractBarcodes(string $input): array
     {
-        $parts = preg_split('/[\r\n,\t ]+/', $input) ?: [];
+        $parts = preg_split('/[\r\n,\t]+/', $input) ?: [];
         $result = [];
 
         foreach ($parts as $part) {
@@ -276,6 +275,20 @@ class CourtDispatchController extends Controller
         return array_values($result);
     }
 
+    private function findMovementCase(string $identifier): ?CourtCase
+    {
+        $identifier = trim(preg_replace('/\s+/', ' ', $identifier) ?? '');
+
+        return CourtCase::query()
+            ->whereNotNull('permanent_barcode')
+            ->where('permanent_barcode', $identifier)
+            ->orWhere(function ($query) use ($identifier) {
+                $query->whereNotNull('permanent_barcode')
+                    ->where('final_case_number', $identifier);
+            })
+            ->first();
+    }
+
     private function nextBatchNo(string $prefix): string
     {
         do {
@@ -283,5 +296,12 @@ class CourtDispatchController extends Controller
         } while (CourtDispatchBatch::where('batch_no', $no)->exists());
 
         return $no;
+    }
+
+    private function invalidBarcodeReason(string $barcode): string
+    {
+        return CourtCase::where('temporary_barcode', $barcode)->exists()
+            ? __('tracking.court.errors.temporary_barcode')
+            : __('tracking.court.errors.not_found');
     }
 }

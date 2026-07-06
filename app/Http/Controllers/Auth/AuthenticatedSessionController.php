@@ -89,7 +89,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         if (str_contains($department, 'office assistant')) {
-            return route('admin.tracking.court.dispatch.index');
+            return route('admin.tracking.section.receive');
         }
 
         if (

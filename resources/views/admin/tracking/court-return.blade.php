@@ -19,7 +19,7 @@
         @csrf
 
         <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <label class="form-label">{{ __('tracking.court.court') }}</label>
                 <select name="court_id" class="form-select" required>
                     <option value="">{{ __('tracking.court.select_court') }}</option>
@@ -30,23 +30,15 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">{{ __('tracking.court.handover_to_section') }}</label>
-                <select name="handover_to_section" class="form-select" required>
-                    <option value="">{{ __('tracking.court.select_section') }}</option>
-                    @foreach($sections as $sec)
-                        <option value="{{ $sec }}" @selected((string)old('handover_to_section') === (string)$sec)>{{ $sec }}</option>
-                    @endforeach
-                </select>
-            </div>
         </div>
 
         <div class="mt-3">
-            <label for="barcode_input" class="form-label">{{ __('tracking.court.barcodes') }}</label>
+            <label for="barcode_input" class="form-label">{{ __('tracking.receive.identifier_label') }}</label>
             <div class="input-group">
-                <input type="text" id="barcode_input" class="form-control" placeholder="{{ __('tracking.receive.barcode_placeholder') }}" autofocus>
+                <input type="text" id="barcode_input" class="form-control form-control-lg" placeholder="{{ __('tracking.receive.identifier_placeholder') }}" aria-describedby="barcodeInputError" autofocus>
                 <button type="button" id="addBarcodeBtn" class="btn btn-brand">{{ __('tracking.receive.add_barcode') }}</button>
             </div>
+            <div id="barcodeInputError" class="text-danger fw-semibold mt-2 d-none" role="alert"></div>
             <input type="hidden" id="barcodes" name="barcodes" value="{{ old('barcodes') }}">
         </div>
 
@@ -157,6 +149,10 @@
         const hiddenBarcodes = document.getElementById('barcodes');
         const form = hiddenBarcodes.closest('form');
         const barcodes = [];
+        const inputError = document.getElementById('barcodeInputError');
+        const permanentBarcodePattern = /^13\d{10}$/;
+        const finalCasePattern = /^WRPET\s+\d+\/\d{4}$/i;
+        const validateIdentifierUrl = @json(route('admin.tracking.movement.validate-identifier'));
 
         function syncHiddenField() {
             hiddenBarcodes.value = barcodes.join('\n');
@@ -180,9 +176,41 @@
             });
         }
 
-        function addBarcode(raw) {
-            const code = (raw || '').trim();
-            if (!code || barcodes.includes(code)) {
+        async function addBarcode(raw) {
+            let code = (raw || '').trim().replace(/\s+/g, ' ');
+            let caseNumber = null;
+            if (!code) return;
+            if (!permanentBarcodePattern.test(code) && !finalCasePattern.test(code)) {
+                inputError.textContent = @json(__('tracking.receive.invalid_identifier_format'));
+                inputError.classList.remove('d-none');
+                barcodeInput.select();
+                return;
+            }
+
+            inputError.classList.add('d-none');
+            addBtn.disabled = true;
+            try {
+                const response = await fetch(`${validateIdentifierUrl}?identifier=${encodeURIComponent(code)}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const result = await response.json();
+                if (!response.ok || !result.valid) {
+                    inputError.textContent = result.message || @json(__('tracking.receive.identifier_not_found'));
+                    inputError.classList.remove('d-none');
+                    barcodeInput.select();
+                    return;
+                }
+                code = result.permanent_barcode;
+                caseNumber = result.case_number;
+            } catch (error) {
+                inputError.textContent = @json(__('tracking.receive.identifier_not_found'));
+                inputError.classList.remove('d-none');
+                return;
+            } finally {
+                addBtn.disabled = false;
+            }
+
+            if (barcodes.includes(code)) {
                 barcodeInput.value = '';
                 barcodeInput.focus();
                 return;
@@ -196,12 +224,10 @@
 
         const oldValue = @json(old('barcodes', ''));
         if (oldValue) {
-            oldValue.split(/[\r\n,\t ]+/).forEach(code => {
+            oldValue.split(/[\r\n,\t]+/).forEach(code => {
                 const c = code.trim();
-                if (c && !barcodes.includes(c)) barcodes.push(c);
+                if (c) addBarcode(c);
             });
-            syncHiddenField();
-            drawRows();
         }
 
         addBtn.addEventListener('click', () => addBarcode(barcodeInput.value));
@@ -233,4 +259,3 @@
     })();
 </script>
 @endpush
-

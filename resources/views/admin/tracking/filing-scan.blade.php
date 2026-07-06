@@ -1,14 +1,16 @@
 @extends('admin.layouts.adminlayout')
 
 @section('content')
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-        <h3 class="mb-0">{{ __('tracking.filing.scan_title') }}</h3>
+<div class="container py-4 filing-scan-page">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-upc-scan filing-heading-icon" aria-hidden="true"></i>
+            <h3 class="filing-heading mb-0">{{ auth()->user()->name }}: {{ __('tracking.filing.scan_title') }}</h3>
+        </div>
         <a href="{{ route('admin.tracking.filing.direct-create') }}" class="btn btn-gold">
-            {{ __('tracking.filing.direct_button') }}
+            <i class="bi bi-file-earmark-plus me-1" aria-hidden="true"></i>{{ __('tracking.filing.direct_button') }}
         </a>
     </div>
-    <p class="text-muted">{{ __('tracking.filing.scan_subtitle') }}</p>
 
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -20,12 +22,15 @@
         <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
 
-    <form method="GET" action="{{ route('admin.tracking.filing.scan-temp') }}" class="card p-4 mb-3">
-        <h5 class="mb-3">{{ __('tracking.filing.search_temp_case') }}</h5>
-        <label for="temporary_barcode" class="form-label">{{ __('tracking.filing.temp_barcode') }}</label>
-        <div class="d-flex gap-2">
+    <form method="GET" action="{{ route('admin.tracking.filing.scan-temp') }}" class="filing-scan-workspace mb-4">
+        <label for="temporary_barcode" class="visually-hidden">{{ __('tracking.filing.temp_barcode') }}</label>
+        <div class="input-group filing-scan-focus">
+            <span class="input-group-text bg-white"><i class="bi bi-upc-scan" aria-hidden="true"></i></span>
             <input type="text" id="temporary_barcode" name="temporary_barcode" value="{{ $tempBarcode ?? '' }}" class="form-control form-control-lg" placeholder="{{ __('tracking.filing.scan_placeholder') }}" autofocus required>
-            <button type="submit" class="btn btn-brand">{{ __('tracking.filing.lookup_button') }}</button>
+            <button type="submit" class="btn btn-brand px-4" title="{{ __('tracking.filing.lookup_button') }}">
+                <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                <span class="visually-hidden">{{ __('tracking.filing.lookup_button') }}</span>
+            </button>
         </div>
     </form>
 
@@ -38,22 +43,14 @@
     @endif
 
     @if ($case && !($isBlocked ?? false))
-        <div class="alert alert-info">{{ __('tracking.filing.loaded_case') }}</div>
-
-        <form method="POST" action="{{ route('admin.tracking.filing.receive-temp') }}" class="card p-4">
+        <form method="POST" action="{{ route('admin.tracking.filing.receive-temp') }}" class="filing-data-workspace">
             @csrf
             <input type="hidden" name="temporary_barcode" value="{{ $case->temporary_barcode }}">
 
-            <h5 class="mb-3">{{ __('tracking.filing.fill_data_title') }}</h5>
-            <p class="mb-3">
-                <strong>{{ __('tracking.filing.lawyer_name') }}:</strong>
-                {{ $case->lawyer?->full_name ?? __('tracking.lookup.na') }}
-            </p>
-
-            <p class="mb-3">
-                <strong>{{ __('tracking.filing.lawyer_member_id') }}:</strong>
-                {{ $case->lawyer?->bar_council_id ?? __('tracking.lookup.na') }} 
-            </p>
+            <div class="lawyer-strip d-flex flex-wrap gap-4 mb-4">
+                <span><strong>{{ $case->lawyer?->full_name ?? __('tracking.lookup.na') }}</strong></span>
+                <span>{{ $case->lawyer?->bar_council_id ?? __('tracking.lookup.na') }}</span>
+            </div>
 
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
@@ -172,10 +169,25 @@
 
 @push('css')
 <style>
+    .filing-scan-page { max-width: 1120px; }
+    .filing-heading { font-size: 1.35rem; font-weight: 650; color: #1f2937; }
+    .filing-heading-icon { color: #0f766e; font-size: 1.45rem; }
+    .filing-scan-workspace { border-top: 1px solid #e5e7eb; padding-top: 1.5rem; }
+    .filing-scan-focus { border: 2px solid #0f766e; border-radius: .5rem; box-shadow: 0 0 0 4px rgba(15, 118, 110, .1); }
+    .filing-scan-focus .input-group-text,
+    .filing-scan-focus .form-control,
+    .filing-scan-focus .btn { min-height: 58px; border: 0; }
+    .filing-scan-focus:focus-within { border-color: #0b5f59; box-shadow: 0 0 0 5px rgba(15, 118, 110, .18); }
+    .filing-data-workspace { border-top: 1px solid #e5e7eb; padding-top: 1.5rem; }
+    .lawyer-strip { padding: .75rem 1rem; background: #f7f8fa; border-left: 4px solid #2563eb; }
     .btn-brand { background: #00284d; color: #fff; border-color: #00284d; }
     .btn-brand:hover { background: #001e3a; color: #fff; border-color: #001e3a; }
     .btn-gold { background: #d4a017; color: #fff; border-color: #d4a017; }
     .btn-gold:hover { background: #b38b0f; color: #fff; border-color: #b38b0f; }
+    @media (max-width: 575.98px) {
+        .filing-scan-page { padding-top: 1rem !important; }
+        .filing-scan-focus .input-group-text { display: none; }
+    }
 </style>
 @endpush
 

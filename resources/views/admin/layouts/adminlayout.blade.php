@@ -70,7 +70,7 @@
                     $currentUser = $isLoggedIn ? auth()->user() : null;
                     $currentType = $currentUser?->user_type;
                     $departmentName = strtolower((string) ($currentUser?->departmentRelation?->name ?? ''));
-                    $sectionTrackingKeywords = ['affidavit', 'requisite', 'put-up', 'put up', 'typing', 'compare', 'superintendent', 'ready table', 'record room', 'court'];
+                    $sectionTrackingKeywords = ['office assistant', 'affidavit', 'requisite', 'put-up', 'put up', 'typing', 'compare', 'superintendent', 'ready table', 'record room', 'court'];
 
                     $canSeeAdminMenu = $isLoggedIn && $currentType === 'admin';
                     $canSeeFilingMenu = $isLoggedIn && str_contains($departmentName, 'filing');
@@ -83,6 +83,7 @@
                         fn ($keyword) => str_contains($departmentName, $keyword)
                     );
                     $isAffidavitSection = str_contains($departmentName, 'affidavit');
+                    $isOfficeAssistantSection = str_contains($departmentName, 'office assistant');
 
                     $brandRoute = '#';
                     if ($canSeeAdminMenu) {
@@ -91,6 +92,8 @@
                         $brandRoute = route('admin.tracking.filing.index');
                     } elseif ($canSeeRegistrarMenu) {
                         $brandRoute = route('admin.tracking.lookup');
+                    } elseif ($canSeeSectionReceiveMenu && str_contains($departmentName, 'office assistant')) {
+                        $brandRoute = route('admin.tracking.section.receive');
                     } elseif ($canSeeCourtMenu) {
                         $brandRoute = route('admin.tracking.court.dispatch.index');
                     } elseif ($canSeeSectionReceiveMenu) {
@@ -158,7 +161,9 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{{ route('admin.tracking.court.dispatch.index') }}">{{ __('messages.court_dispatch') }}</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.court.return.index') }}">{{ __('messages.court_return') }}</a></li>
+                                @if(!$isOfficeAssistantSection)
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.court.return.index') }}">{{ __('messages.court_return') }}</a></li>
+                                @endif
                             </ul>
                         </li>
                     @endif
@@ -227,7 +232,9 @@
                         <li><a href="{{ route('admin.tracking.register-report') }}">{{ __('messages.register_report') }}</a></li>
                         @if($canSeeCourtMenu)
                             <li><a href="{{ route('admin.tracking.court.dispatch.index') }}">{{ __('messages.court_dispatch') }}</a></li>
-                            <li><a href="{{ route('admin.tracking.court.return.index') }}">{{ __('messages.court_return') }}</a></li>
+                            @if(!$isOfficeAssistantSection)
+                                <li><a href="{{ route('admin.tracking.court.return.index') }}">{{ __('messages.court_return') }}</a></li>
+                            @endif
                         @endif
                         @if($canSeeRegistrarMenu)
                             <li><a href="{{ route('admin.tracking.lookup') }}">{{ __('messages.registrar_lookup') }}</a></li>
