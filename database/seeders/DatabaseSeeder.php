@@ -11,9 +11,10 @@ use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
-    public const SUPER_ADMIN_LOGIN_ID = 'SUPER-ADMIN';
+    public const SUPER_ADMIN_LOGIN_ID = '0000';
     public const SUPER_ADMIN_EMAIL = 'super.admin@writ.local';
     public const SUPER_ADMIN_PASSWORD = 'Pass@1234';
+    public const STAFF_PASSWORD = 'Pass@1234';
 
     public function run(): void
     {
@@ -55,6 +56,29 @@ class DatabaseSeeder extends Seeder
             ])->save();
 
             $user->syncRoles([$roles->get('Super Admin')]);
+
+            foreach (Department::CANONICAL_NAMES as $departmentIndex => $departmentName) {
+                $staffDepartment = Department::where('name', $departmentName)->firstOrFail();
+
+                foreach ([1, 2] as $staffNumber) {
+                    $loginId = (string) (1100 + ($departmentIndex * 100) + $staffNumber);
+                    $staff = User::firstOrNew(['login_id' => $loginId]);
+
+                    if (!$staff->exists) {
+                        $staff->password = Hash::make(self::STAFF_PASSWORD);
+                    }
+
+                    $staff->forceFill([
+                        'name' => $departmentName . ' User ' . $staffNumber,
+                        'email' => sprintf('department-%02d-user-%d@writ.local', $departmentIndex + 1, $staffNumber),
+                        'department' => (string) $staffDepartment->id,
+                        'user_type' => 'staff',
+                        'is_active' => true,
+                    ])->save();
+
+                    $staff->syncRoles([$roles->get('Staff')]);
+                }
+            }
         });
     }
 }
