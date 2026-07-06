@@ -43,7 +43,7 @@ return [
 
     'scba' => [
         'member_list_url' => env('SCBA_MEMBER_LIST_URL', 'https://api.scba.org.bd/api/esl/memberlist'),
-        'verify_ssl' => env('SCBA_SSL_VERIFY', true),
+        'verify_ssl' => env('SCBA_SSL_VERIFY', false),
         'ssl_cipher_list' => env('SCBA_SSL_CIPHER_LIST', 'DEFAULT@SECLEVEL=1'),
     ],
 
