@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Lawyer;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class LawyerRegistrationController extends Controller
 {
@@ -34,15 +35,24 @@ class LawyerRegistrationController extends Controller
         // Call API only if not already registered
         try {
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, "https://api.scba.org.bd/api/esl/memberlist");
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            $verifySsl = (bool) config('services.scba.verify_ssl', true);
+            curl_setopt_array($ch, [
+                CURLOPT_URL => config('services.scba.member_list_url'),
+                CURLOPT_POST => true,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_SSL_VERIFYPEER => $verifySsl,
+                CURLOPT_SSL_VERIFYHOST => $verifySsl ? 2 : 0,
+                CURLOPT_SSL_CIPHER_LIST => config('services.scba.ssl_cipher_list', 'DEFAULT@SECLEVEL=1'),
+                CURLOPT_HTTPHEADER => ['Accept: application/json'],
+            ]);
 
             $response = curl_exec($ch);
             if (curl_errno($ch)) {
-                throw new \Exception(curl_error($ch));
+                $curlError = curl_error($ch);
+                curl_close($ch);
+                throw new \Exception($curlError);
             }
             curl_close($ch);
 
@@ -67,9 +77,14 @@ class LawyerRegistrationController extends Controller
                 'member' => $member[0]
             ]);
         } catch (\Exception $e) {
+            Log::warning('SCBA member lookup failed.', [
+                'member_id' => $memberId,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'found' => false,
-                'message' => __('writ.lawyer.api_error') . ' ' . $e->getMessage()
+                'message' => __('writ.lawyer.api_error')
             ], 500);
         }
     }

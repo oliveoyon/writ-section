@@ -41,4 +41,10 @@ return [
         'fallback_share' => env('BARCODE_PRINTER_FALLBACK_SHARE', '\\\\127.0.0.1\\GS2406T'),
     ],
 
+    'scba' => [
+        'member_list_url' => env('SCBA_MEMBER_LIST_URL', 'https://api.scba.org.bd/api/esl/memberlist'),
+        'verify_ssl' => env('SCBA_SSL_VERIFY', true),
+        'ssl_cipher_list' => env('SCBA_SSL_CIPHER_LIST', 'DEFAULT@SECLEVEL=1'),
+    ],
+
 ];
