@@ -321,7 +321,7 @@ class FilingController extends Controller
                 'movement_type' => 'receive',
                 'received_by_user_id' => $user->id,
                 'received_at' => now(),
-                'notes' => 'Direct filing initiated at filing section.',
+                'notes' => 'Direct filing completed at filing section.',
             ]);
 
             return $case;
@@ -692,6 +692,10 @@ class FilingController extends Controller
 
     private function resolveSection($user): string
     {
+        if ($user?->hasRole('Super Admin')) {
+            return 'Filing Section';
+        }
+
         return $user->departmentRelation?->name
             ?? $user->department
             ?? 'Filing Section';

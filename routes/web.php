@@ -98,13 +98,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
         Route::get('filing/print/{case}/tspl', [FilingController::class, 'printLabelTspl'])->name('filing.print-label-tspl');
         Route::post('filing/print/{case}/direct', [FilingController::class, 'printLabelDirect'])->name('filing.print-label-direct');
         Route::get('movement/validate-identifier', [SectionReceiveController::class, 'validateIdentifier'])->name('movement.validate-identifier');
+        Route::get('court/batches', [CourtDispatchController::class, 'batches'])->name('court.batches.index');
+        Route::get('court/batches/{batch}', [CourtDispatchController::class, 'batchShow'])->name('court.batches.show');
+        Route::get('court/batches/{batch}/pdf', [CourtDispatchController::class, 'batchPdf'])->name('court.batch.pdf');
 
         Route::middleware('ensureDepartment:Office Assistant,Assistant Registrar Office')->group(function () {
             Route::get('court/dispatch', [CourtDispatchController::class, 'dispatchIndex'])->name('court.dispatch.index');
             Route::post('court/dispatch', [CourtDispatchController::class, 'dispatchStore'])->name('court.dispatch.store');
             Route::get('court/return', [CourtDispatchController::class, 'returnIndex'])->name('court.return.index');
             Route::post('court/return', [CourtDispatchController::class, 'returnStore'])->name('court.return.store');
-            Route::get('court/batches/{batch}/pdf', [CourtDispatchController::class, 'batchPdf'])->name('court.batch.pdf');
         });
 
         Route::middleware('ensureDepartment:Filing Section')->group(function () {
@@ -118,10 +120,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
             Route::get('filing/cases/{case}', [FilingController::class, 'show'])->name('filing.show');
         });
 
-        Route::middleware('ensureDepartment:Office Assistant,Affidavit Section,Requisite Section,Put-Up Section,Typing Section,Compare Section,Superintendent,Ready Table,Record Room,Court Operator')->group(function () {
-            Route::get('section/receive', [SectionReceiveController::class, 'show'])->name('section.receive');
-            Route::post('section/receive', [SectionReceiveController::class, 'receive'])->name('section.receive.store');
-        });
+        Route::get('section/receive', [SectionReceiveController::class, 'show'])->name('section.receive');
+        Route::post('section/receive', [SectionReceiveController::class, 'receive'])->name('section.receive.store');
 
         Route::middleware('ensureDepartment:Assistant Registrar Office,Registrar')->group(function () {
             Route::get('lookup', [RegistrarTrackingController::class, 'lookup'])->name('lookup');

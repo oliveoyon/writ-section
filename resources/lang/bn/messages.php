@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'admin_panel_title' => 'অ্যাডমিন ড্যাশবোর্ড',
-    'admin_panel_brand' => 'অ্যাডমিন প্যানেল',
+    'admin_panel_title' => 'RTFTS',
+    'admin_panel_brand' => 'RTFTS',
     'dashboard' => 'ড্যাশবোর্ড',
     'admin_menu' => 'অ্যাডমিন',
     'filing_menu' => 'ফাইলিং',
@@ -11,7 +11,7 @@ return [
     'registrar_menu' => 'রেজিস্ট্রার',
     'filing_module' => 'ফাইলিং মডিউল',
     'filing_scan_temp' => 'টেম্প ফাইল স্ক্যান',
-    'filing_direct_create' => 'সরাসরি ইনিশিয়েশন',
+    'filing_direct_create' => 'সরাসরি ফাইলিং',
     'filing_print_module' => 'বারকোড প্রিন্ট',
     'affidavit_receive' => 'গ্রহণ / প্রত্যাখ্যান',
     'section_receive' => 'ফাইল গ্রহণ',
@@ -47,7 +47,8 @@ return [
     'facebook' => 'ফেসবুক',
     'twitter' => 'টুইটার',
     'linkedin' => 'লিংকডইন',
-    'copyright' => '© :year অ্যাডমিন প্যানেল। সর্বস্বত্ব সংরক্ষিত।',
+    'copyright' => '© :year RTFTS - Real Time File Tracking System',
+    'technical_assistance' => 'Technical Assistance by Access to Justice For Women, GIZ Bangladesh',
     'user_management' => 'ব্যবহারকারী ব্যবস্থাপনা',
     'permission_groups' => 'পারমিশন গ্রুপ',
     'permissions' => 'পারমিশন',
@@ -55,4 +56,3 @@ return [
     'users' => 'ব্যবহারকারীগণ',
     'master_data' => 'মাস্টার ডাটা',
 ];
-

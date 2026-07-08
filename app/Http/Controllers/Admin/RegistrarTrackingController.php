@@ -31,7 +31,7 @@ class RegistrarTrackingController extends Controller
         if ($request->filled('q')) {
             $query = trim((string) $request->q);
             $cases = $this->buildLookupQuery($query)
-                ->with(['latestMovement.receivedBy', 'currentHolder', 'petitioners', 'lawyer'])
+                ->with(['latestMovement.receivedBy', 'latestMovement.court', 'currentHolder', 'petitioners', 'lawyer'])
                 ->latest('id')
                 ->limit(30)
                 ->get();
@@ -249,8 +249,8 @@ class RegistrarTrackingController extends Controller
         $today = now();
         $request->merge([
             'filter_mode' => (string) $request->input('filter_mode', 'date_range'),
-            'date_from' => (string) $request->input('date_from', $today->toDateString()),
-            'date_to' => (string) $request->input('date_to', $today->toDateString()),
+            'date_from' => (string) $request->input('date_from', $today->format('d-m-Y')),
+            'date_to' => (string) $request->input('date_to', $today->format('d-m-Y')),
             'month' => (string) $request->input('month', $today->format('Y-m')),
             'year' => (int) $request->input('year', (int) $today->format('Y')),
             'movement_scope' => (string) $request->input('movement_scope', 'all'),
@@ -290,11 +290,11 @@ class RegistrarTrackingController extends Controller
             $dateTo = $yearEnd->toDateString();
         } else {
             $validated = $request->validate([
-                'date_from' => 'required|date',
-                'date_to' => 'required|date',
+                'date_from' => 'required|date_format:d-m-Y',
+                'date_to' => 'required|date_format:d-m-Y',
             ]);
-            $dateFrom = Carbon::parse($validated['date_from'])->toDateString();
-            $dateTo = Carbon::parse($validated['date_to'])->toDateString();
+            $dateFrom = Carbon::createFromFormat('d-m-Y', $validated['date_from'])->toDateString();
+            $dateTo = Carbon::createFromFormat('d-m-Y', $validated['date_to'])->toDateString();
 
             if ($dateFrom > $dateTo) {
                 [$dateFrom, $dateTo] = [$dateTo, $dateFrom];

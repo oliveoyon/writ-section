@@ -1,18 +1,18 @@
 <?php
 return [
-    'title' => 'Writ File Tracking System - Bangladesh',
+    'title' => 'RTFTS - Real Time File Tracking System',
     'nav' => [
-        'brand' => 'Writ Tracking',
+        'brand' => 'RTFTS',
         'about' => 'About',
         'features' => 'Features',
         'process' => 'How it Works',
         'benefits' => 'Benefits',
         'faq' => 'FAQ',
-        'login' => 'Lawyer Login',
+        'login' => 'Login',
     ],
     'hero' => [
-        'title' => 'Writ File Tracking System',
-        'subtitle' => 'A digital solution for lawyers to initiate, submit, and track writ petitions efficiently in Bangladesh.',
+        'title' => 'RTFTS - Real Time File Tracking System',
+        'subtitle' => 'A digital solution for lawyers to file, submit, and track writ petitions efficiently in Bangladesh.',
         'cta' => 'Register as Lawyer',
     ],
     'about' => [
@@ -33,7 +33,7 @@ return [
         'step1_title' => 'Create Account',
         'step1_text' => 'Lawyers register with valid credentials and get secure login access.',
         'step2_title' => 'Submit Writ Application',
-        'step2_text' => 'Upload documents, fill required fields, and initiate your writ filing.',
+        'step2_text' => 'Upload documents, complete the required fields, and file your writ petition.',
         'step3_title' => 'Track Progress',
         'step3_text' => 'View updates on review, approval, assignment, and final status.',
     ],
@@ -66,7 +66,11 @@ return [
         'phone' => 'Phone: +880 1XXX-XXXXXX',
         'quick_links' => 'Quick Links',
         'follow_us' => 'Follow Us',
-        'copyright' => '&copy; 2025 Writ File Tracking System – Bangladesh',
+        'system_access' => 'System Access',
+        'lawyer_login' => 'Lawyer Login',
+        'admin_login' => 'Admin Login',
+        'copyright' => '© :year RTFTS - Real Time File Tracking System',
+        'technical_assistance' => 'Technical Assistance by Access to Justice For Women, GIZ Bangladesh',
     ],
 
     'lawyer' => [

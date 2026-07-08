@@ -183,14 +183,16 @@
                         </ul>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <h5>{{ __('lawyer.footer.follow_us') }}</h5>
-                    <a href="#" class="me-2">Facebook</a>
-                    <a href="#" class="me-2">Twitter</a>
-                    <a href="#">LinkedIn</a>
+                    <h5>{{ __('writ.footer.system_access') }}</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>
+                        <li><a href="{{ route('login') }}">{{ __('writ.footer.admin_login') }}</a></li>
+                    </ul>
                 </div>
             </div>
             <hr class="mt-3" style="border-color: #d4a017;">
-            <p class="text-center mt-2 mb-0">{{ __('lawyer.footer.copyright') }}</p>
+            <p class="text-center mt-2 mb-1">{{ __('lawyer.footer.copyright') }}</p>
+            <p class="text-center small mb-0">{{ __('lawyer.footer.technical_assistance') }}</p>
         </div>
     </footer>
 

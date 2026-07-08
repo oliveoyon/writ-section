@@ -95,7 +95,13 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <div>{!! $highlight($item->current_section) !!}</div>
+                                        @php
+                                            $custody = $item->current_section;
+                                            if (strtolower((string) $custody) === 'court' && $item->latestMovement?->court) {
+                                                $custody = 'Court (' . $item->latestMovement->court->displayName() . ')';
+                                            }
+                                        @endphp
+                                        <div>{!! $highlight($custody) !!}</div>
                                         @if($item->currentHolder?->name)
                                             <div class="table-secondary-text">{!! $highlight($item->currentHolder->name) !!}</div>
                                         @endif

@@ -68,6 +68,8 @@ class CheckUserType
             return 'admin.tracking.lookup';
         }
 
-        return $isStaff ? 'admin.tracking.register-report' : 'admin.dashboard';
+        return $isStaff && $department !== ''
+            ? 'admin.tracking.section.receive'
+            : ($isStaff ? 'admin.tracking.register-report' : 'admin.dashboard');
     }
 }

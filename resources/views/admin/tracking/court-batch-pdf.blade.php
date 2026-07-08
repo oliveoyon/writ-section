@@ -7,6 +7,8 @@
         body { font-family: solaimanlipi, dejavusans, sans-serif; font-size: 12px; color: #111; }
         .heading { text-align: center; margin-bottom: 10px; }
         .heading h3 { margin: 0 0 4px; }
+        .court-heading { margin-bottom: 5px; line-height: 1.35; }
+        .system-name { margin: 4px 0 7px; font-size: 10px; font-weight: bold; }
         .meta { margin-bottom: 10px; }
         .meta p { margin: 2px 0; }
         table { width: 100%; border-collapse: collapse; }
@@ -19,6 +21,12 @@
 </head>
 <body>
     <div class="heading">
+        <div class="court-heading">
+            <div>IN THE SUPREME COURT OF BANGLADESH</div>
+            <div>HIGH COURT DIVISION</div>
+            <div>(SPECIAL ORIGINAL JURISDICTION)</div>
+        </div>
+        <div class="system-name">Real Time File Tracking System - RTFTS</div>
         <h3>{{ __('tracking.court.batch_document') }}</h3>
         <div>{{ __('tracking.court.batch_no') }}: {{ $batch->batch_no }}</div>
     </div>
@@ -27,7 +35,7 @@
         <p><strong>{{ __('tracking.court.type') }}:</strong> {{ strtoupper($batch->type) }}</p>
         <p><strong>{{ __('tracking.court.court') }}:</strong> {{ app()->getLocale() === 'bn' ? $batch->court?->name_bn : $batch->court?->name_en }}</p>
         <p><strong>{{ __('tracking.court.created_by') }}:</strong> {{ $batch->createdBy?->name ?? '-' }}</p>
-        <p><strong>{{ __('tracking.court.processed_time') }}:</strong> {{ optional($batch->dispatched_at ?? $batch->returned_at)->format('Y-m-d h:i A') }}</p>
+        <p><strong>{{ __('tracking.court.processed_time') }}:</strong> {{ optional($batch->dispatched_at ?? $batch->returned_at)->format('d-m-Y h:i A') }}</p>
         @if($batch->received_by_name)
             <p><strong>{{ __('tracking.court.received_by_name') }}:</strong> {{ $batch->received_by_name }}</p>
         @endif
@@ -49,23 +57,21 @@
         <thead>
             <tr>
                 <th style="width:6%;">#</th>
-                <th style="width:22%;">{{ __('tracking.receive.barcode') }}</th>
-                <th style="width:22%;">{{ __('tracking.register.case_no') }}</th>
-                <th style="width:25%;">{{ __('tracking.register.from') }}</th>
-                <th style="width:25%;">{{ __('tracking.register.to') }}</th>
+                <th style="width:30%;">{{ __('tracking.register.case_no') }}</th>
+                <th style="width:32%;">{{ __('tracking.register.from') }}</th>
+                <th style="width:32%;">{{ __('tracking.register.to') }}</th>
             </tr>
         </thead>
         <tbody>
             @forelse($batch->items as $i => $item)
                 <tr>
                     <td>{{ $i + 1 }}</td>
-                    <td>{{ $item->barcode_scanned }}</td>
                     <td>{{ $item->courtCase?->case_reference ?? ('CASE-' . ($item->case_id ?? '')) }}</td>
                     <td>{{ $item->from_section ?? '-' }}</td>
                     <td>{{ $item->to_section ?? '-' }}</td>
                 </tr>
             @empty
-                <tr><td colspan="5">{{ __('tracking.receive.none') }}</td></tr>
+                <tr><td colspan="4">{{ __('tracking.receive.none') }}</td></tr>
             @endforelse
         </tbody>
     </table>

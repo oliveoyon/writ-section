@@ -49,13 +49,22 @@
 </head>
 
 <body>
+    @php
+        $movementTypeLabelKeys = [
+            'receive' => 'tracking.receive.receive',
+            'reject' => 'tracking.receive.reject',
+            'override_receive' => 'tracking.register.override_receive',
+            'dispatch_to_court' => 'tracking.register.dispatch_to_court',
+            'returned_from_court_handover' => 'tracking.register.returned_from_court_handover',
+        ];
+    @endphp
 @php
     $scopeLabelKey = match ($movementScope) {
         'in' => 'tracking.register.scope_in',
         'out' => 'tracking.register.scope_out',
         default => 'tracking.register.scope_all_filter',
     };
-    $printedAt = optional($generatedAt ?? now())->format('Y-m-d h:i A');
+    $printedAt = optional($generatedAt ?? now())->format('d-m-Y h:i A');
 @endphp
 
 <!-- Define header -->
@@ -81,11 +90,10 @@
                     <tr>
                         <td style="text-align:left; font-size:13px;">
                             <strong>{{ __('tracking.register.print_title') }}</strong>
-                            <div style="font-size:11px; margin-top:2px;">{{ __('tracking.register.subtitle') }}</div>
                         </td>
                         <td style="text-align:right; font-size:11px;">
                             <strong>{{ __('tracking.register.print_range') }}</strong><br>
-                            <span class="mono">{{ $dateFrom }} - {{ $dateTo }}</span>
+                            <span class="mono">{{ \Illuminate\Support\Carbon::parse($dateFrom)->format('d-m-Y') }} - {{ \Illuminate\Support\Carbon::parse($dateTo)->format('d-m-Y') }}</span>
                         </td>
                     </tr>
                 </table>
@@ -106,7 +114,7 @@
                         </td>
                         <td style="border:1px solid #333; padding:4px; width:30%;">
                             <strong>{{ __('tracking.register.movement_type') }}</strong><br>
-                            {{ $movementType !== '' ? $movementType : __('tracking.register.all_types') }}
+                            {{ $movementType !== '' ? __(($movementTypeLabelKeys[$movementType] ?? $movementType)) : __('tracking.register.all_types') }}
                         </td>
                     </tr>
                 </table> --}}
@@ -120,10 +128,13 @@
 <htmlpagefooter name="CourtRegisterFooter" style="display:none;">
     <table style="width:100%; border-collapse:collapse; border-top:1px solid #000; font-size:9.5px;">
         <tr>
-            <td style="text-align:left; padding-top:6px;">
+            <td style="width:25%; text-align:left; padding-top:6px;">
                 {{ __('tracking.register.total') }}: {{ $movements->count() }}
             </td>
-            <td style="text-align:right; padding-top:6px;">
+            <td style="width:50%; text-align:center; padding-top:6px; font-weight:bold;">
+                Real Time File Tracking System - RTFTS
+            </td>
+            <td style="width:25%; text-align:right; padding-top:6px;">
                 Page {PAGENO} of {nbpg}
             </td>
         </tr>
@@ -136,13 +147,12 @@
         <tr>
             <th style="width:4%;" class="text-center">#</th>
             <th style="width:11%;">{{ __('tracking.register.time') }}</th>
-            <th style="width:12%;">{{ __('tracking.register.case_no') }}</th>
-            <th style="width:14%;">{{ __('tracking.register.barcode') }}</th>
-            <th style="width:12%;">{{ __('tracking.register.from') }}</th>
-            <th style="width:12%;">{{ __('tracking.register.to') }}</th>
-            <th style="width:9%;">{{ __('tracking.register.movement_type') }}</th>
-            <th style="width:10%;">{{ __('tracking.register.by') }}</th>
-            <th style="width:16%;">{{ __('tracking.register.notes') }}</th>
+            <th style="width:16%;">{{ __('tracking.register.case_no') }}</th>
+            <th style="width:14%;">{{ __('tracking.register.from') }}</th>
+            <th style="width:14%;">{{ __('tracking.register.to') }}</th>
+            <th style="width:11%;">{{ __('tracking.register.movement_type') }}</th>
+            <th style="width:12%;">{{ __('tracking.register.by') }}</th>
+            <th style="width:18%;">{{ __('tracking.register.notes') }}</th>
         </tr>
     </thead>
 
@@ -150,18 +160,17 @@
         @forelse($movements as $i => $movement)
             <tr>
                 <td class="text-center">{{ $i + 1 }}</td>
-                <td class="mono">{{ optional($movement->received_at)->format('Y-m-d h:i A') }}</td>
+                <td class="mono">{{ optional($movement->received_at)->format('d-m-Y h:i A') }}</td>
                 <td class="wrap">{{ $movement->courtCase?->case_reference ?? ('CASE-' . ($movement->case_id ?? '')) }}</td>
-                <td class="mono">{{ $movement->barcode_scanned }}</td>
                 <td class="wrap">{{ $movement->from_section ?? '-' }}</td>
                 <td class="wrap">{{ $movement->to_section ?? '-' }}</td>
-                <td class="wrap">{{ $movement->movement_type ?? '-' }}</td>
+                <td class="wrap">{{ $movement->movement_type ? __(($movementTypeLabelKeys[$movement->movement_type] ?? $movement->movement_type)) : '-' }}</td>
                 <td class="wrap">{{ $movement->receivedBy?->name ?? '-' }}</td>
                 <td class="wrap">{{ $movement->notes ?: ($movement->override_reason ?: '-') }}</td>
             </tr>
         @empty
             <tr>
-                <td colspan="9" class="text-center">{{ __('tracking.register.no_data') }}</td>
+                <td colspan="8" class="text-center">{{ __('tracking.register.no_data') }}</td>
             </tr>
         @endforelse
     </tbody>

@@ -61,6 +61,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $isLawyer = $request->user()?->user_type === 'lawyer';
+
         Auth::guard('web')->logout();
 
         $request->session()->forget('last_activity_at');
@@ -68,7 +70,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        return redirect()->route($isLawyer ? 'lawyer.login' : 'login');
     }
 
     private function redirectPathFor(?User $user): string
@@ -111,6 +113,8 @@ class AuthenticatedSessionController extends Controller
             return route('admin.tracking.lookup');
         }
 
-        return $isStaff ? route('admin.tracking.register-report') : route('admin.dashboard');
+        return $isStaff && $department !== ''
+            ? route('admin.tracking.section.receive')
+            : ($isStaff ? route('admin.tracking.register-report') : route('admin.dashboard'));
     }
 }

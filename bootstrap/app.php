@@ -11,6 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectGuestsTo(fn (\Illuminate\Http\Request $request) =>
+            $request->is('lawyer/*') ? route('lawyer.login') : route('login')
+        );
+
          $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
 

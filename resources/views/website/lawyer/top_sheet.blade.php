@@ -80,6 +80,12 @@
             margin-top: 6px;
         }
 
+        .system-name {
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
         .doc-sub {
             font-size: 12px;
             margin-top: 2px;
@@ -202,6 +208,9 @@
                     <div class="court-juris">
                         (SPECIAL ORIGINAL JURISDICTION)
                     </div>
+                    <div class="system-name">
+                        Real Time File Tracking System - RTFTS
+                    </div>
                     <br>
                     <div class="doc-title">
                         {{ __('lawyer.case.top_sheet_official') }}
@@ -227,7 +236,7 @@
 
                     <div class="small" style="margin-top:8px;">
                         {{ __('lawyer.case.generated_at') }}:<br>
-                        <span>{{ now()->format('Y-m-d h:i A') }}</span>
+                        <span>{{ now()->format('d-m-Y h:i A') }}</span>
                     </div>
 
                 </td>

@@ -1,17 +1,17 @@
 <?php
 return [
-    'title' => 'রিট ফাইল ট্র্যাকিং সিস্টেম - বাংলাদেশ',
+    'title' => 'RTFTS - Real Time File Tracking System',
     'nav' => [
-        'brand' => 'রিট ট্র্যাকিং',
+        'brand' => 'RTFTS',
         'about' => 'সম্বন্ধে',
         'features' => 'বৈশিষ্ট্যসমূহ',
         'process' => 'কিভাবে কাজ করে',
         'benefits' => 'সুবিধাসমূহ',
         'faq' => 'প্রায়শই জিজ্ঞাসিত প্রশ্ন',
-        'login' => 'আইনজীবী লগইন',
+        'login' => 'লগইন',
     ],
     'hero' => [
-        'title' => 'রিট ফাইল ট্র্যাকিং সিস্টেম',
+        'title' => 'RTFTS - Real Time File Tracking System',
         'subtitle' => 'বাংলাদেশে আইনজীবীদের জন্য রিট পিটিশন তৈরি, জমা এবং ট্র্যাক করার ডিজিটাল সমাধান।',
         'cta' => 'আইনজীবী হিসেবে নিবন্ধন করুন',
     ],
@@ -66,7 +66,11 @@ return [
         'phone' => 'ফোন: +880 1XXX-XXXXXX',
         'quick_links' => 'দ্রুত লিঙ্ক',
         'follow_us' => 'আমাদের অনুসরণ করুন',
-        'copyright' => '© 2025 রিট ফাইল ট্র্যাকিং সিস্টেম – বাংলাদেশ',
+        'system_access' => 'সিস্টেমে প্রবেশ',
+        'lawyer_login' => 'আইনজীবী লগইন',
+        'admin_login' => 'অ্যাডমিন লগইন',
+        'copyright' => '© :year RTFTS - Real Time File Tracking System',
+        'technical_assistance' => 'Technical Assistance by Access to Justice For Women, GIZ Bangladesh',
     ],
 
     'lawyer' => [

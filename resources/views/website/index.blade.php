@@ -1,6 +1,6 @@
 @extends('website.layouts.weblayout')
 
-@section('title', 'Writ Section')
+@section('title', __('writ.title'))
 
 @section('content')
 
@@ -145,8 +145,8 @@
         <div class="container" data-aos="fade-up">
             <h2 class="mb-3">{{ __('writ.cta.title') }}</h2>
             <p class="mb-4">{{ __('writ.cta.text') }}</p>
-            <a href="#" class="btn btn-gold btn-lg me-3">{{ __('writ.cta.register') }}</a>
-            <a href="#" class="btn btn-outline-primary btn-lg">{{ __('writ.cta.login') }}</a>
+            <a href="{{ route('lawyer.register') }}" class="btn btn-gold btn-lg me-3">{{ __('writ.cta.register') }}</a>
+            <a href="{{ route('lawyer.login') }}" class="btn btn-outline-primary btn-lg">{{ __('writ.cta.login') }}</a>
         </div>
     </section>
 

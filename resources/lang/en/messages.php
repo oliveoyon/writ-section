@@ -1,7 +1,7 @@
 <?php
 return [
-    'admin_panel_title' => 'Admin Dashboard',
-    'admin_panel_brand' => 'Admin Panel',
+    'admin_panel_title' => 'RTFTS',
+    'admin_panel_brand' => 'RTFTS',
     'dashboard'         => 'Dashboard',
     'admin_menu'        => 'Admin',
     'filing_menu'       => 'Filing',
@@ -10,7 +10,7 @@ return [
     'registrar_menu'    => 'Registrar',
     'filing_module'     => 'Filing Module',
     'filing_scan_temp'  => 'Scan Temp File',
-    'filing_direct_create' => 'Direct Initiation',
+    'filing_direct_create' => 'Direct Filing',
     'filing_print_module' => 'Barcode Print',
     'affidavit_receive' => 'Receive / Reject',
     'section_receive'   => 'Receive Files',
@@ -34,7 +34,8 @@ return [
     'facebook'          => 'Facebook',
     'twitter'           => 'Twitter',
     'linkedin'          => 'LinkedIn',
-    'copyright'         => '© :year Admin Panel. All Rights Reserved.',
+    'copyright'         => '© :year RTFTS - Real Time File Tracking System',
+    'technical_assistance' => 'Technical Assistance by Access to Justice For Women, GIZ Bangladesh',
     'user_management'   => 'User Management',
     'permission_groups' => 'Permission Groups',
     'permissions'       => 'Permissions',

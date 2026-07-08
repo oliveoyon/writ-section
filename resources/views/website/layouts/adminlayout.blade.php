@@ -62,7 +62,7 @@
     <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">Admin Panel</a>
+            <a class="navbar-brand fw-bold" href="#">RTFTS</a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -147,15 +147,17 @@
                     </ul>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <h5>Follow Us</h5>
-                    <a href="#" class="me-2">Facebook</a>
-                    <a href="#" class="me-2">Twitter</a>
-                    <a href="#">LinkedIn</a>
+                    <h5>{{ __('writ.footer.system_access') }}</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>
+                        <li><a href="{{ route('login') }}">{{ __('writ.footer.admin_login') }}</a></li>
+                    </ul>
                 </div>
             </div>
 
             <hr class="mt-3" style="border-color: #d4a017;">
-            <p class="text-center mt-2 mb-0">© 2025 Admin Panel. All Rights Reserved.</p>
+            <p class="text-center mt-2 mb-1">© {{ date('Y') }} RTFTS - Real Time File Tracking System</p>
+            <p class="text-center small mb-0">Technical Assistance by Access to Justice For Women, GIZ Bangladesh</p>
         </div>
     </footer>
 

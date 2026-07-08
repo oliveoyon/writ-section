@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ __('writ.title') }}</title>
+    <title>@yield('title', __('writ.title'))</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -24,16 +24,12 @@
         /* Apply to body */
         body {
             font-family: 'SolaimanLipi', "Segoe UI", sans-serif;
+            padding-top: 64px;
         }
-
-        main {
-            /* padding-top: 80px; */
-            /* or height of your navbar */
-        }
-
 
         .navbar {
             background: #00284d;
+            min-height: 64px;
         }
 
         .navbar-brand,
@@ -114,25 +110,35 @@
     <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">{{ __('writ.nav.brand') }}</a>
+            <a class="navbar-brand fw-bold" href="{{ route('web.home') }}">{{ __('writ.nav.brand') }}</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center">
-                    <li class="nav-item"><a class="nav-link" href="#about">{{ __('writ.nav.about') }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#features">{{ __('writ.nav.features') }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#process">{{ __('writ.nav.process') }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#benefits">{{ __('writ.nav.benefits') }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#faq">{{ __('writ.nav.faq') }}</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#faq">Logout</a></li>
-                    <li class="nav-item ms-lg-3">
-                        <a href="{{ route('logout.all') }}" class="text-danger">
-    Logout All Devices
-</a>
-                    </li>
-                    <!-- Add inside your <ul class="navbar-nav ms-auto align-items-lg-center">, preferably before the login button -->
+                    <li class="nav-item"><a class="nav-link" href="{{ route('web.home') }}#about">{{ __('writ.nav.about') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('web.home') }}#features">{{ __('writ.nav.features') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('web.home') }}#process">{{ __('writ.nav.process') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('web.home') }}#benefits">{{ __('writ.nav.benefits') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('web.home') }}#faq">{{ __('writ.nav.faq') }}</a></li>
+                    @guest
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link" href="{{ route('lawyer.login') }}">{{ __('writ.nav.login') }}</a>
+                        </li>
+                    @else
+                        @if(auth()->user()->user_type === 'lawyer')
+                            <li class="nav-item ms-lg-3">
+                                <a class="nav-link" href="{{ route('lawyer.dashboard') }}">{{ __('lawyer.nav.dashboard') }}</a>
+                            </li>
+                        @endif
+                        <li class="nav-item ms-lg-3">
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="btn btn-link nav-link border-0">{{ __('lawyer.nav.logout') }}</button>
+                            </form>
+                        </li>
+                    @endguest
                     <li class="nav-item dropdown ms-lg-3">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             {{ strtoupper(app()->getLocale()) }}
@@ -172,14 +178,16 @@
                     </ul>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <h5>{{ __('writ.footer.follow_us') }}</h5>
-                    <a href="#" class="me-2">Facebook</a>
-                    <a href="#" class="me-2">Twitter</a>
-                    <a href="#">LinkedIn</a>
+                    <h5>{{ __('writ.footer.system_access') }}</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>
+                        <li><a href="{{ route('login') }}">{{ __('writ.footer.admin_login') }}</a></li>
+                    </ul>
                 </div>
             </div>
             <hr class="mt-3" style="border-color: #d4a017;">
-            <p class="text-center mt-2 mb-0">{{ __('writ.footer.copyright') }}</p>
+            <p class="text-center mt-2 mb-1">{{ __('writ.footer.copyright', ['year' => date('Y')]) }}</p>
+            <p class="text-center small mb-0">{{ __('writ.footer.technical_assistance') }}</p>
         </div>
     </footer>
 

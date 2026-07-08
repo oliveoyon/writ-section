@@ -49,6 +49,10 @@ class SectionReceiveController extends Controller
         $case = $this->findMovementCase($identifier);
 
         if ($case) {
+            if ($message = $this->receiveRestrictionMessage($case, $request->user())) {
+                return response()->json(['valid' => false, 'message' => $message], 422);
+            }
+
             return response()->json([
                 'valid' => true,
                 'permanent_barcode' => $case->permanent_barcode,
@@ -129,6 +133,11 @@ class SectionReceiveController extends Controller
 
             $latest = $case->latestMovement;
             $fromSection = $latest?->to_section ?? $case->current_section;
+
+            if ($failureReason = $this->receiveRestrictionMessage($case, $user, $latest)) {
+                $failed[] = ['barcode' => $barcode, 'reason' => $failureReason];
+                continue;
+            }
 
             if ((int) $case->current_holder_user_id === (int) $user->id) {
                 $failed[] = [
@@ -282,6 +291,30 @@ class SectionReceiveController extends Controller
         });
 
         return null;
+    }
+
+    private function receiveRestrictionMessage(CourtCase $case, $user, $latest = null): ?string
+    {
+        $latest ??= $case->latestMovement;
+        $status = strtolower(trim((string) $case->status));
+
+        if (in_array($status, ['rejected', 'affidavit_rejected', 'filing_rejected', 'returned_to_lawyer'], true)
+            || $latest?->movement_type === 'reject') {
+            return __('tracking.receive.rejected_file_not_receivable');
+        }
+
+        $fromSection = strtolower(trim((string) ($latest?->to_section ?? $case->current_section)));
+        if ($fromSection === 'court' && !$this->canReceiveFromCourt($user)) {
+            return __('tracking.receive.court_return_office_assistant_only');
+        }
+
+        return null;
+    }
+
+    private function canReceiveFromCourt($user): bool
+    {
+        return $user->hasRole('Super Admin')
+            || str_contains(strtolower($this->resolveSection($user)), 'office assistant');
     }
 
     private function nextBatchNo(string $prefix): string

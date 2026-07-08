@@ -8,6 +8,9 @@
             <h3 class="dispatch-heading mb-0">{{ auth()->user()->name }}: {{ __('tracking.court.dispatch_title') }}</h3>
         </div>
         <div class="d-flex gap-2">
+            <a href="{{ route('admin.tracking.court.batches.index') }}" class="btn btn-report">
+                <i class="bi bi-collection" aria-hidden="true"></i> Batches
+            </a>
             <a href="{{ route('admin.tracking.section.receive') }}" class="btn btn-receive">
                 <i class="bi bi-upc-scan" aria-hidden="true"></i> {{ __('messages.section_receive') }}
             </a>
@@ -110,7 +113,6 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>{{ __('tracking.receive.barcode') }}</th>
                             <th>{{ __('tracking.register.case_no') }}</th>
                             <th>{{ __('tracking.register.from') }}</th>
                             <th>{{ __('tracking.register.to') }}</th>
@@ -120,7 +122,6 @@
                         @foreach(session('court_processed') as $i => $item)
                             <tr>
                                 <td>{{ $i + 1 }}</td>
-                                <td>{{ $item['barcode'] }}</td>
                                 <td>{{ $item['case_no'] }}</td>
                                 <td>{{ $item['from_section'] }}</td>
                                 <td>{{ $item['to_section'] }}</td>

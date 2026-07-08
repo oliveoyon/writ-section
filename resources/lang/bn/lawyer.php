@@ -2,10 +2,10 @@
 
 return [
 
-    'title' => 'আইনজীবী প্যানেল',
+    'title' => 'RTFTS',
 
     'nav' => [
-        'brand'        => 'আইনজীবী প্যানেল',
+        'brand'        => 'RTFTS',
         'lawyer'       => 'আইনজীবী',
         'dashboard'    => 'ড্যাশবোর্ড',
         'my_cases'     => 'আমার মামলাসমূহ',
@@ -61,7 +61,8 @@ return [
         'phone'     => 'ফোন: +৮৮০ ১২৩৪ ৫৬৭৮৯০',
         'quick_links' => 'দ্রুত লিংক',
         'follow_us'   => 'আমাদের অনুসরণ করুন',
-        'copyright'    => '© ' . date('Y') . ' সর্বস্বত্ব সংরক্ষিত.',
+        'copyright'    => '© ' . date('Y') . ' RTFTS - Real Time File Tracking System',
+        'technical_assistance' => 'Technical Assistance by Access to Justice For Women, GIZ Bangladesh',
     ],
     'placeholder' => [
         'current_password' => 'বর্তমান পাসওয়ার্ড লিখুন',
@@ -127,5 +128,4 @@ return [
     ],
 
 ];
-
 

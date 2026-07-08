@@ -1,23 +1,18 @@
 @extends('website.layouts.weblayout')
 
-@section('title', __('writ.auth.login_page_title'))
+@section('title', __('writ.auth.login_page_title') . ' | RTFTS')
 
 @section('content')
 
-<div class="container py-5" style="min-height: 70vh; margin-top: 30px;">
+<div class="container auth-page py-5">
     <div class="row justify-content-center">
-        <div class="col-md-5">
+        <div class="col-md-6 col-lg-5">
 
-            <div class="card shadow-lg border-0 rounded-3">
-                <div class="card-body p-4">
+            <div class="auth-panel">
 
-                    <h3 class="text-center mb-2" style="color:#003366; font-weight:700;">
+                    <h3 class="auth-title text-center mb-4">
                         {{ __('writ.auth.login_title') }}
                     </h3>
-
-                    <p class="text-center text-muted mb-4">
-                        {{ __('writ.auth.login_subtitle') }}
-                    </p>
 
                     {{-- Success Message --}}
                     @if(session('success'))
@@ -27,59 +22,42 @@
                         </div>
                     @endif
 
-                    {{-- Validation Errors --}}
-                    @if($errors->any())
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-
                     <form method="POST" action="{{ route('lawyer.login.submit') }}">
                         @csrf
 
                         <div class="mb-3">
-                            <label class="form-label">
+                            <label for="email_or_phone" class="form-label">
                                 {{ __('writ.auth.email_or_phone') }}
                             </label>
-                            <input type="text" name="email_or_phone" class="form-control @error('email_or_phone') is-invalid @enderror"
-                                   value="{{ old('email_or_phone') }}"
-                                   placeholder="{{ __('writ.auth.email_or_phone_placeholder') }}">
+                            <input type="text" id="email_or_phone" name="email_or_phone" class="form-control form-control-lg @error('email_or_phone') is-invalid @enderror"
+                                   value="{{ old('email_or_phone') }}" autocomplete="username" autofocus required>
                             @error('email_or_phone')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">
+                            <label for="password" class="form-label">
                                 {{ __('writ.auth.password') }}
                             </label>
-                            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
-                                   placeholder="{{ __('writ.auth.password_placeholder') }}">
+                            <input type="password" id="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror"
+                                   autocomplete="current-password" required>
                             @error('password')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <div class="d-flex justify-content-between mb-3">
-                            <div>
-                                <input type="checkbox" id="remember" name="remember">
-                                <label for="remember">{{ __('writ.auth.remember_me') }}</label>
-                            </div>
-                            <a href="#" class="text-decoration-none" style="color:#00284d;">
-                                {{ __('writ.auth.forgot_password') }}
-                            </a>
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">{{ __('writ.auth.remember_me') }}</label>
                         </div>
 
-                        <button type="submit" class="btn btn-gold w-100 py-2">
+                        <button type="submit" class="btn btn-gold btn-lg w-100">
                             {{ __('writ.auth.login_button') }}
                         </button>
                     </form>
 
-                    <div class="text-center mt-3">
+                    <div class="auth-switch text-center mt-4">
                         <span class="text-muted">
                             {{ __('writ.auth.no_account') }}
                         </span>
@@ -88,11 +66,25 @@
                         </a>
                     </div>
 
-                </div>
             </div>
 
         </div>
     </div>
 </div>
+
+<style>
+    .auth-page { min-height: calc(100vh - 64px); display: flex; align-items: center; }
+    .auth-page > .row { width: 100%; }
+    .auth-panel { padding: 2rem; border: 1px solid #e5e7eb; border-top: 4px solid #d4a017; background: #fff; box-shadow: 0 10px 28px rgba(0, 40, 77, .08); }
+    .auth-title { color: #003366; font-size: 1.55rem; font-weight: 700; }
+    .auth-panel .form-label { color: #374151; font-weight: 600; }
+    .auth-panel .form-control { min-height: 50px; }
+    .auth-switch { color: #6b7280; }
+    .auth-switch a { color: #00284d; font-weight: 600; }
+    @media (max-width: 575.98px) {
+        .auth-page { align-items: flex-start; padding-top: 2rem !important; }
+        .auth-panel { padding: 1.25rem; }
+    }
+</style>
 
 @endsection

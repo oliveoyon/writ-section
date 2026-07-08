@@ -17,6 +17,10 @@ class EnsureDepartment
             return redirect()->route('login');
         }
 
+        if ($user->hasRole('Super Admin')) {
+            return $next($request);
+        }
+
         $departmentName = $user->departmentRelation?->name ?? $user->department;
 
         if (!$departmentName) {
@@ -74,6 +78,8 @@ class EnsureDepartment
             return 'admin.tracking.lookup';
         }
 
-        return $isStaff ? 'admin.tracking.register-report' : 'admin.dashboard';
+        return $isStaff && $department !== ''
+            ? 'admin.tracking.section.receive'
+            : ($isStaff ? 'admin.tracking.register-report' : 'admin.dashboard');
     }
 }

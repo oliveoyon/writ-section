@@ -8,7 +8,9 @@ use App\Models\CourtCase;
 use App\Models\CourtDispatchBatch;
 use App\Models\CourtDispatchBatchItem;
 use App\Models\FileMovement;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Mpdf\Mpdf;
 
@@ -235,6 +237,7 @@ class CourtDispatchController extends Controller
 
     public function batchPdf(CourtDispatchBatch $batch)
     {
+        $this->authorizeBatchView($batch, request()->user());
         $batch->load(['court', 'createdBy', 'items.courtCase']);
 
         $html = view('admin.tracking.court-batch-pdf', compact('batch'))->render();
@@ -257,6 +260,116 @@ class CourtDispatchController extends Controller
         return response($mpdf->Output('CourtBatch_' . $batch->batch_no . '.pdf', 'S'))
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="CourtBatch_' . $batch->batch_no . '.pdf"');
+    }
+
+    public function batches(Request $request)
+    {
+        $request->validate([
+            'q' => 'nullable|string|max:100',
+            'type' => 'nullable|in:dispatch,return',
+            'court_id' => 'nullable|integer|exists:courts,id',
+            'creator_id' => 'nullable|integer|exists:users,id',
+            'date_from' => 'nullable|date_format:d-m-Y',
+            'date_to' => 'nullable|date_format:d-m-Y',
+        ]);
+
+        $user = $request->user();
+        $canViewAll = $this->canViewAllBatches($user);
+        $queryText = trim((string) $request->input('q', ''));
+        $dateFrom = $request->filled('date_from')
+            ? Carbon::createFromFormat('d-m-Y', (string) $request->date_from)->toDateString()
+            : null;
+        $dateTo = $request->filled('date_to')
+            ? Carbon::createFromFormat('d-m-Y', (string) $request->date_to)->toDateString()
+            : null;
+
+        $query = CourtDispatchBatch::query()
+            ->with(['court', 'createdBy', 'items'])
+            ->when(!$canViewAll, fn ($builder) => $builder->where('created_by_user_id', $user->id))
+            ->when($queryText !== '', function ($builder) use ($queryText) {
+                $builder->where(function ($inner) use ($queryText) {
+                    $inner->where('batch_no', 'like', '%' . $queryText . '%')
+                        ->orWhereHas('items.courtCase', function ($caseQuery) use ($queryText) {
+                            $caseQuery->where('final_case_number', 'like', '%' . $queryText . '%')
+                                ->orWhere('permanent_barcode', 'like', '%' . $queryText . '%');
+                        });
+                });
+            })
+            ->when($request->filled('type'), fn ($builder) => $builder->where('type', $request->type))
+            ->when($request->filled('court_id'), fn ($builder) => $builder->where('court_id', $request->court_id))
+            ->when($canViewAll && $request->filled('creator_id'), fn ($builder) => $builder->where('created_by_user_id', $request->creator_id))
+            ->when($dateFrom, fn ($builder) => $builder->whereDate(DB::raw('COALESCE(dispatched_at, returned_at)'), '>=', $dateFrom))
+            ->when($dateTo, fn ($builder) => $builder->whereDate(DB::raw('COALESCE(dispatched_at, returned_at)'), '<=', $dateTo))
+            ->latest(DB::raw('COALESCE(dispatched_at, returned_at)'));
+
+        $batches = $query->paginate(20)->withQueryString();
+        $this->attachBatchReturnCounts($batches->getCollection());
+
+        $courts = Court::orderBy('name_en')->get();
+        $creators = $canViewAll
+            ? User::whereHas('courtDispatchBatches')->orderBy('name')->get(['id', 'name'])
+            : collect();
+
+        return view('admin.tracking.court-batches', compact('batches', 'courts', 'creators', 'canViewAll'));
+    }
+
+    public function batchShow(CourtDispatchBatch $batch, Request $request)
+    {
+        $this->authorizeBatchView($batch, $request->user());
+        $batch->load(['court', 'createdBy', 'items.courtCase']);
+
+        $returnMovements = FileMovement::query()
+            ->whereIn('case_id', $batch->items->pluck('case_id'))
+            ->where('movement_type', 'returned_from_court_handover')
+            ->orderBy('received_at')
+            ->get()
+            ->groupBy('case_id');
+
+        $itemReturns = $batch->items->mapWithKeys(function (CourtDispatchBatchItem $item) use ($batch, $returnMovements) {
+            $movement = null;
+            if ($batch->type !== 'return') {
+                $processedAt = $item->processed_at ?? $batch->dispatched_at ?? $item->created_at;
+                $movement = ($returnMovements->get($item->case_id) ?? collect())
+                    ->first(fn (FileMovement $candidate) => $candidate->received_at?->greaterThanOrEqualTo($processedAt));
+            }
+
+            return [$item->id => $movement];
+        });
+
+        return view('admin.tracking.court-batch-show', compact('batch', 'itemReturns'));
+    }
+
+    private function attachBatchReturnCounts($batches): void
+    {
+        $items = $batches->pluck('items')->flatten();
+        $returnMovements = FileMovement::query()
+            ->whereIn('case_id', $items->pluck('case_id')->unique())
+            ->where('movement_type', 'returned_from_court_handover')
+            ->orderBy('received_at')
+            ->get()
+            ->groupBy('case_id');
+
+        foreach ($batches as $batch) {
+            $returned = $batch->type === 'return'
+                ? $batch->items->count()
+                : $batch->items->filter(function (CourtDispatchBatchItem $item) use ($batch, $returnMovements) {
+                    $processedAt = $item->processed_at ?? $batch->dispatched_at ?? $item->created_at;
+                    return ($returnMovements->get($item->case_id) ?? collect())
+                        ->contains(fn (FileMovement $movement) => $movement->received_at?->greaterThanOrEqualTo($processedAt));
+                })->count();
+
+            $batch->setAttribute('returned_items_count', $returned);
+        }
+    }
+
+    private function authorizeBatchView(CourtDispatchBatch $batch, $user): void
+    {
+        abort_unless($this->canViewAllBatches($user) || (int) $batch->created_by_user_id === (int) $user?->id, 403);
+    }
+
+    private function canViewAllBatches($user): bool
+    {
+        return ($user?->user_type === 'admin') || $user?->hasRole('Super Admin');
     }
 
     private function extractBarcodes(string $input): array

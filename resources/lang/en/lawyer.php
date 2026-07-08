@@ -2,10 +2,10 @@
 
 return [
 
-    'title' => 'Lawyer Panel',
+    'title' => 'RTFTS',
 
     'nav' => [
-        'brand' => 'Lawyer Panel',
+        'brand' => 'RTFTS',
         'lawyer' => 'Lawyer',
         'dashboard' => 'Dashboard',
         'my_cases' => 'My Cases',
@@ -61,7 +61,8 @@ return [
         'phone' => 'Phone: +880 1234 567890',
         'quick_links' => 'Quick Links',
         'follow_us' => 'Follow Us',
-        'copyright' => '© ' . date('Y') . ' All Rights Reserved.',
+        'copyright' => '© ' . date('Y') . ' RTFTS - Real Time File Tracking System',
+        'technical_assistance' => 'Technical Assistance by Access to Justice For Women, GIZ Bangladesh',
     ],
     'placeholder' => [
         'current_password' => 'Current password',

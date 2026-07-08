@@ -68,4 +68,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(FileMovement::class, 'received_by_user_id');
     }
+
+    public function courtDispatchBatches()
+    {
+        return $this->hasMany(CourtDispatchBatch::class, 'created_by_user_id');
+    }
 }

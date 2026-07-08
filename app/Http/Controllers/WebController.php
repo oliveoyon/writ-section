@@ -7,16 +7,26 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Lawyer; // your lawyer table model
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class WebController extends Controller
 {
-    public function index()
+    public function index(): View|RedirectResponse
     {
+        if (Auth::check() && Auth::user()->user_type === 'lawyer') {
+            return redirect()->route('lawyer.dashboard');
+        }
+
         return view('website.index');
     }
 
-    public function login()
+    public function login(): View|RedirectResponse
     {
+        if (Auth::check() && Auth::user()->user_type === 'lawyer') {
+            return redirect()->route('lawyer.dashboard');
+        }
+
         return view('website.login');
     }
 
