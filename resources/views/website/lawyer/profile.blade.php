@@ -138,7 +138,7 @@
                                 @foreach($recentCases as $case)
                                     <li>
                                         {{ __('lawyer.meta.case_no') }} {{ $case->case_reference ?? ('TEMP-' . ($case->temporary_barcode ?? $case->id)) }}
-                                        - {{ $case->subject ?? __('lawyer.meta.not_available') }}
+                                        - {{ $case->case_type ?? __('lawyer.meta.not_available') }}
                                         ({{ $case->status ?? __('lawyer.meta.status_unknown') }})
                                     </li>
                                 @endforeach

@@ -32,7 +32,6 @@
                 <thead>
                     <tr>
                         <th>{{ __('tracking.filing.case_no') }}</th>
-                        <th>{{ __('tracking.filing.subject') }}</th>
                         <th>{{ __('tracking.filing.lawyer_name') }}</th>
                         <th>{{ __('tracking.filing.current_holder') }}</th>
                         <th>{{ __('tracking.filing.action') }}</th>
@@ -42,7 +41,6 @@
                     @forelse($recentCases as $item)
                         <tr>
                             <td>{{ $item->case_reference ?? '-' }}</td>
-                            <td>{{ $item->subject ?? '-' }}</td>
                             <td>{{ $item->lawyer?->full_name ?? '-' }}</td>
                             <td>{{ $item->currentHolder?->name ?? '-' }}</td>
                             <td>
@@ -54,7 +52,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center text-muted">{{ __('tracking.filing.no_data') }}</td>
+                            <td colspan="4" class="text-center text-muted">{{ __('tracking.filing.no_data') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

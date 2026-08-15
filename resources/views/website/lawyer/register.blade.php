@@ -54,6 +54,10 @@
                                     <span id="btn_text">{{ __('writ.lawyer.check_member') }}</span>
                                 </button>
 
+                                <button type="button" class="btn btn-link w-100 mt-2 register-manual-link" id="manual_register_btn">
+                                    {{ __('writ.lawyer.not_bar_member') }}
+                                </button>
+
                             </div>
 
                             {{-- ---------------- STEP 2 ---------------- --}}
@@ -69,8 +73,15 @@
                                     <input type="hidden" id="form_status" name="status">
 
 
-                                    <input type="hidden" name="member_id" id="form_member_id"
-                                        value="{{ old('member_id') }}">
+                                    <div class="mb-3" id="member_id_field" style="{{ old('member_id') ? 'display:block;' : 'display:none;' }}">
+                                        <label class="form-label">{{ __('writ.lawyer.enter_member_id') }}</label>
+                                        <input type="text" name="member_id" id="form_member_id"
+                                            class="form-control form-control-lg @error('member_id') is-invalid @enderror"
+                                            value="{{ old('member_id') }}">
+                                        @error('member_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">{{ __('writ.lawyer.full_name') }}</label>
@@ -145,6 +156,8 @@
         .auth-title { color: #003366; font-size: 1.55rem; font-weight: 700; }
         .auth-panel .form-label { color: #374151; font-weight: 600; }
         .auth-panel .form-control { min-height: 50px; }
+        .register-manual-link { color: #00284d; font-weight: 700; text-decoration: none; }
+        .register-manual-link:hover { color: #d4a017; text-decoration: underline; }
         .auth-switch a { color: #00284d; font-weight: 600; text-decoration: none; }
         @media (max-width: 575.98px) {
             .auth-page { align-items: flex-start; padding-top: 2rem !important; }
@@ -155,6 +168,25 @@
 
     {{-- ---------------- JS (unchanged) ---------------- --}}
     <script>
+        function openRegistrationForm(member = null, showMemberField = false) {
+            document.querySelector('.step-1').style.display = 'none';
+            document.querySelector('.step-2').style.display = 'block';
+
+            document.getElementById('member_id_field').style.display = showMemberField ? 'block' : 'none';
+            document.getElementById('form_member_id').value = member?.memberId || '';
+            document.getElementById('form_full_name').value = member?.memberName || '';
+            document.getElementById('form_phone').value = member?.mobile || '';
+            document.getElementById('form_picture').value = member?.picture || '';
+            document.getElementById('form_barDateOfJoining').value = member?.barDateOfJoining || '';
+            document.getElementById('form_barDateOfEnrollment').value = member?.barDateOfEnrollment || '';
+            document.getElementById('form_barCourtType').value = member?.barCourtType || '';
+            document.getElementById('form_status').value = member?.status || 'active';
+        }
+
+        document.getElementById('manual_register_btn').addEventListener('click', function() {
+            openRegistrationForm(null, false);
+        });
+
         document.getElementById('check_member_btn').addEventListener('click', function(e) {
             e.preventDefault();
 
@@ -186,22 +218,7 @@
                     errorDiv.style.display = 'block';
 
                     if (data.found) {
-                        document.querySelector('.step-1').style.display = 'none';
-                        document.querySelector('.step-2').style.display = 'block';
-
-                        // Existing fields
-                        document.getElementById('form_member_id').value = data.member.memberId;
-                        document.getElementById('form_full_name').value = data.member.memberName;
-                        document.getElementById('form_phone').value = data.member.mobile;
-
-                        // New fields
-                        document.getElementById('form_picture').value = data.member.picture || '';
-                        document.getElementById('form_barDateOfJoining').value = data.member.barDateOfJoining ||
-                            '';
-                        document.getElementById('form_barDateOfEnrollment').value = data.member
-                            .barDateOfEnrollment || '';
-                        document.getElementById('form_barCourtType').value = data.member.barCourtType || '';
-                        document.getElementById('form_status').value = data.member.status || 'active';
+                        openRegistrationForm(data.member, true);
 
                         errorDiv.innerText = '';
                     } else {

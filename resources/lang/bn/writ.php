@@ -75,8 +75,9 @@ return [
 
     'lawyer' => [
         'register_page_title' => 'আইনজীবীর রেজিস্ট্রেশন',
-        'enter_member_id' => 'বার কাউন্সিল সদস্য আইডি লিখুন',
+        'enter_member_id' => 'SCB মেম্বারশিপ নম্বর লিখুন',
         'check_member' => 'সদস্য যাচাই করুন',
+        'not_bar_member' => 'বার সদস্য নন? ম্যানুয়ালি রেজিস্টার করুন',
         'loading' => 'যাচাই করা হচ্ছে...',
         'full_name' => 'পূর্ণ নাম',
         'phone' => 'ফোন নম্বর',
@@ -84,10 +85,10 @@ return [
         'password' => 'পাসওয়ার্ড',
         'confirm_password' => 'পাসওয়ার্ড নিশ্চিত করুন',
         'register' => 'রেজিস্টার করুন',
-        'not_found' => 'সদস্য আইডি পাওয়া যায়নি!',
+        'not_found' => 'SCB মেম্বারশিপ নম্বর পাওয়া যায়নি!',
         'api_error' => 'এপিআই-তে সমস্যা হয়েছে!',
         'registration_success' => 'রেজিস্ট্রেশন সফল হয়েছে!',
-        'validation_member_id' => 'সদস্য আইডি প্রয়োজন।',
+        'validation_member_id' => 'SCB মেম্বারশিপ নম্বর প্রয়োজন।',
         'validation_full_name' => 'পূর্ণ নাম প্রয়োজন।',
         'validation_phone' => 'ফোন নম্বর প্রয়োজন।',
         'validation_email' => 'ইমেইল প্রয়োজন।',

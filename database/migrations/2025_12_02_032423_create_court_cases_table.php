@@ -19,7 +19,6 @@ return new class extends Migration
 
             // basic case info
             $table->string('case_type')->nullable();
-            $table->string('subject')->nullable();
             $table->text('description')->nullable();
 
             // status workflow

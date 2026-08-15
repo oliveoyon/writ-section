@@ -17,7 +17,8 @@ return new class extends Migration
 
             $table->string('name_or_organization');
             $table->string('represented_by')->nullable();
-            $table->string('phone')->nullable();
+            $table->string('designation')->nullable();
+            $table->string('address')->nullable();
 
             $table->timestamps();
         });

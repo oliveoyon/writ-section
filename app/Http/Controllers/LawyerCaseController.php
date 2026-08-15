@@ -12,13 +12,16 @@ use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class LawyerCaseController extends Controller
 {
     // Show create form
     public function create()
     {
-        return view('website.lawyer.case_create');
+        return view('website.lawyer.case_create', [
+            'caseTypes' => CourtCase::caseTypes(),
+        ]);
     }
 
     // Store case data
@@ -26,18 +29,18 @@ class LawyerCaseController extends Controller
     {
         // Validation
         $request->validate([
-            'case_type' => 'required|string|max:255',
-            'subject' => 'required|string|max:255',
+            'case_type' => ['required', 'string', 'max:255', Rule::in(CourtCase::caseTypes())],
             'description' => 'nullable|string',
 
             'petitioners.*.name_or_organization' => 'required|string|max:255',
             'petitioners.*.represented_by' => 'nullable|string|max:255',
-            'petitioners.*.phone' => 'nullable|string|max:20',
+            'petitioners.*.designation' => 'nullable|string|max:255',
+            'petitioners.*.address' => 'nullable|string|max:1000',
 
-            'respondents.*.name' => 'required|string|max:255',
+            'respondents.*.name_or_organization' => 'required|string|max:255',
+            'respondents.*.represented_by' => 'nullable|string|max:255',
             'respondents.*.designation' => 'nullable|string|max:255',
-            'respondents.*.organization' => 'nullable|string|max:255',
-            'respondents.*.address' => 'nullable|string|max:255',
+            'respondents.*.address' => 'nullable|string|max:1000',
 
             'files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
@@ -46,7 +49,6 @@ class LawyerCaseController extends Controller
         $case = CourtCase::create([
             'lawyer_id' => auth()->user()->lawyer->id,
             'case_type' => $request->case_type,
-            'subject' => $request->subject,
             'description' => $request->description,
             'temporary_barcode' => 'TEMP' . time(),
             'temporary_barcode_generated_at' => now(),
@@ -58,7 +60,8 @@ class LawyerCaseController extends Controller
                 'case_id' => $case->id,
                 'name_or_organization' => $p['name_or_organization'],
                 'represented_by' => $p['represented_by'] ?? null,
-                'phone' => $p['phone'] ?? null,
+                'designation' => $p['designation'] ?? null,
+                'address' => $p['address'] ?? null,
             ]);
         }
 
@@ -66,9 +69,9 @@ class LawyerCaseController extends Controller
         foreach ($request->respondents as $r) {
             CaseRespondent::create([
                 'case_id' => $case->id,
-                'name' => $r['name'],
+                'name_or_organization' => $r['name_or_organization'],
+                'represented_by' => $r['represented_by'] ?? null,
                 'designation' => $r['designation'] ?? null,
-                'organization' => $r['organization'] ?? null,
                 'address' => $r['address'] ?? null,
             ]);
         }
@@ -107,7 +110,10 @@ class LawyerCaseController extends Controller
             abort(403, 'Only draft or returned cases can be edited.');
         }
 
-        return view('website.lawyer.case_edit', compact('case'));
+        return view('website.lawyer.case_edit', [
+            'case' => $case,
+            'caseTypes' => CourtCase::caseTypes(),
+        ]);
     }
 
     // Update case
@@ -119,23 +125,22 @@ class LawyerCaseController extends Controller
         }
 
         $request->validate([
-            'case_type' => 'required|string|max:255',
-            'subject' => 'required|string|max:255',
+            'case_type' => ['required', 'string', 'max:255', Rule::in(CourtCase::caseTypes())],
             'description' => 'nullable|string',
             'petitioners.*.name_or_organization' => 'required|string|max:255',
             'petitioners.*.represented_by' => 'nullable|string|max:255',
-            'petitioners.*.phone' => 'nullable|string|max:20',
-            'respondents.*.name' => 'required|string|max:255',
+            'petitioners.*.designation' => 'nullable|string|max:255',
+            'petitioners.*.address' => 'nullable|string|max:1000',
+            'respondents.*.name_or_organization' => 'required|string|max:255',
+            'respondents.*.represented_by' => 'nullable|string|max:255',
             'respondents.*.designation' => 'nullable|string|max:255',
-            'respondents.*.organization' => 'nullable|string|max:255',
-            'respondents.*.address' => 'nullable|string|max:255',
+            'respondents.*.address' => 'nullable|string|max:1000',
             'files.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         // Update case info
         $case->update([
             'case_type' => $request->case_type,
-            'subject' => $request->subject,
             'description' => $request->description,
         ]);
 
@@ -146,7 +151,8 @@ class LawyerCaseController extends Controller
                 'case_id' => $case->id,
                 'name_or_organization' => $p['name_or_organization'],
                 'represented_by' => $p['represented_by'] ?? null,
-                'phone' => $p['phone'] ?? null,
+                'designation' => $p['designation'] ?? null,
+                'address' => $p['address'] ?? null,
             ]);
         }
 
@@ -155,9 +161,9 @@ class LawyerCaseController extends Controller
         foreach ($request->respondents as $r) {
             CaseRespondent::create([
                 'case_id' => $case->id,
-                'name' => $r['name'],
+                'name_or_organization' => $r['name_or_organization'],
+                'represented_by' => $r['represented_by'] ?? null,
                 'designation' => $r['designation'] ?? null,
-                'organization' => $r['organization'] ?? null,
                 'address' => $r['address'] ?? null,
             ]);
         }
@@ -300,4 +306,5 @@ class LawyerCaseController extends Controller
 
         return $candidate;
     }
+
 }

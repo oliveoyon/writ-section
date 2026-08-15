@@ -44,6 +44,24 @@
         margin-bottom: 20px;
     }
 
+    .case-form-label {
+        color: #2f3a45;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .case-form-control {
+        border: 1px solid #cfd8e3;
+        border-radius: 8px;
+        min-height: 46px;
+    }
+
+    .case-form-control:focus {
+        border-color: #0b5ed7;
+        box-shadow: 0 0 0 0.16rem rgba(13, 110, 253, 0.15);
+    }
+
     @media (max-width: 767px) {
         .lawyer-sidebar {
             display: none !important;
@@ -71,16 +89,19 @@
                         <h5 class="profile-section-title">{{ __('lawyer.case.basic_info') }}</h5>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label>{{ __('lawyer.case.case_type') }}</label>
-                                <input type="text" name="case_type" class="form-control" value="{{ old('case_type', $case->case_type) }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label>{{ __('lawyer.case.subject') }}</label>
-                                <input type="text" name="subject" class="form-control" value="{{ old('subject', $case->subject) }}" required>
+                                <label class="case-form-label">{{ __('lawyer.case.case_type') }}</label>
+                                <select name="case_type" class="form-select case-form-control" required>
+                                    <option value="">Select One</option>
+                                    @foreach($caseTypes as $caseType)
+                                        <option value="{{ $caseType }}" @selected(old('case_type', $case->case_type) === $caseType)>
+                                            {{ $caseType }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="col-md-12">
-                                <label>{{ __('lawyer.case.description') }}</label>
-                                <textarea name="description" class="form-control">{{ old('description', $case->description) }}</textarea>
+                                <label class="case-form-label">{{ __('lawyer.case.description') }}</label>
+                                <textarea name="description" class="form-control case-form-control" rows="4">{{ old('description', $case->description) }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -95,7 +116,8 @@
                                 <tr>
                                     <th>{{ __('lawyer.case.name_or_organization') }}</th>
                                     <th>{{ __('lawyer.case.represented_by') }}</th>
-                                    <th>{{ __('lawyer.case.phone') }}</th>
+                                    <th>{{ __('lawyer.case.designation') }}</th>
+                                    <th>{{ __('lawyer.case.address') }}</th>
                                     <th>
                                         <button type="button" class="btn btn-success btn-sm" id="addPetitioner">+</button>
                                     </th>
@@ -106,7 +128,8 @@
                                 <tr>
                                     <td><input type="text" name="petitioners[{{ $i }}][name_or_organization]" class="form-control" value="{{ old("petitioners.$i.name_or_organization", $p->name_or_organization) }}" required></td>
                                     <td><input type="text" name="petitioners[{{ $i }}][represented_by]" class="form-control" value="{{ old("petitioners.$i.represented_by", $p->represented_by) }}"></td>
-                                    <td><input type="text" name="petitioners[{{ $i }}][phone]" class="form-control" value="{{ old("petitioners.$i.phone", $p->phone) }}"></td>
+                                    <td><input type="text" name="petitioners[{{ $i }}][designation]" class="form-control" value="{{ old("petitioners.$i.designation", $p->designation) }}"></td>
+                                    <td><textarea name="petitioners[{{ $i }}][address]" class="form-control" rows="1">{{ old("petitioners.$i.address", $p->address) }}</textarea></td>
                                     <td></td>
                                 </tr>
                                 @endforeach
@@ -122,9 +145,9 @@
                         <table class="table table-bordered" id="respondents_table">
                             <thead class="table-light">
                                 <tr>
-                                    <th>{{ __('lawyer.case.name') }}</th>
+                                    <th>{{ __('lawyer.case.name_or_organization') }}</th>
+                                    <th>{{ __('lawyer.case.represented_by') }}</th>
                                     <th>{{ __('lawyer.case.designation') }}</th>
-                                    <th>{{ __('lawyer.case.organization') }}</th>
                                     <th>{{ __('lawyer.case.address') }}</th>
                                     <th>
                                         <button type="button" class="btn btn-success btn-sm" id="addRespondent">+</button>
@@ -134,10 +157,10 @@
                             <tbody>
                                 @foreach($case->respondents as $i => $r)
                                 <tr>
-                                    <td><input type="text" name="respondents[{{ $i }}][name]" class="form-control" value="{{ old("respondents.$i.name", $r->name) }}" required></td>
+                                    <td><input type="text" name="respondents[{{ $i }}][name_or_organization]" class="form-control" value="{{ old("respondents.$i.name_or_organization", $r->name_or_organization) }}" required></td>
+                                    <td><input type="text" name="respondents[{{ $i }}][represented_by]" class="form-control" value="{{ old("respondents.$i.represented_by", $r->represented_by) }}"></td>
                                     <td><input type="text" name="respondents[{{ $i }}][designation]" class="form-control" value="{{ old("respondents.$i.designation", $r->designation) }}"></td>
-                                    <td><input type="text" name="respondents[{{ $i }}][organization]" class="form-control" value="{{ old("respondents.$i.organization", $r->organization) }}"></td>
-                                    <td><input type="text" name="respondents[{{ $i }}][address]" class="form-control" value="{{ old("respondents.$i.address", $r->address) }}"></td>
+                                    <td><textarea name="respondents[{{ $i }}][address]" class="form-control" rows="1">{{ old("respondents.$i.address", $r->address) }}</textarea></td>
                                     <td></td>
                                 </tr>
                                 @endforeach
@@ -173,7 +196,8 @@ document.getElementById('addPetitioner').addEventListener('click', function(){
     row.innerHTML = `
         <td><input type="text" name="petitioners[${petitionerIndex}][name_or_organization]" class="form-control" required></td>
         <td><input type="text" name="petitioners[${petitionerIndex}][represented_by]" class="form-control"></td>
-        <td><input type="text" name="petitioners[${petitionerIndex}][phone]" class="form-control"></td>
+        <td><input type="text" name="petitioners[${petitionerIndex}][designation]" class="form-control"></td>
+        <td><textarea name="petitioners[${petitionerIndex}][address]" class="form-control" rows="1"></textarea></td>
         <td><button type="button" class="btn btn-danger btn-sm removeRow">-</button></td>
     `;
     table.appendChild(row);
@@ -185,10 +209,10 @@ document.getElementById('addRespondent').addEventListener('click', function(){
     const table = document.querySelector('#respondents_table tbody');
     const row = document.createElement('tr');
     row.innerHTML = `
-        <td><input type="text" name="respondents[${respondentIndex}][name]" class="form-control" required></td>
+        <td><input type="text" name="respondents[${respondentIndex}][name_or_organization]" class="form-control" required></td>
+        <td><input type="text" name="respondents[${respondentIndex}][represented_by]" class="form-control"></td>
         <td><input type="text" name="respondents[${respondentIndex}][designation]" class="form-control"></td>
-        <td><input type="text" name="respondents[${respondentIndex}][organization]" class="form-control"></td>
-        <td><input type="text" name="respondents[${respondentIndex}][address]" class="form-control"></td>
+        <td><textarea name="respondents[${respondentIndex}][address]" class="form-control" rows="1"></textarea></td>
         <td><button type="button" class="btn btn-danger btn-sm removeRow">-</button></td>
     `;
     table.appendChild(row);

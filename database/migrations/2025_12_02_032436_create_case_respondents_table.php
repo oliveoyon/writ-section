@@ -15,9 +15,9 @@ return new class extends Migration
                 ->constrained('cases')
                 ->cascadeOnDelete();
 
-            $table->string('name');
+            $table->string('name_or_organization');
+            $table->string('represented_by')->nullable();
             $table->string('designation')->nullable();
-            $table->string('organization')->nullable();
             $table->string('address')->nullable();
 
             $table->timestamps();

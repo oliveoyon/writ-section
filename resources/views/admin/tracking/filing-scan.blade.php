@@ -55,11 +55,14 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label class="form-label">{{ __('tracking.filing.case_type') }}</label>
-                    <input type="text" name="case_type" class="form-control" value="{{ old('case_type', $case->case_type) }}" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">{{ __('tracking.filing.subject') }}</label>
-                    <input type="text" name="subject" class="form-control" value="{{ old('subject', $case->subject) }}" required>
+                    <select name="case_type" class="form-select" required>
+                        <option value="">Select One</option>
+                        @foreach($caseTypes as $caseType)
+                            <option value="{{ $caseType }}" @selected(old('case_type', $case->case_type) === $caseType)>
+                                {{ $caseType }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
                 <div class="col-md-12">
                     <label class="form-label">{{ __('tracking.filing.description') }}</label>
@@ -72,11 +75,12 @@
                     return [
                         'name_or_organization' => $p->name_or_organization,
                         'represented_by' => $p->represented_by,
-                        'phone' => $p->phone,
+                        'designation' => $p->designation,
+                        'address' => $p->address,
                     ];
                 })->toArray());
                 if (empty($petitioners)) {
-                    $petitioners = [['name_or_organization' => '', 'represented_by' => '', 'phone' => '']];
+                    $petitioners = [['name_or_organization' => '', 'represented_by' => '', 'designation' => '', 'address' => '']];
                 }
             @endphp
             <div class="mb-3">
@@ -86,7 +90,8 @@
                         <tr>
                             <th>{{ __('tracking.filing.name_or_organization') }}</th>
                             <th>{{ __('tracking.filing.represented_by') }}</th>
-                            <th>{{ __('tracking.filing.phone') }}</th>
+                            <th>{{ __('tracking.filing.designation') }}</th>
+                            <th>{{ __('tracking.filing.address') }}</th>
                             <th><button type="button" class="btn btn-success btn-sm" id="addPetitioner">{{ __('tracking.filing.add_row') }}</button></th>
                         </tr>
                     </thead>
@@ -95,7 +100,8 @@
                             <tr>
                                 <td><input type="text" name="petitioners[{{ $i }}][name_or_organization]" class="form-control" value="{{ $p['name_or_organization'] ?? '' }}" required></td>
                                 <td><input type="text" name="petitioners[{{ $i }}][represented_by]" class="form-control" value="{{ $p['represented_by'] ?? '' }}"></td>
-                                <td><input type="text" name="petitioners[{{ $i }}][phone]" class="form-control" value="{{ $p['phone'] ?? '' }}"></td>
+                                <td><input type="text" name="petitioners[{{ $i }}][designation]" class="form-control" value="{{ $p['designation'] ?? '' }}"></td>
+                                <td><textarea name="petitioners[{{ $i }}][address]" class="form-control" rows="1">{{ $p['address'] ?? '' }}</textarea></td>
                                 <td>
                                     @if($i > 0)
                                         <button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button>
@@ -110,14 +116,14 @@
             @php
                 $respondents = old('respondents', $case->respondents->map(function($r){
                     return [
-                        'name' => $r->name,
+                        'name_or_organization' => $r->name_or_organization,
+                        'represented_by' => $r->represented_by,
                         'designation' => $r->designation,
-                        'organization' => $r->organization,
                         'address' => $r->address,
                     ];
                 })->toArray());
                 if (empty($respondents)) {
-                    $respondents = [['name' => '', 'designation' => '', 'organization' => '', 'address' => '']];
+                    $respondents = [['name_or_organization' => '', 'represented_by' => '', 'designation' => '', 'address' => '']];
                 }
             @endphp
             <div class="mb-3">
@@ -125,9 +131,9 @@
                 <table class="table table-bordered" id="respondents_table">
                     <thead class="table-light">
                         <tr>
-                            <th>{{ __('tracking.filing.name') }}</th>
+                            <th>{{ __('tracking.filing.name_or_organization') }}</th>
+                            <th>{{ __('tracking.filing.represented_by') }}</th>
                             <th>{{ __('tracking.filing.designation') }}</th>
-                            <th>{{ __('tracking.filing.organization') }}</th>
                             <th>{{ __('tracking.filing.address') }}</th>
                             <th><button type="button" class="btn btn-success btn-sm" id="addRespondent">{{ __('tracking.filing.add_row') }}</button></th>
                         </tr>
@@ -135,10 +141,10 @@
                     <tbody>
                         @foreach ($respondents as $i => $r)
                             <tr>
-                                <td><input type="text" name="respondents[{{ $i }}][name]" class="form-control" value="{{ $r['name'] ?? '' }}" required></td>
+                                <td><input type="text" name="respondents[{{ $i }}][name_or_organization]" class="form-control" value="{{ $r['name_or_organization'] ?? '' }}" required></td>
+                                <td><input type="text" name="respondents[{{ $i }}][represented_by]" class="form-control" value="{{ $r['represented_by'] ?? '' }}"></td>
                                 <td><input type="text" name="respondents[{{ $i }}][designation]" class="form-control" value="{{ $r['designation'] ?? '' }}"></td>
-                                <td><input type="text" name="respondents[{{ $i }}][organization]" class="form-control" value="{{ $r['organization'] ?? '' }}"></td>
-                                <td><input type="text" name="respondents[{{ $i }}][address]" class="form-control" value="{{ $r['address'] ?? '' }}"></td>
+                                <td><textarea name="respondents[{{ $i }}][address]" class="form-control" rows="1">{{ $r['address'] ?? '' }}</textarea></td>
                                 <td>
                                     @if($i > 0)
                                         <button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button>
@@ -204,7 +210,8 @@ if (petitionerBtn) {
         row.innerHTML = `
             <td><input type="text" name="petitioners[${petitionerIndex}][name_or_organization]" class="form-control" required></td>
             <td><input type="text" name="petitioners[${petitionerIndex}][represented_by]" class="form-control"></td>
-            <td><input type="text" name="petitioners[${petitionerIndex}][phone]" class="form-control"></td>
+            <td><input type="text" name="petitioners[${petitionerIndex}][designation]" class="form-control"></td>
+            <td><textarea name="petitioners[${petitionerIndex}][address]" class="form-control" rows="1"></textarea></td>
             <td><button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button></td>
         `;
         table.appendChild(row);
@@ -218,10 +225,10 @@ if (respondentBtn) {
         const table = document.querySelector('#respondents_table tbody');
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="text" name="respondents[${respondentIndex}][name]" class="form-control" required></td>
+            <td><input type="text" name="respondents[${respondentIndex}][name_or_organization]" class="form-control" required></td>
+            <td><input type="text" name="respondents[${respondentIndex}][represented_by]" class="form-control"></td>
             <td><input type="text" name="respondents[${respondentIndex}][designation]" class="form-control"></td>
-            <td><input type="text" name="respondents[${respondentIndex}][organization]" class="form-control"></td>
-            <td><input type="text" name="respondents[${respondentIndex}][address]" class="form-control"></td>
+            <td><textarea name="respondents[${respondentIndex}][address]" class="form-control" rows="1"></textarea></td>
             <td><button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button></td>
         `;
         table.appendChild(row);

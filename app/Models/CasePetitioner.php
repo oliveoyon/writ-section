@@ -13,7 +13,8 @@ class CasePetitioner extends Model
         'case_id',
         'name_or_organization',
         'represented_by',
-        'phone',
+        'designation',
+        'address',
     ];
 
     public function courtCase()

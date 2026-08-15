@@ -67,7 +67,6 @@
                     <h5 class="profile-section-title">{{ __('lawyer.case.basic_info') }}</h5>
                     <p><strong>Status:</strong> {{ ucfirst(str_replace('_', ' ', $case->status)) }}</p>
                     <p><strong>{{ __('lawyer.case.case_type') }}:</strong> {{ $case->case_type }}</p>
-                    <p><strong>{{ __('lawyer.case.subject') }}:</strong> {{ $case->subject }}</p>
                     <p><strong>{{ __('lawyer.case.description') }}:</strong> {{ $case->description }}</p>
                     @if ($case->status === 'returned_to_lawyer')
                         <div class="alert alert-warning mt-2 mb-0">
@@ -86,7 +85,8 @@
                             <tr>
                                 <th>{{ __('lawyer.case.name_or_organization') }}</th>
                                 <th>{{ __('lawyer.case.represented_by') }}</th>
-                                <th>{{ __('lawyer.case.phone') }}</th>
+                                <th>{{ __('lawyer.case.designation') }}</th>
+                                <th>{{ __('lawyer.case.address') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -94,7 +94,8 @@
                                 <tr>
                                     <td>{{ $p->name_or_organization }}</td>
                                     <td>{{ $p->represented_by }}</td>
-                                    <td>{{ $p->phone }}</td>
+                                    <td>{{ $p->designation }}</td>
+                                    <td>{!! nl2br(e($p->address)) !!}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -109,19 +110,19 @@
                     <table class="table table-bordered">
                         <thead class="table-light">
                             <tr>
-                                <th>{{ __('lawyer.case.name') }}</th>
+                                <th>{{ __('lawyer.case.name_or_organization') }}</th>
+                                <th>{{ __('lawyer.case.represented_by') }}</th>
                                 <th>{{ __('lawyer.case.designation') }}</th>
-                                <th>{{ __('lawyer.case.organization') }}</th>
                                 <th>{{ __('lawyer.case.address') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($case->respondents as $r)
                                 <tr>
-                                    <td>{{ $r->name }}</td>
+                                    <td>{{ $r->name_or_organization }}</td>
+                                    <td>{{ $r->represented_by }}</td>
                                     <td>{{ $r->designation }}</td>
-                                    <td>{{ $r->organization }}</td>
-                                    <td>{{ $r->address }}</td>
+                                    <td>{!! nl2br(e($r->address)) !!}</td>
                                 </tr>
                             @endforeach
                         </tbody>

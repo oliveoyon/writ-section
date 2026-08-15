@@ -11,9 +11,9 @@ class CaseRespondent extends Model
 
     protected $fillable = [
         'case_id',
-        'name',
+        'name_or_organization',
+        'represented_by',
         'designation',
-        'organization',
         'address',
     ];
 

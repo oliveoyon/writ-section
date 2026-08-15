@@ -24,8 +24,8 @@
                     <!-- Step 1 -->
                     <div id="step1">
                         <div class="mb-3">
-                            <label for="bar_council_id" class="form-label">Bar Council ID</label>
-                            <input type="text" id="bar_council_id" class="form-control" placeholder="Enter your Bar Council ID">
+                            <label for="bar_council_id" class="form-label">SCB Membership No.</label>
+                            <input type="text" id="bar_council_id" class="form-control" placeholder="Enter your SCB Membership No.">
                             <div id="bar-error" class="text-danger mt-1" style="display:none;"></div>
                         </div>
                         <button id="validateBarBtn" class="btn btn-gold w-100">Validate</button>
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
     validateBarBtn.addEventListener('click', function () {
         const barId = barInput.value.trim();
         if(!barId) {
-            barError.innerText = 'Please enter your Bar Council ID.';
+            barError.innerText = 'Please enter your SCB Membership No.';
             barError.style.display = 'block';
             return;
         }

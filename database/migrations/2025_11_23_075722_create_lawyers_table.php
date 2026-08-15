@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')
                 ->constrained('users')
                 ->onDelete('cascade'); // link to users table
-            $table->string('bar_council_id')->unique();
+            $table->string('bar_council_id')->nullable()->unique();
             $table->string('full_name');
             $table->string('phone')->nullable();
             $table->string('picture')->nullable(); // path to profile picture

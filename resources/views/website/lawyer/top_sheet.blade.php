@@ -303,7 +303,7 @@
                     <ol style="margin:6px 0 0 18px; padding:0;">
 
                         @foreach ($case->respondents as $r)
-                            <li>{{ $r->name ?? '-' }}</li>
+                            <li>{{ $r->name_or_organization ?? '-' }}</li>
                         @endforeach
 
                     </ol>
@@ -373,19 +373,6 @@
         <tr>
 
             <td class="label">
-                {{ __('lawyer.case.subject') }}
-            </td>
-
-            <td colspan="3" class="wrap">
-                {{ $case->subject ?? '-' }}
-            </td>
-
-        </tr>
-
-
-        <tr>
-
-            <td class="label">
                 {{ __('lawyer.case.description') }}
             </td>
 
@@ -410,16 +397,20 @@
 
             <tr>
 
-                <th style="width:42%;">
+                <th style="width:25%;">
                     {{ __('lawyer.case.name_or_organization') }}
                 </th>
 
-                <th style="width:30%;">
+                <th style="width:20%;">
                     {{ __('lawyer.case.represented_by') }}
                 </th>
 
-                <th style="width:28%;">
-                    {{ __('lawyer.case.phone') }}
+                <th style="width:18%;">
+                    {{ __('lawyer.case.designation') }}
+                </th>
+
+                <th style="width:37%;">
+                    {{ __('lawyer.case.address') }}
                 </th>
 
             </tr>
@@ -440,7 +431,11 @@
                     </td>
 
                     <td class="wrap">
-                        {{ $p->phone ?? '-' }}
+                        {{ $p->designation ?? '-' }}
+                    </td>
+
+                    <td class="wrap">
+                        {!! nl2br(e($p->address ?? '-')) !!}
                     </td>
 
                 </tr>
@@ -449,7 +444,7 @@
 
                 <tr>
 
-                    <td colspan="3">
+                    <td colspan="5">
                         {{ __('lawyer.case.no_data') }}
                     </td>
 
@@ -474,18 +469,18 @@
             <tr>
 
                 <th style="width:25%;">
-                    {{ __('lawyer.case.name') }}
+                    {{ __('lawyer.case.name_or_organization') }}
                 </th>
 
                 <th style="width:20%;">
+                    {{ __('lawyer.case.represented_by') }}
+                </th>
+
+                <th style="width:18%;">
                     {{ __('lawyer.case.designation') }}
                 </th>
 
-                <th style="width:23%;">
-                    {{ __('lawyer.case.organization') }}
-                </th>
-
-                <th style="width:32%;">
+                <th style="width:37%;">
                     {{ __('lawyer.case.address') }}
                 </th>
 
@@ -499,7 +494,11 @@
                 <tr>
 
                     <td class="wrap">
-                        {{ $r->name ?? '-' }}
+                        {{ $r->name_or_organization ?? '-' }}
+                    </td>
+
+                    <td class="wrap">
+                        {{ $r->represented_by ?? '-' }}
                     </td>
 
                     <td class="wrap">
@@ -507,11 +506,7 @@
                     </td>
 
                     <td class="wrap">
-                        {{ $r->organization ?? '-' }}
-                    </td>
-
-                    <td class="wrap">
-                        {{ $r->address ?? '-' }}
+                        {!! nl2br(e($r->address ?? '-')) !!}
                     </td>
 
                 </tr>
@@ -520,7 +515,7 @@
 
                 <tr>
 
-                    <td colspan="4">
+                    <td colspan="5">
                         {{ __('lawyer.case.no_data') }}
                     </td>
 

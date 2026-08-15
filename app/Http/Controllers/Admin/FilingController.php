@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Picqer\Barcode\BarcodeGeneratorSVG;
 use Picqer\Barcode\Types\TypeCode128;
 use Symfony\Component\Process\Process;
@@ -57,25 +58,30 @@ class FilingController extends Controller
             }
         }
 
-        return view('admin.tracking.filing-scan', compact('case', 'tempBarcode', 'isBlocked'));
+        return view('admin.tracking.filing-scan', [
+            'case' => $case,
+            'tempBarcode' => $tempBarcode,
+            'isBlocked' => $isBlocked,
+            'caseTypes' => CourtCase::caseTypes(),
+        ]);
     }
 
     public function receiveTemp(Request $request)
     {
         $request->validate([
             'temporary_barcode' => 'required|string|max:255',
-            'case_type' => 'required|string|max:255',
-            'subject' => 'required|string|max:255',
+            'case_type' => ['required', 'string', 'max:255', Rule::in(CourtCase::caseTypes())],
             'description' => 'nullable|string',
             'petitioners' => 'required|array|min:1',
             'petitioners.*.name_or_organization' => 'required|string|max:255',
             'petitioners.*.represented_by' => 'nullable|string|max:255',
-            'petitioners.*.phone' => 'nullable|string|max:20',
+            'petitioners.*.designation' => 'nullable|string|max:255',
+            'petitioners.*.address' => 'nullable|string|max:1000',
             'respondents' => 'required|array|min:1',
-            'respondents.*.name' => 'required|string|max:255',
+            'respondents.*.name_or_organization' => 'required|string|max:255',
+            'respondents.*.represented_by' => 'nullable|string|max:255',
             'respondents.*.designation' => 'nullable|string|max:255',
-            'respondents.*.organization' => 'nullable|string|max:255',
-            'respondents.*.address' => 'nullable|string|max:255',
+            'respondents.*.address' => 'nullable|string|max:1000',
         ]);
 
         $case = CourtCase::where('temporary_barcode', $request->temporary_barcode)->first();
@@ -101,7 +107,6 @@ class FilingController extends Controller
 
             $case->update([
                 'case_type' => $request->case_type,
-                'subject' => $request->subject,
                 'description' => $request->description,
                 'status' => 'filed',
                 'final_case_number' => $registration['reference'],
@@ -139,7 +144,9 @@ class FilingController extends Controller
 
     public function showDirectCreate()
     {
-        return view('admin.tracking.filing-direct-create');
+        return view('admin.tracking.filing-direct-create', [
+            'caseTypes' => CourtCase::caseTypes(),
+        ]);
     }
 
     public function lookupLawyerMember(Request $request)
@@ -265,18 +272,18 @@ class FilingController extends Controller
             'lawyer_phone' => 'nullable|string|max:20',
             'lawyer_email' => 'required|email|max:255',
             'lawyer_password' => 'nullable|string|min:6|max:255',
-            'case_type' => 'required|string|max:255',
-            'subject' => 'required|string|max:255',
+            'case_type' => ['required', 'string', 'max:255', Rule::in(CourtCase::caseTypes())],
             'description' => 'nullable|string',
             'petitioners' => 'required|array|min:1',
             'petitioners.*.name_or_organization' => 'required|string|max:255',
             'petitioners.*.represented_by' => 'nullable|string|max:255',
-            'petitioners.*.phone' => 'nullable|string|max:20',
+            'petitioners.*.designation' => 'nullable|string|max:255',
+            'petitioners.*.address' => 'nullable|string|max:1000',
             'respondents' => 'required|array|min:1',
-            'respondents.*.name' => 'required|string|max:255',
+            'respondents.*.name_or_organization' => 'required|string|max:255',
+            'respondents.*.represented_by' => 'nullable|string|max:255',
             'respondents.*.designation' => 'nullable|string|max:255',
-            'respondents.*.organization' => 'nullable|string|max:255',
-            'respondents.*.address' => 'nullable|string|max:255',
+            'respondents.*.address' => 'nullable|string|max:1000',
         ]);
 
         $user = $request->user();
@@ -291,7 +298,6 @@ class FilingController extends Controller
                 'initiated_by_user_id' => $user->id,
                 'entry_source' => 'filing',
                 'case_type' => $request->case_type,
-                'subject' => $request->subject,
                 'description' => $request->description,
                 'status' => 'filed',
             ]);
@@ -709,7 +715,8 @@ class FilingController extends Controller
                 'case_id' => $case->id,
                 'name_or_organization' => $p['name_or_organization'],
                 'represented_by' => $p['represented_by'] ?? null,
-                'phone' => $p['phone'] ?? null,
+                'designation' => $p['designation'] ?? null,
+                'address' => $p['address'] ?? null,
             ]);
         }
 
@@ -717,9 +724,9 @@ class FilingController extends Controller
         foreach ($respondents as $r) {
             CaseRespondent::create([
                 'case_id' => $case->id,
-                'name' => $r['name'],
+                'name_or_organization' => $r['name_or_organization'],
+                'represented_by' => $r['represented_by'] ?? null,
                 'designation' => $r['designation'] ?? null,
-                'organization' => $r['organization'] ?? null,
                 'address' => $r['address'] ?? null,
             ]);
         }
@@ -732,7 +739,8 @@ class FilingController extends Controller
                 return [
                     'name_or_organization' => trim((string) ($p['name_or_organization'] ?? '')),
                     'represented_by' => trim((string) ($p['represented_by'] ?? '')),
-                    'phone' => trim((string) ($p['phone'] ?? '')),
+                    'designation' => trim((string) ($p['designation'] ?? '')),
+                    'address' => trim((string) ($p['address'] ?? '')),
                 ];
             })
             ->filter(fn ($p) => $p['name_or_organization'] !== '')
@@ -745,13 +753,13 @@ class FilingController extends Controller
         return collect($respondents)
             ->map(function ($r) {
                 return [
-                    'name' => trim((string) ($r['name'] ?? '')),
+                    'name_or_organization' => trim((string) ($r['name_or_organization'] ?? $r['name'] ?? '')),
+                    'represented_by' => trim((string) ($r['represented_by'] ?? '')),
                     'designation' => trim((string) ($r['designation'] ?? '')),
-                    'organization' => trim((string) ($r['organization'] ?? '')),
                     'address' => trim((string) ($r['address'] ?? '')),
                 ];
             })
-            ->filter(fn ($r) => $r['name'] !== '')
+            ->filter(fn ($r) => $r['name_or_organization'] !== '')
             ->values()
             ->all();
     }

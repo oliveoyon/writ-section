@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Lawyer;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class LawyerRegistrationController extends Controller
 {
@@ -113,7 +114,11 @@ class LawyerRegistrationController extends Controller
     {
 
         $request->validate([
-            'member_id' => 'required',
+            'member_id' => [
+                'nullable',
+                'string',
+                Rule::unique('lawyers', 'bar_council_id')->whereNotNull('bar_council_id'),
+            ],
             'full_name' => 'required|string',
             'phone' => [
                 'required',
@@ -122,7 +127,7 @@ class LawyerRegistrationController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|confirmed|min:6|regex:/^[\x20-\x7E]+$/', // English characters only
         ], [
-            'member_id.required' => __('writ.lawyer.validation_member_id'),
+            'member_id.unique' => __('writ.lawyer.already_registered'),
             'full_name.required' => __('writ.lawyer.validation_full_name'),
             'phone.required' => __('writ.lawyer.validation_phone'),
             'phone.regex' => __('writ.lawyer.validation_phone_invalid'), // "Phone must be 11 digits starting with 01"
@@ -136,6 +141,8 @@ class LawyerRegistrationController extends Controller
         ]);
 
         $phone = $request->phone;
+        $memberId = trim((string) $request->input('member_id'));
+        $memberId = $memberId !== '' ? $memberId : null;
 
         // Remove leading 88 if exists
         if (str_starts_with($phone, '88')) {
@@ -155,7 +162,7 @@ class LawyerRegistrationController extends Controller
 
         Lawyer::create([
             'user_id' => $user->id,
-            'bar_council_id' => $request->member_id,
+            'bar_council_id' => $memberId,
             'full_name' => $request->full_name,
             'phone' => $phone,
             'picture' => $request->picture ?? null,

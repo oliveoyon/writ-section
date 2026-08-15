@@ -123,7 +123,6 @@
                         <thead class="table-light">
                             <tr>
                                 <th>{{ __('lawyer.case.id') }}</th>
-                                <th>{{ __('lawyer.case.subject') }}</th>
                                 <th>{{ __('lawyer.case.case_type') }}</th>
                                 <th>{{ __('lawyer.case.status') }}</th>
                                 <th>{{ __('lawyer.case.actions') }}</th>
@@ -133,7 +132,6 @@
                             @foreach ($cases as $case)
                                 <tr>
                                     <td>{{ $case->id }}</td>
-                                    <td>{{ $case->subject }}</td>
                                     <td>{{ $case->case_type }}</td>
                                     <td>{{ ucfirst($case->status) }}</td>
                                     <td>

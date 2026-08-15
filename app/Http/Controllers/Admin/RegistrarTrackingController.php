@@ -89,18 +89,18 @@ class RegistrarTrackingController extends Controller
                     ->orWhere('final_case_number', $query)
                     ->orWhere('permanent_barcode', 'like', $like)
                     ->orWhere('final_case_number', 'like', $like)
-                    ->orWhere('subject', 'like', $like)
                     ->orWhere('description', 'like', $like)
                     ->orWhere('case_type', 'like', $like)
                     ->orWhereHas('petitioners', function ($p) use ($like) {
                         $p->where('name_or_organization', 'like', $like)
                             ->orWhere('represented_by', 'like', $like)
-                            ->orWhere('phone', 'like', $like);
+                            ->orWhere('designation', 'like', $like)
+                            ->orWhere('address', 'like', $like);
                     })
                     ->orWhereHas('respondents', function ($r) use ($like) {
-                        $r->where('name', 'like', $like)
+                        $r->where('name_or_organization', 'like', $like)
+                            ->orWhere('represented_by', 'like', $like)
                             ->orWhere('designation', 'like', $like)
-                            ->orWhere('organization', 'like', $like)
                             ->orWhere('address', 'like', $like);
                     })
                     ->orWhereHas('lawyer', function ($l) use ($like) {

@@ -21,7 +21,6 @@
             <div class="col-md-4"><strong>{{ __('tracking.filing.case_no') }}:</strong> {{ $case->case_reference ?? '-' }}</div>
             <div class="col-md-4"><strong>{{ __('tracking.lookup.permanent_barcode') }}:</strong> {{ $case->permanent_barcode ?? '-' }}</div>
             <div class="col-md-4"><strong>{{ __('tracking.lookup.current_section') }}:</strong> {{ $case->current_section ?? '-' }}</div>
-            <div class="col-md-6"><strong>{{ __('tracking.filing.subject') }}:</strong> {{ $case->subject ?? '-' }}</div>
             <div class="col-md-6"><strong>{{ __('tracking.filing.lawyer_name') }}:</strong> {{ $case->lawyer?->full_name ?? '-' }}</div>
         </div>
     </div>
@@ -30,7 +29,12 @@
         <h5>{{ __('tracking.filing.petitioners') }}</h5>
         <ul class="mb-0">
             @forelse($case->petitioners as $p)
-                <li>{{ $p->name_or_organization }} @if($p->phone) ({{ $p->phone }}) @endif</li>
+                <li>
+                    {{ $p->name_or_organization }}
+                    @if($p->represented_by) - {{ $p->represented_by }} @endif
+                    @if($p->designation) ({{ $p->designation }}) @endif
+                    @if($p->address) - {{ $p->address }} @endif
+                </li>
             @empty
                 <li class="text-muted">{{ __('tracking.filing.no_data') }}</li>
             @endforelse
@@ -41,7 +45,12 @@
         <h5>{{ __('tracking.filing.respondents') }}</h5>
         <ul class="mb-0">
             @forelse($case->respondents as $r)
-                <li>{{ $r->name }} @if($r->designation) - {{ $r->designation }} @endif</li>
+                <li>
+                    {{ $r->name_or_organization }}
+                    @if($r->represented_by) - {{ $r->represented_by }} @endif
+                    @if($r->designation) ({{ $r->designation }}) @endif
+                    @if($r->address) - {{ $r->address }} @endif
+                </li>
             @empty
                 <li class="text-muted">{{ __('tracking.filing.no_data') }}</li>
             @endforelse

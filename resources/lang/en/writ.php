@@ -75,8 +75,9 @@ return [
 
     'lawyer' => [
         'register_page_title' => 'Lawyer Registration',
-        'enter_member_id' => 'Enter Bar Council Member ID',
+        'enter_member_id' => 'Enter SCB Membership No.',
         'check_member' => 'Check Member',
+        'not_bar_member' => 'Not a Bar member? Register manually',
         'loading' => 'Checking...',
         'full_name' => 'Full Name',
         'phone' => 'Phone Number',
@@ -84,10 +85,10 @@ return [
         'password' => 'Password',
         'confirm_password' => 'Confirm Password',
         'register' => 'Register',
-        'not_found' => 'Member ID not found!',
+        'not_found' => 'SCB Membership No. not found!',
         'api_error' => 'API error occurred!',
         'registration_success' => 'Registration successful!',
-        'validation_member_id' => 'Member ID is required.',
+        'validation_member_id' => 'SCB Membership No. is required.',
         'validation_full_name' => 'Full name is required.',
         'validation_phone' => 'Phone number is required.',
         'validation_email' => 'Email is required.',

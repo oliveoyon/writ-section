@@ -26,7 +26,6 @@ class CourtCase extends Model
         'initiated_by_user_id',
         'entry_source',
         'case_type',
-        'subject',
         'description',
         'status',
         'temporary_barcode',
@@ -59,6 +58,25 @@ class CourtCase extends Model
     {
         return RtftsCaseReference::humanReferenceFromBarcode($this->permanent_barcode)
             ?? $this->final_case_number;
+    }
+
+    public static function caseTypes(): array
+    {
+        return [
+            'Constitutional Matter',
+            'Service Matter',
+            'Detention Matter',
+            'Lease Matter',
+            'Artha Rin Matter',
+            'VAT and Custom Matter',
+            'Income Tax Matter',
+            'PIL Matter',
+            'RAJUK Matter',
+            'DUDUK Matter',
+            'Court of Settlement Matter',
+            'Labour Court Matter',
+            'Others Matter',
+        ];
     }
 
     // Relationship: CourtCase belongs to a Lawyer
