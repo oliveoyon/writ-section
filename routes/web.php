@@ -83,6 +83,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
     Route::get('/home', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('departments', DepartmentController::class)->except(['show', 'create']);
     Route::resource('courts', CourtController::class)->except(['show', 'create']);
+    Route::put('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
     Route::resource('users', UserController::class)->except(['show']);
     Route::put('roles/{role}/display-name', [RoleLabelController::class, 'update'])->name('roles.display-name.update');
 

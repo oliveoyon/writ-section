@@ -14,12 +14,75 @@ use Spatie\Permission\PermissionRegistrar;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['roles', 'departmentRelation'])->get();
+        $activeTab = $request->query('tab') === 'lawyers' ? 'lawyers' : 'users';
+        $staffSearch = trim((string) $request->query('staff_q', ''));
+        $lawyerSearch = trim((string) $request->query('lawyer_q', ''));
+        $lawyerStatus = trim((string) $request->query('lawyer_status', ''));
+
+        $staffUserCount = User::whereIn('user_type', ['admin', 'staff'])->count();
+        $lawyerUserCount = User::where('user_type', 'lawyer')->count();
+        $users = null;
+        $lawyerUsers = null;
+
+        if ($activeTab === 'users') {
+            $users = User::query()
+                ->select('users.id', 'users.name', 'users.email', 'users.login_id', 'users.department', 'users.user_type', 'users.is_active')
+                ->with(['roles', 'departmentRelation:id,name,display_name'])
+                ->leftJoin('departments', 'departments.id', '=', 'users.department')
+                ->whereIn('users.user_type', ['admin', 'staff'])
+                ->when($staffSearch !== '', function ($query) use ($staffSearch) {
+                    $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $staffSearch) . '%';
+                    $query->where(function ($inner) use ($like) {
+                        $inner->where('users.name', 'like', $like)
+                            ->orWhere('users.email', 'like', $like)
+                            ->orWhere('users.login_id', 'like', $like)
+                            ->orWhere('departments.name', 'like', $like)
+                            ->orWhere('departments.display_name', 'like', $like);
+                    });
+                })
+                ->orderBy('users.name')
+                ->paginate(25, ['users.*'], 'staff_page')
+                ->withQueryString();
+        }
+
+        if ($activeTab === 'lawyers') {
+            $lawyerUsers = User::query()
+                ->select('users.id', 'users.name', 'users.email', 'users.user_type', 'users.is_active')
+                ->with('lawyer:id,user_id,full_name,phone,bar_council_id')
+                ->leftJoin('lawyers', 'lawyers.user_id', '=', 'users.id')
+                ->where('users.user_type', 'lawyer')
+                ->when($lawyerStatus === 'active', fn ($query) => $query->where('users.is_active', true))
+                ->when($lawyerStatus === 'inactive', fn ($query) => $query->where('users.is_active', false))
+                ->when($lawyerSearch !== '', function ($query) use ($lawyerSearch) {
+                    $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $lawyerSearch) . '%';
+                    $query->where(function ($inner) use ($like) {
+                        $inner->where('users.name', 'like', $like)
+                            ->orWhere('users.email', 'like', $like)
+                            ->orWhere('lawyers.full_name', 'like', $like)
+                            ->orWhere('lawyers.phone', 'like', $like)
+                            ->orWhere('lawyers.bar_council_id', 'like', $like);
+                    });
+                })
+                ->orderByRaw('COALESCE(lawyers.full_name, users.name)')
+                ->paginate(25, ['users.*'], 'lawyer_page')
+                ->withQueryString();
+        }
+
         $userTypeLabels = $this->userTypeLabels();
 
-        return view('admin.rbac.users.index', compact('users', 'userTypeLabels'));
+        return view('admin.rbac.users.index', compact(
+            'users',
+            'lawyerUsers',
+            'activeTab',
+            'staffUserCount',
+            'lawyerUserCount',
+            'staffSearch',
+            'lawyerSearch',
+            'lawyerStatus',
+            'userTypeLabels'
+        ));
     }
 
     public function create()
@@ -68,6 +131,11 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        if ($user->user_type === 'lawyer') {
+            return redirect()->route('admin.users.index')
+                ->withErrors(['user' => 'Lawyer accounts are managed from the Lawyer panel.']);
+        }
+
         $departments = Department::get();
         $userTypeLabels = $this->userTypeLabels();
 
@@ -148,6 +216,18 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('swal-success', 'User deactivated successfully.');
+    }
+
+    public function activate(User $user, Request $request)
+    {
+        $user->forceFill(['is_active' => true])->save();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => 'User activated successfully']);
+        }
+
+        return redirect()->route('admin.users.index')
+            ->with('swal-success', 'User activated successfully.');
     }
 
     private function resolveRolesForUserType(string $userType): array
