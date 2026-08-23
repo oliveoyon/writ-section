@@ -65,6 +65,22 @@
             text-decoration: underline;
         }
 
+        .footer-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: .35rem .75rem;
+            margin-top: .5rem;
+            font-size: .86rem;
+            color: rgba(255, 255, 255, .82);
+        }
+
+        .footer-meta span + span::before {
+            content: "|";
+            margin-right: .75rem;
+            color: #d4a017;
+        }
+
         @media (max-width: 991px) {
 
             /* Always show dropdown menu items */
@@ -101,6 +117,22 @@
                 cursor: default;
                 color: #d4a017 !important;
                 font-weight: bold;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .footer-meta {
+                display: block;
+                line-height: 1.45;
+            }
+
+            .footer-meta span {
+                display: block;
+            }
+
+            .footer-meta span + span::before {
+                content: "";
+                margin: 0;
             }
         }
     </style>
@@ -191,8 +223,11 @@
                 </div>
             </div>
             <hr class="mt-3" style="border-color: #d4a017;">
-            <p class="text-center mt-2 mb-1">{{ __('lawyer.footer.copyright') }}</p>
-            <p class="text-center small mb-0">{{ __('lawyer.footer.technical_assistance') }}</p>
+            <div class="footer-meta">
+                <span>{{ __('lawyer.footer.copyright') }}</span>
+                <span>{{ __('lawyer.footer.implemented_by') }}</span>
+                <span>{{ __('lawyer.footer.technical_assistance') }}</span>
+            </div>
         </div>
     </footer>
 

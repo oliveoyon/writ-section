@@ -53,6 +53,38 @@
         footer a:hover {
             text-decoration: underline;
         }
+
+        .footer-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: .35rem .75rem;
+            margin-top: .5rem;
+            font-size: .86rem;
+            color: rgba(255, 255, 255, .82);
+        }
+
+        .footer-meta span + span::before {
+            content: "|";
+            margin-right: .75rem;
+            color: #d4a017;
+        }
+
+        @media (max-width: 575.98px) {
+            .footer-meta {
+                display: block;
+                line-height: 1.45;
+            }
+
+            .footer-meta span {
+                display: block;
+            }
+
+            .footer-meta span + span::before {
+                content: "";
+                margin: 0;
+            }
+        }
     </style>
     @stack('css')
 </head>
@@ -197,10 +229,10 @@
 
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            {{ Auth::user()->name ?? __('messages.profile') }}
+                            <i class="bi bi-person-circle"></i> {{ Auth::user()->name ?? __('messages.profile') }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">{{ __('messages.my_profile') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.edit') }}">{{ __('messages.my_profile') }}</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
@@ -261,8 +293,11 @@
             </div>
 
             <hr class="mt-3" style="border-color: #d4a017;">
-            <p class="text-center mt-2 mb-1">{{ __('messages.copyright', ['year' => date('Y')]) }}</p>
-            <p class="text-center small mb-0">{{ __('messages.technical_assistance') }}</p>
+            <div class="footer-meta">
+                <span>{{ __('messages.copyright', ['year' => date('Y')]) }}</span>
+                <span>{{ __('messages.implemented_by') }}</span>
+                <span>{{ __('messages.technical_assistance') }}</span>
+            </div>
         </div>
     </footer>
 

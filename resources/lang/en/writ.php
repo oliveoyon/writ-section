@@ -70,6 +70,7 @@ return [
         'lawyer_login' => 'Lawyer Login',
         'admin_login' => 'Admin Login',
         'copyright' => '© :year RTFTS - Real Time File Tracking System',
+        'implemented_by' => 'Implemented by The Supreme Court of Bangladesh',
         'technical_assistance' => 'Technical Assistance by Access to Justice For Women, GIZ Bangladesh',
     ],
 

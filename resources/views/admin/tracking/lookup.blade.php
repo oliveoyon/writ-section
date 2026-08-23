@@ -2,10 +2,14 @@
 
 @section('content')
 <div class="container py-4 lookup-page">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <h3 class="lookup-title mb-0">{{ __('tracking.lookup.title') }}</h3>
+    <div class="lookup-header mb-3">
+        <div>
+            <div class="system-mark">RTFTS Lookup</div>
+            <h4 class="mb-0">{{ auth()->user()->name }}: {{ __('tracking.lookup.title') }}</h4>
+            <small>Search by barcode, case number, party or lawyer</small>
+        </div>
         @if(request()->filled('q'))
-            <a href="{{ route('admin.tracking.lookup') }}" class="btn btn-sm btn-light border" title="Clear search">
+            <a href="{{ route('admin.tracking.lookup') }}" class="btn btn-sm btn-outline-brand" title="Clear search">
                 <i class="bi bi-x-lg" aria-hidden="true"></i>
                 <span class="visually-hidden">Clear search</span>
             </a>
@@ -38,7 +42,14 @@
         };
     @endphp
 
-    <form method="GET" action="{{ route('admin.tracking.lookup') }}" class="lookup-search mb-4">
+    <form method="GET" action="{{ route('admin.tracking.lookup') }}" class="lookup-search admin-panel mb-3">
+        <div class="panel-heading">
+            <div>
+                <h5>{{ __('tracking.lookup.search') }}</h5>
+                <span>{{ request()->filled('q') ? request('q') : 'Enter at least 3 characters for suggestions' }}</span>
+            </div>
+        </div>
+        <div class="panel-body">
         <label for="q" class="visually-hidden">{{ __('tracking.lookup.search_label') }}</label>
         <div class="position-relative lookup-search-box">
             <div class="input-group">
@@ -62,14 +73,17 @@
             </div>
             <div id="smartSuggest" class="list-group position-absolute w-100 mt-1 d-none" style="z-index: 1050;"></div>
         </div>
+        </div>
     </form>
 
     @if(request()->filled('q'))
         @if(($cases ?? collect())->isNotEmpty())
-            <section class="lookup-results" aria-labelledby="lookup-results-title">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h5 id="lookup-results-title" class="mb-0">Results</h5>
-                    <span class="result-count">{{ $cases->count() }}</span>
+            <section class="lookup-results admin-panel" aria-labelledby="lookup-results-title">
+                <div class="panel-heading">
+                    <div>
+                        <h5 id="lookup-results-title">Results</h5>
+                        <span>{{ $cases->count() }} match(es)</span>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table lookup-table align-middle mb-0">
@@ -101,13 +115,13 @@
                                                 $custody = 'Court (' . $item->latestMovement->court->displayName() . ')';
                                             }
                                         @endphp
-                                        <div>{!! $highlight($custody) !!}</div>
+                                        <div><span class="custody-badge">{!! $highlight($custody) !!}</span></div>
                                         @if($item->currentHolder?->name)
                                             <div class="table-secondary-text">{!! $highlight($item->currentHolder->name) !!}</div>
                                         @endif
                                     </td>
                                     <td class="text-end">
-                                        <a href="{{ route('admin.tracking.timeline', $item) }}" class="btn btn-sm btn-outline-brand" title="{{ __('tracking.lookup.timeline') }}">
+                                        <a href="{{ route('admin.tracking.timeline', $item) }}" class="btn btn-action" title="{{ __('tracking.lookup.timeline') }}">
                                             <i class="bi bi-arrow-right" aria-hidden="true"></i>
                                             <span class="visually-hidden">{{ __('tracking.lookup.timeline') }}</span>
                                         </a>
@@ -119,7 +133,7 @@
                 </div>
             </section>
         @else
-            <div class="lookup-empty text-center py-5">
+            <div class="lookup-empty admin-panel text-center py-5">
                 <i class="bi bi-file-earmark-x" aria-hidden="true"></i>
                 <p class="mb-0 mt-2">{{ __('tracking.lookup.not_found') }}</p>
             </div>
@@ -131,27 +145,61 @@
 @push('css')
 <style>
     .lookup-page { max-width: 1100px; }
-    .lookup-title { font-size: 1.35rem; font-weight: 650; color: #1f2937; }
-    .lookup-search { max-width: 760px; }
+    .lookup-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .85rem 1rem;
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-top: 3px solid #00284d;
+        border-bottom-color: #d4a017;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .08);
+    }
+    .lookup-header h4 { color: #00284d; font-size: 1.15rem; font-weight: 800; }
+    .lookup-header small { color: #6b7280; font-weight: 600; }
+    .system-mark { color: #b87d08; font-size: .82rem; font-weight: 800; }
+    .admin-panel { background: #fff; border: 1px solid #e3e8ef; border-radius: 4px; box-shadow: 0 1px 5px rgba(0, 40, 77, .07); overflow: visible; }
+    .panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .75rem 1rem;
+        background: #fbfcfe;
+        border-top: 3px solid #00284d;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .panel-heading h5 { margin: 0; color: #1f2937; font-size: 1rem; font-weight: 800; }
+    .panel-heading span { color: #6b7280; font-size: .84rem; font-weight: 600; }
+    .panel-body { padding: 1rem; }
+    .lookup-search { max-width: 860px; }
     .lookup-search .form-control,
     .lookup-search .input-group-text,
-    .lookup-search .btn { min-height: 46px; }
-    .lookup-search .form-control:focus { box-shadow: none; border-color: #ced4da; }
-    .lookup-search:focus-within .input-group { box-shadow: 0 0 0 .2rem rgba(0, 40, 77, .12); border-radius: .375rem; }
-    .lookup-results { border-top: 1px solid #e5e7eb; padding-top: 1rem; }
-    .lookup-results h5 { font-size: 1rem; font-weight: 650; color: #374151; }
-    .result-count { min-width: 28px; padding: .15rem .45rem; border-radius: 4px; background: #eef2f6; color: #4b5563; font-size: .8rem; text-align: center; }
+    .lookup-search .btn { min-height: 52px; }
+    .lookup-search .input-group { border: 2px solid #0f766e; border-radius: 4px; box-shadow: 0 0 0 4px rgba(15, 118, 110, .1); }
+    .lookup-search .input-group-text,
+    .lookup-search .form-control,
+    .lookup-search .btn { border: 0; }
+    .lookup-search .form-control:focus { box-shadow: none; }
+    .lookup-search:focus-within .input-group { border-color: #0b5f59; box-shadow: 0 0 0 5px rgba(15, 118, 110, .18); }
+    .lookup-results { overflow: hidden; }
     .lookup-table { font-size: .9rem; }
-    .lookup-table thead th { padding: .65rem .75rem; border-bottom-width: 1px; color: #6b7280; font-size: .75rem; font-weight: 600; text-transform: uppercase; }
+    .lookup-table thead th { padding: .65rem .75rem; background: #eef5fb; color: #00284d; border-bottom: 0; font-size: .78rem; font-weight: 800; }
     .lookup-table tbody td { padding: .75rem; border-color: #edf0f2; }
-    .file-reference { font-weight: 650; color: #111827; }
+    .file-reference { font-weight: 800; color: #111827; }
     .file-barcode, .table-secondary-text { margin-top: .15rem; color: #6b7280; font-size: .8rem; }
-    .lookup-empty { color: #6b7280; border-top: 1px solid #e5e7eb; }
+    .custody-badge { display: inline-flex; border-radius: 4px; border: 1px solid #d8e3ef; background: #f7fbff; color: #0b4f8a; font-size: .78rem; font-weight: 800; padding: .18rem .45rem; }
+    .lookup-empty { color: #6b7280; }
     .lookup-empty .bi { font-size: 1.75rem; color: #9ca3af; }
     .btn-brand { background: #00284d; color: #fff; border-color: #00284d; }
     .btn-brand:hover { background: #001e3a; color: #fff; border-color: #001e3a; }
-    .btn-outline-brand { color: #00284d; border-color: #00284d; }
+    .btn-outline-brand { color: #00284d; border-color: #00284d; border-radius: 4px; font-weight: 800; }
     .btn-outline-brand:hover { color: #fff; background: #00284d; border-color: #00284d; }
+    .btn-action { width: 2rem; height: 2rem; display: inline-grid; place-items: center; padding: 0; border-radius: 4px; border: 1px solid #bcd0e2; color: #0b4f8a; background: #f2f7fc; }
+    .btn-action:hover { background: #0b4f8a; color: #fff; }
     #smartSuggest .list-group-item {
         cursor: pointer;
         border-color: #e5e7eb;
@@ -181,6 +229,9 @@
     .lookup-table mark { background: #fff1a8; padding: 0 1px; }
     @media (max-width: 767.98px) {
         .lookup-page { padding-top: 1rem !important; }
+        .lookup-header { align-items: stretch; flex-direction: column; }
+        .lookup-header .btn { width: 100%; }
+        .lookup-search { max-width: none; }
         .lookup-table { min-width: 690px; }
     }
 </style>

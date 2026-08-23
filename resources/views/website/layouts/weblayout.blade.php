@@ -102,6 +102,38 @@
         footer a:hover {
             text-decoration: underline;
         }
+
+        .footer-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: .35rem .75rem;
+            margin-top: .5rem;
+            font-size: .86rem;
+            color: rgba(255, 255, 255, .82);
+        }
+
+        .footer-meta span + span::before {
+            content: "|";
+            margin-right: .75rem;
+            color: #d4a017;
+        }
+
+        @media (max-width: 575.98px) {
+            .footer-meta {
+                display: block;
+                line-height: 1.45;
+            }
+
+            .footer-meta span {
+                display: block;
+            }
+
+            .footer-meta span + span::before {
+                content: "";
+                margin: 0;
+            }
+        }
     </style>
 </head>
 
@@ -186,8 +218,11 @@
                 </div>
             </div>
             <hr class="mt-3" style="border-color: #d4a017;">
-            <p class="text-center mt-2 mb-1">{{ __('writ.footer.copyright', ['year' => date('Y')]) }}</p>
-            <p class="text-center small mb-0">{{ __('writ.footer.technical_assistance') }}</p>
+            <div class="footer-meta">
+                <span>{{ __('writ.footer.copyright', ['year' => date('Y')]) }}</span>
+                <span>{{ __('writ.footer.implemented_by') }}</span>
+                <span>{{ __('writ.footer.technical_assistance') }}</span>
+            </div>
         </div>
     </footer>
 

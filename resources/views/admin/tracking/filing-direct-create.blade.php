@@ -2,11 +2,15 @@
 
 @section('content')
 <div class="container py-4 direct-filing-page">
-    <div class="direct-filing-header mb-4">
+    <div class="direct-filing-header mb-3">
         <div>
-            <h3 class="mb-1">{{ __('tracking.filing.direct_title') }}</h3>
-            <p class="text-muted mb-0">{{ __('tracking.filing.direct_subtitle') }}</p>
+            <div class="system-mark">RTFTS Filing</div>
+            <h4 class="mb-0">{{ __('tracking.filing.direct_title') }}</h4>
+            <small>{{ __('tracking.filing.direct_subtitle') }}</small>
         </div>
+        <a href="{{ route('admin.tracking.filing.index') }}" class="btn btn-outline-brand btn-sm">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
     </div>
 
     @if (session('success'))
@@ -91,14 +95,14 @@
                 <span class="step-badge">3</span>
                 <h5 class="mb-0">{{ __('tracking.filing.petitioners') }}</h5>
             </div>
-            <table class="table table-bordered" id="petitioners_table">
+            <table class="table filing-table" id="petitioners_table">
                 <thead class="table-light">
                     <tr>
                         <th>{{ __('tracking.filing.name_or_organization') }}</th>
                         <th>{{ __('tracking.filing.represented_by') }}</th>
                         <th>{{ __('tracking.filing.designation') }}</th>
                         <th>{{ __('tracking.filing.address') }}</th>
-                        <th><button type="button" class="btn btn-success btn-sm" id="addPetitioner">{{ __('tracking.filing.add_row') }}</button></th>
+                        <th><button type="button" class="btn btn-add btn-sm" id="addPetitioner"><i class="bi bi-plus"></i></button></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -110,7 +114,7 @@
                             <td><textarea name="petitioners[{{ $i }}][address]" class="form-control" rows="1">{{ $p['address'] ?? '' }}</textarea></td>
                             <td>
                                 @if($i > 0)
-                                    <button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button>
+                                    <button type="button" class="btn btn-remove btn-sm removeRow"><i class="bi bi-trash"></i></button>
                                 @endif
                             </td>
                         </tr>
@@ -124,14 +128,14 @@
                 <span class="step-badge">4</span>
                 <h5 class="mb-0">{{ __('tracking.filing.respondents') }}</h5>
             </div>
-            <table class="table table-bordered" id="respondents_table">
+            <table class="table filing-table" id="respondents_table">
                 <thead class="table-light">
                     <tr>
                         <th>{{ __('tracking.filing.name_or_organization') }}</th>
                         <th>{{ __('tracking.filing.represented_by') }}</th>
                         <th>{{ __('tracking.filing.designation') }}</th>
                         <th>{{ __('tracking.filing.address') }}</th>
-                        <th><button type="button" class="btn btn-success btn-sm" id="addRespondent">{{ __('tracking.filing.add_row') }}</button></th>
+                        <th><button type="button" class="btn btn-add btn-sm" id="addRespondent"><i class="bi bi-plus"></i></button></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -143,7 +147,7 @@
                             <td><textarea name="respondents[{{ $i }}][address]" class="form-control" rows="1">{{ $r['address'] ?? '' }}</textarea></td>
                             <td>
                                 @if($i > 0)
-                                    <button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button>
+                                    <button type="button" class="btn btn-remove btn-sm removeRow"><i class="bi bi-trash"></i></button>
                                 @endif
                             </td>
                         </tr>
@@ -161,33 +165,40 @@
 
 @push('css')
 <style>
-    .direct-filing-page { max-width: 1180px; }
-    .direct-filing-header { border-left: 4px solid #0f766e; padding: .25rem 0 .25rem 1rem; }
-    .direct-filing-header h3 { color: #1f2937; font-size: 1.4rem; font-weight: 700; }
-    .direct-filing-form { border-top: 1px solid #e5e7eb; padding-top: 1rem; }
-    .form-panel { background: #fff; border: 1px solid #e5e7eb; border-left: 4px solid #d4a017; padding: 1rem; }
-    .form-panel-title { display: flex; align-items: center; gap: .65rem; margin-bottom: 1rem; color: #1f2937; }
-    .form-panel-title h5 { font-size: 1rem; font-weight: 700; }
-    .step-badge { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #00284d; color: #fff; font-weight: 700; font-size: .85rem; }
+    .direct-filing-page { max-width: 1120px; }
+    .direct-filing-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1rem; background: #fff; border: 1px solid #e3e8ef; border-top: 3px solid #00284d; border-bottom-color: #d4a017; border-radius: 4px; box-shadow: 0 1px 5px rgba(0, 40, 77, .08); }
+    .direct-filing-header h4 { color: #00284d; font-size: 1.15rem; font-weight: 800; }
+    .direct-filing-header small { color: #6b7280; font-weight: 600; }
+    .system-mark { color: #b87d08; font-size: .82rem; font-weight: 800; }
+    .form-panel { background: #fff; border: 1px solid #e3e8ef; border-radius: 4px; box-shadow: 0 1px 5px rgba(0, 40, 77, .07); overflow: hidden; padding: 1rem; }
+    .form-panel-title { display: flex; align-items: center; gap: .65rem; margin: -1rem -1rem 1rem; padding: .75rem 1rem; background: #fbfcfe; border-top: 3px solid #00284d; border-bottom: 1px solid #e5e7eb; color: #1f2937; }
+    .form-panel-title h5 { font-size: 1rem; font-weight: 800; }
+    .step-badge { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #00284d; color: #fff; font-weight: 800; font-size: .85rem; }
     .direct-filing-page .form-label { color: #374151; font-size: .84rem; font-weight: 700; margin-bottom: .35rem; }
     .direct-filing-page .form-control,
-    .direct-filing-page .form-select { min-height: 44px; border-color: #cfd8e3; border-radius: .45rem; }
+    .direct-filing-page .form-select { min-height: 42px; border-color: #cfd8e3; border-radius: 4px; }
     .direct-filing-page textarea.form-control { min-height: 44px; }
     .direct-filing-page .form-control:focus,
     .direct-filing-page .form-select:focus { border-color: #0f766e; box-shadow: 0 0 0 .16rem rgba(15, 118, 110, .14); }
     .party-panel { overflow-x: auto; }
     .party-panel table { min-width: 900px; margin-bottom: 0; }
-    .party-panel thead th { background: #f7f8fa; color: #4b5563; font-size: .78rem; text-transform: uppercase; border-bottom-width: 1px; vertical-align: middle; }
+    .party-panel thead th { background: #eef5fb; color: #00284d; font-size: .78rem; font-weight: 800; border-bottom: 0; vertical-align: middle; }
     .party-panel td { vertical-align: top; background: #fff; }
     .party-panel th:last-child,
     .party-panel td:last-child { width: 92px; text-align: center; }
+    .btn-add, .btn-remove { width: 2rem; height: 2rem; display: inline-grid; place-items: center; padding: 0; border-radius: 4px; }
+    .btn-add { background: #eefbf3; border-color: #bce8ca; color: #186a36; }
+    .btn-remove { background: #fff5f5; border-color: #f1b7b7; color: #a93b2d; }
     .submit-bar { display: flex; justify-content: flex-end; padding: 1rem 0 0; border-top: 1px solid #e5e7eb; }
     .btn-brand { background: #00284d; color: #fff; border-color: #00284d; }
     .btn-brand:hover { background: #001e3a; color: #fff; border-color: #001e3a; }
     .btn-outline-brand { color: #00284d; border-color: #00284d; }
     .btn-outline-brand:hover { background: #00284d; color: #fff; border-color: #00284d; }
     @media (max-width: 767.98px) {
+        .direct-filing-header { align-items: stretch; flex-direction: column; }
+        .direct-filing-header .btn { width: 100%; }
         .form-panel { padding: .85rem; }
+        .form-panel-title { margin: -.85rem -.85rem .85rem; }
         .submit-bar .btn { width: 100%; }
     }
 </style>
@@ -254,7 +265,7 @@ if (petitionerBtn) {
             <td><input type="text" name="petitioners[${petitionerIndex}][represented_by]" class="form-control"></td>
             <td><input type="text" name="petitioners[${petitionerIndex}][designation]" class="form-control"></td>
             <td><textarea name="petitioners[${petitionerIndex}][address]" class="form-control" rows="1"></textarea></td>
-            <td><button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button></td>
+            <td><button type="button" class="btn btn-remove btn-sm removeRow"><i class="bi bi-trash"></i></button></td>
         `;
         table.appendChild(row);
         petitionerIndex++;
@@ -271,7 +282,7 @@ if (respondentBtn) {
             <td><input type="text" name="respondents[${respondentIndex}][represented_by]" class="form-control"></td>
             <td><input type="text" name="respondents[${respondentIndex}][designation]" class="form-control"></td>
             <td><textarea name="respondents[${respondentIndex}][address]" class="form-control" rows="1"></textarea></td>
-            <td><button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button></td>
+            <td><button type="button" class="btn btn-remove btn-sm removeRow"><i class="bi bi-trash"></i></button></td>
         `;
         table.appendChild(row);
         respondentIndex++;
@@ -279,8 +290,9 @@ if (respondentBtn) {
 }
 
 document.addEventListener('click', function (event) {
-    if (event.target && event.target.classList.contains('removeRow')) {
-        event.target.closest('tr').remove();
+    const removeButton = event.target.closest('.removeRow');
+    if (removeButton) {
+        removeButton.closest('tr').remove();
     }
 });
 </script>

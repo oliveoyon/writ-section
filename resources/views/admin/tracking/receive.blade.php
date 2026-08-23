@@ -3,13 +3,14 @@
 @section('content')
 <div class="container py-4 receive-page">
     @php($isOfficeAssistant = str_contains(strtolower($section), 'office assistant'))
-    <div class="receive-toolbar d-flex align-items-center justify-content-between gap-3 mb-4">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-upc-scan receive-heading-icon" aria-hidden="true"></i>
-            <h3 class="receive-heading mb-0">{{ auth()->user()->name }}: {{ __('tracking.receive.title') }}</h3>
+    <div class="receive-header mb-3">
+        <div>
+            <div class="system-mark">RTFTS Receive</div>
+            <h4 class="mb-0">{{ auth()->user()->name }}: {{ __('tracking.receive.title') }}</h4>
+            <small>{{ $section }}</small>
         </div>
         @if($isOfficeAssistant)
-            <div class="kiosk-actions d-flex gap-2">
+            <div class="kiosk-actions">
                 <a href="{{ route('admin.tracking.court.dispatch.index') }}" class="btn kiosk-action btn-send">
                     <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
                     <span>{{ __('tracking.receive.send_to_court') }}</span>
@@ -32,7 +33,14 @@
         <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
 
-    <div class="receive-workspace">
+    <div class="receive-workspace admin-panel">
+        <div class="panel-heading">
+            <div>
+                <h5>{{ __('tracking.receive.title') }}</h5>
+                <span>{{ __('tracking.receive.identifier_label') }}</span>
+            </div>
+        </div>
+        <div class="panel-body">
         <form method="POST" action="{{ route('admin.tracking.section.receive.store') }}">
                 @csrf
                 <input type="hidden" name="action" value="receive">
@@ -71,18 +79,27 @@
                     <input id="reason_receive" name="reason" class="form-control" value="{{ old('reason') }}">
                 </div>
 
-                <button type="submit" class="btn btn-brand btn-lg receive-submit mt-4">
+                <div class="submit-bar">
+                <button type="submit" class="btn btn-brand btn-lg receive-submit">
                     <i class="bi bi-check2-circle me-2" aria-hidden="true"></i>{{ __('tracking.receive.submit_bulk') }}
                 </button>
+                </div>
         </form>
+        </div>
     </div>
 
     @if ($isAffidavit)
-        <div class="reject-workspace mt-4 pt-4 border-top">
+        <div class="reject-workspace admin-panel mt-3">
+            <div class="panel-heading danger">
+                <div>
+                    <h5>{{ __('tracking.receive.reject_title') }}</h5>
+                    <span>{{ __('tracking.receive.identifier_label') }}</span>
+                </div>
+            </div>
+            <div class="panel-body">
                 <form method="POST" action="{{ route('admin.tracking.section.receive.store') }}">
                     @csrf
                     <input type="hidden" name="action" value="reject">
-                    <h5 class="mb-3">{{ __('tracking.receive.reject_title') }}</h5>
 
                     <label for="barcode" class="form-label">{{ __('tracking.receive.identifier_label') }}</label>
                     <input
@@ -103,25 +120,28 @@
 
                     <button type="submit" class="btn btn-danger btn-lg mt-3">{{ __('tracking.receive.submit_reject') }}</button>
                 </form>
+            </div>
         </div>
     @endif
 
     @php($summary = session('receive_summary'))
     @if($summary && is_array($summary))
-        <div class="card p-4 mt-3" id="receivePrintArea">
-            <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="admin-panel receipt-panel mt-3" id="receivePrintArea">
+            <div class="panel-heading">
                 <div>
                     <h5 class="mb-1">{{ __('tracking.receive.receipt_title') }}</h5>
                 </div>
-                <button type="button" class="btn btn-gold no-print" onclick="window.print()">
+                <button type="button" class="btn btn-gold btn-sm no-print" onclick="window.print()">
+                    <i class="bi bi-printer"></i>
                     {{ __('tracking.receive.print_copy') }}
                 </button>
             </div>
 
-            <div class="row mb-3">
-                <div class="col-md-4"><strong>{{ __('tracking.receive.receipt_section') }}:</strong> {{ $summary['section'] ?? '-' }}</div>
-                <div class="col-md-4"><strong>{{ __('tracking.receive.receipt_user') }}:</strong> {{ $summary['received_by'] ?? '-' }}</div>
-                <div class="col-md-4"><strong>{{ __('tracking.receive.receipt_time') }}:</strong> {{ $summary['received_at'] ?? '-' }}</div>
+            <div class="panel-body">
+            <div class="receipt-grid mb-3">
+                <div><span>{{ __('tracking.receive.receipt_section') }}</span><strong>{{ $summary['section'] ?? '-' }}</strong></div>
+                <div><span>{{ __('tracking.receive.receipt_user') }}</span><strong>{{ $summary['received_by'] ?? '-' }}</strong></div>
+                <div><span>{{ __('tracking.receive.receipt_time') }}</span><strong>{{ $summary['received_at'] ?? '-' }}</strong></div>
             </div>
 
             <h6 class="mb-2">{{ __('tracking.receive.received_files') }}</h6>
@@ -186,6 +206,7 @@
                     <div>{{ __('tracking.receive.supervisor_signature') }}</div>
                 </div>
             </div>
+            </div>
         </div>
     @endif
 </div>
@@ -194,45 +215,90 @@
 @push('css')
 <style>
     .receive-page { max-width: 1040px; }
-    .receive-heading { font-size: 1.35rem; font-weight: 650; color: #1f2937; }
-    .receive-heading-icon { color: #00284d; font-size: 1.45rem; }
-    .kiosk-action { min-height: 44px; display: inline-flex; align-items: center; gap: .45rem; color: #fff; font-weight: 600; }
+    .receive-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .85rem 1rem;
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-top: 3px solid #00284d;
+        border-bottom-color: #d4a017;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .08);
+    }
+    .receive-header h4 { color: #00284d; font-size: 1.15rem; font-weight: 800; }
+    .receive-header small { color: #6b7280; font-weight: 600; }
+    .system-mark { color: #b87d08; font-size: .82rem; font-weight: 800; }
+    .kiosk-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
+    .kiosk-action { min-height: 38px; display: inline-flex; align-items: center; gap: .45rem; color: #fff; font-weight: 800; border-radius: 4px; }
     .kiosk-action:hover, .kiosk-action:focus-visible { color: #fff; }
     .btn-send { background: #0f766e; border-color: #0f766e; }
     .btn-report { background: #2563eb; border-color: #2563eb; }
     .btn-send:hover, .btn-send:focus-visible { background: #0b5f59; border-color: #0b5f59; }
     .btn-report:hover, .btn-report:focus-visible { background: #1d4ed8; border-color: #1d4ed8; }
-    .receive-workspace { border-top: 1px solid #e5e7eb; padding-top: 1.5rem; }
+    .admin-panel {
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .07);
+        overflow: hidden;
+    }
+    .panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .75rem 1rem;
+        background: #fbfcfe;
+        border-top: 3px solid #00284d;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .panel-heading.danger { border-top-color: #a93b2d; }
+    .panel-heading h5 { margin: 0; color: #1f2937; font-size: 1rem; font-weight: 800; }
+    .panel-heading span { color: #6b7280; font-size: .84rem; font-weight: 600; }
+    .panel-body { padding: 1rem; }
     .kiosk-input-group .form-control,
     .kiosk-input-group .input-group-text,
     .kiosk-input-group .btn { min-height: 58px; }
     .kiosk-input-group .form-control { font-size: 1.1rem; }
-    .kiosk-scan-focus { border: 2px solid #0f766e; border-radius: .5rem; box-shadow: 0 0 0 4px rgba(15, 118, 110, .1); }
+    .kiosk-scan-focus { border: 2px solid #0f766e; border-radius: 4px; box-shadow: 0 0 0 4px rgba(15, 118, 110, .1); }
     .kiosk-scan-focus .input-group-text,
     .kiosk-scan-focus .form-control,
     .kiosk-scan-focus .btn { border: 0; }
     .kiosk-scan-focus:focus-within { border-color: #0b5f59; box-shadow: 0 0 0 5px rgba(15, 118, 110, .18); }
-    .receive-queue { min-height: 150px; border: 1px solid #e5e7eb; }
-    .receive-queue thead th { background: #f7f8fa; color: #4b5563; font-size: .8rem; text-transform: uppercase; border-bottom-width: 1px; }
+    .receive-queue { min-height: 150px; border: 1px solid #e5e7eb; border-radius: 4px; }
+    .receive-queue thead th { background: #eef5fb; color: #00284d; font-size: .8rem; font-weight: 800; border-bottom: 0; }
     .receive-queue td, .receive-queue th { padding: .8rem; }
     .queue-barcode { margin-top: .15rem; color: #6b7280; font-size: .8rem; font-family: monospace; }
+    .form-label { color: #374151; font-size: .84rem; font-weight: 800; }
+    .form-control { border-radius: 4px; }
+    .form-control:focus { border-color: #d4a017; box-shadow: 0 0 0 .15rem rgba(212, 160, 23, .15); }
+    .submit-bar { display: flex; justify-content: flex-end; margin-top: 1rem; }
     .receive-submit { min-width: 210px; min-height: 54px; }
     .reject-workspace { max-width: 680px; }
     .btn-brand { background: #00284d; color: #fff; border-color: #00284d; }
     .btn-brand:hover { background: #001e3a; color: #fff; border-color: #001e3a; }
-    .btn-gold { background: #d4a017; color: #1f2933; border-color: #d4a017; }
+    .btn-gold { background: #d4a017; color: #1f2933; border-color: #d4a017; font-weight: 800; }
     .btn-gold:hover { background: #bc8d12; color: #fff; border-color: #bc8d12; }
+    .receipt-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+    .receipt-grid > div { border: 1px solid #e5e7eb; border-left: 4px solid #d4a017; border-radius: 4px; padding: .7rem; background: #fbfcfe; }
+    .receipt-grid span { display: block; color: #6b7280; font-size: .76rem; font-weight: 800; text-transform: uppercase; }
+    .receipt-grid strong { display: block; color: #111827; margin-top: .25rem; word-break: break-word; }
+    .receipt-panel table thead th { background: #eef5fb; color: #00284d; font-weight: 800; }
     .signature-line { border-bottom: 1px solid #222; height: 28px; margin-bottom: 8px; }
     @media (max-width: 575.98px) {
         .receive-page { padding-top: 1rem !important; }
-        .receive-toolbar { align-items: stretch !important; flex-direction: column; }
+        .receive-header { align-items: stretch; flex-direction: column; }
         .kiosk-actions { display: grid !important; grid-template-columns: 1fr 1fr; }
         .kiosk-action { justify-content: center; }
         .kiosk-input-group { flex-wrap: wrap; }
         .kiosk-input-group .input-group-text { display: none; }
         .kiosk-input-group .form-control { width: 100%; border-radius: .375rem !important; }
         .kiosk-input-group .btn { width: 100%; margin-top: .5rem; border-radius: .375rem !important; }
-        .receive-submit { width: 100%; }
+        .receive-submit, .submit-bar .btn { width: 100%; }
+        .receipt-grid { grid-template-columns: 1fr; }
     }
     @media print {
         .navbar, footer, .no-print { display: none !important; }

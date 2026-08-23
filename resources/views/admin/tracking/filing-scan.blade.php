@@ -2,12 +2,12 @@
 
 @section('content')
 <div class="container py-4 filing-scan-page">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-upc-scan filing-heading-icon" aria-hidden="true"></i>
-            <h3 class="filing-heading mb-0">{{ auth()->user()->name }}: {{ __('tracking.filing.scan_title') }}</h3>
+    <div class="filing-header mb-3">
+        <div>
+            <div class="system-mark">RTFTS Filing</div>
+            <h4 class="mb-0">{{ auth()->user()->name }}: {{ __('tracking.filing.scan_title') }}</h4>
         </div>
-        <a href="{{ route('admin.tracking.filing.direct-create') }}" class="btn btn-gold">
+        <a href="{{ route('admin.tracking.filing.direct-create') }}" class="btn btn-gold btn-sm">
             <i class="bi bi-file-earmark-plus me-1" aria-hidden="true"></i>{{ __('tracking.filing.direct_button') }}
         </a>
     </div>
@@ -22,7 +22,7 @@
         <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
 
-    <form method="GET" action="{{ route('admin.tracking.filing.scan-temp') }}" class="filing-scan-workspace mb-4">
+    <form method="GET" action="{{ route('admin.tracking.filing.scan-temp') }}" class="scan-panel mb-3">
         <label for="temporary_barcode" class="visually-hidden">{{ __('tracking.filing.temp_barcode') }}</label>
         <div class="input-group filing-scan-focus">
             <span class="input-group-text bg-white"><i class="bi bi-upc-scan" aria-hidden="true"></i></span>
@@ -43,7 +43,7 @@
     @endif
 
     @if ($case && !($isBlocked ?? false))
-        <form method="POST" action="{{ route('admin.tracking.filing.receive-temp') }}" class="filing-data-workspace">
+        <form method="POST" action="{{ route('admin.tracking.filing.receive-temp') }}" class="admin-panel filing-data-workspace">
             @csrf
             <input type="hidden" name="temporary_barcode" value="{{ $case->temporary_barcode }}">
 
@@ -83,16 +83,16 @@
                     $petitioners = [['name_or_organization' => '', 'represented_by' => '', 'designation' => '', 'address' => '']];
                 }
             @endphp
-            <div class="mb-3">
-                <h6>{{ __('tracking.filing.petitioners') }}</h6>
-                <table class="table table-bordered" id="petitioners_table">
+            <div class="party-panel mb-3">
+                <div class="panel-heading compact"><h5>{{ __('tracking.filing.petitioners') }}</h5></div>
+                <table class="table filing-table mb-0" id="petitioners_table">
                     <thead class="table-light">
                         <tr>
                             <th>{{ __('tracking.filing.name_or_organization') }}</th>
                             <th>{{ __('tracking.filing.represented_by') }}</th>
                             <th>{{ __('tracking.filing.designation') }}</th>
                             <th>{{ __('tracking.filing.address') }}</th>
-                            <th><button type="button" class="btn btn-success btn-sm" id="addPetitioner">{{ __('tracking.filing.add_row') }}</button></th>
+                            <th><button type="button" class="btn btn-add btn-sm" id="addPetitioner"><i class="bi bi-plus"></i></button></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,7 +104,7 @@
                                 <td><textarea name="petitioners[{{ $i }}][address]" class="form-control" rows="1">{{ $p['address'] ?? '' }}</textarea></td>
                                 <td>
                                     @if($i > 0)
-                                        <button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button>
+                                        <button type="button" class="btn btn-remove btn-sm removeRow"><i class="bi bi-trash"></i></button>
                                     @endif
                                 </td>
                             </tr>
@@ -126,16 +126,16 @@
                     $respondents = [['name_or_organization' => '', 'represented_by' => '', 'designation' => '', 'address' => '']];
                 }
             @endphp
-            <div class="mb-3">
-                <h6>{{ __('tracking.filing.respondents') }}</h6>
-                <table class="table table-bordered" id="respondents_table">
+            <div class="party-panel mb-3">
+                <div class="panel-heading compact"><h5>{{ __('tracking.filing.respondents') }}</h5></div>
+                <table class="table filing-table mb-0" id="respondents_table">
                     <thead class="table-light">
                         <tr>
                             <th>{{ __('tracking.filing.name_or_organization') }}</th>
                             <th>{{ __('tracking.filing.represented_by') }}</th>
                             <th>{{ __('tracking.filing.designation') }}</th>
                             <th>{{ __('tracking.filing.address') }}</th>
-                            <th><button type="button" class="btn btn-success btn-sm" id="addRespondent">{{ __('tracking.filing.add_row') }}</button></th>
+                            <th><button type="button" class="btn btn-add btn-sm" id="addRespondent"><i class="bi bi-plus"></i></button></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -147,7 +147,7 @@
                                 <td><textarea name="respondents[{{ $i }}][address]" class="form-control" rows="1">{{ $r['address'] ?? '' }}</textarea></td>
                                 <td>
                                     @if($i > 0)
-                                        <button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button>
+                                        <button type="button" class="btn btn-remove btn-sm removeRow"><i class="bi bi-trash"></i></button>
                                     @endif
                                 </td>
                             </tr>
@@ -156,18 +156,20 @@
                 </table>
             </div>
 
-            <button type="submit" class="btn btn-brand">{{ __('tracking.filing.receive_convert') }}</button>
+            <div class="submit-bar">
+                <button type="submit" class="btn btn-brand">{{ __('tracking.filing.receive_convert') }}</button>
+            </div>
         </form>
 
-        <form method="POST" action="{{ route('admin.tracking.filing.return-to-lawyer') }}" class="card p-4 mt-3">
+        <form method="POST" action="{{ route('admin.tracking.filing.return-to-lawyer') }}" class="admin-panel return-panel mt-3">
             @csrf
             <input type="hidden" name="temporary_barcode" value="{{ $case->temporary_barcode }}">
-            <h6 class="mb-2">{{ __('tracking.filing.return_title') }}</h6>
-            <div class="mb-3">
+            <div class="panel-heading danger"><h5>{{ __('tracking.filing.return_title') }}</h5></div>
+            <div class="panel-body">
                 <label class="form-label">{{ __('tracking.filing.return_reason') }}</label>
                 <textarea name="return_reason" class="form-control" rows="3" required></textarea>
+                <button type="submit" class="btn btn-danger mt-3">{{ __('tracking.filing.return_button') }}</button>
             </div>
-            <button type="submit" class="btn btn-danger">{{ __('tracking.filing.return_button') }}</button>
         </form>
     @endif
 </div>
@@ -176,22 +178,42 @@
 @push('css')
 <style>
     .filing-scan-page { max-width: 1120px; }
-    .filing-heading { font-size: 1.35rem; font-weight: 650; color: #1f2937; }
-    .filing-heading-icon { color: #0f766e; font-size: 1.45rem; }
-    .filing-scan-workspace { border-top: 1px solid #e5e7eb; padding-top: 1.5rem; }
-    .filing-scan-focus { border: 2px solid #0f766e; border-radius: .5rem; box-shadow: 0 0 0 4px rgba(15, 118, 110, .1); }
+    .filing-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1rem; background: #fff; border: 1px solid #e3e8ef; border-top: 3px solid #00284d; border-bottom-color: #d4a017; border-radius: 4px; box-shadow: 0 1px 5px rgba(0, 40, 77, .08); }
+    .filing-header h4 { color: #00284d; font-size: 1.15rem; font-weight: 800; }
+    .system-mark { color: #b87d08; font-size: .82rem; font-weight: 800; }
+    .scan-panel { background: #fff; border: 1px solid #e3e8ef; border-radius: 4px; padding: 1rem; box-shadow: 0 1px 5px rgba(0, 40, 77, .07); }
+    .filing-scan-focus { border: 2px solid #0f766e; border-radius: 4px; box-shadow: 0 0 0 4px rgba(15, 118, 110, .1); }
     .filing-scan-focus .input-group-text,
     .filing-scan-focus .form-control,
     .filing-scan-focus .btn { min-height: 58px; border: 0; }
     .filing-scan-focus:focus-within { border-color: #0b5f59; box-shadow: 0 0 0 5px rgba(15, 118, 110, .18); }
-    .filing-data-workspace { border-top: 1px solid #e5e7eb; padding-top: 1.5rem; }
-    .lawyer-strip { padding: .75rem 1rem; background: #f7f8fa; border-left: 4px solid #2563eb; }
+    .admin-panel { background: #fff; border: 1px solid #e3e8ef; border-radius: 4px; box-shadow: 0 1px 5px rgba(0, 40, 77, .07); overflow: hidden; }
+    .filing-data-workspace { padding: 1rem; }
+    .lawyer-strip { padding: .75rem 1rem; background: #f7fbff; border-left: 4px solid #2563eb; border-radius: 4px; }
+    .panel-heading { padding: .75rem 1rem; background: #fbfcfe; border-top: 3px solid #00284d; border-bottom: 1px solid #e5e7eb; }
+    .panel-heading.compact { border-top: 0; }
+    .panel-heading.danger { border-top-color: #a93b2d; }
+    .panel-heading h5 { margin: 0; color: #1f2937; font-size: 1rem; font-weight: 800; }
+    .panel-body { padding: 1rem; }
+    .form-label { color: #374151; font-size: .84rem; font-weight: 800; }
+    .form-control, .form-select { border-radius: 4px; }
+    .form-control:focus, .form-select:focus { border-color: #d4a017; box-shadow: 0 0 0 .15rem rgba(212, 160, 23, .15); }
+    .party-panel { border: 1px solid #e3e8ef; border-radius: 4px; overflow-x: auto; }
+    .filing-table { min-width: 900px; }
+    .filing-table thead th { background: #eef5fb; color: #00284d; font-weight: 800; border-bottom: 0; white-space: nowrap; }
+    .filing-table td { vertical-align: top; }
+    .btn-add, .btn-remove { width: 2rem; height: 2rem; display: inline-grid; place-items: center; padding: 0; border-radius: 4px; }
+    .btn-add { background: #eefbf3; border-color: #bce8ca; color: #186a36; }
+    .btn-remove { background: #fff5f5; border-color: #f1b7b7; color: #a93b2d; }
+    .submit-bar { display: flex; justify-content: flex-end; padding-top: .5rem; }
     .btn-brand { background: #00284d; color: #fff; border-color: #00284d; }
     .btn-brand:hover { background: #001e3a; color: #fff; border-color: #001e3a; }
-    .btn-gold { background: #d4a017; color: #fff; border-color: #d4a017; }
+    .btn-gold { background: #d4a017; color: #111827; border-color: #d4a017; font-weight: 800; }
     .btn-gold:hover { background: #b38b0f; color: #fff; border-color: #b38b0f; }
     @media (max-width: 575.98px) {
         .filing-scan-page { padding-top: 1rem !important; }
+        .filing-header { align-items: stretch; flex-direction: column; }
+        .filing-header .btn, .submit-bar .btn { width: 100%; }
         .filing-scan-focus .input-group-text { display: none; }
     }
 </style>
@@ -212,7 +234,7 @@ if (petitionerBtn) {
             <td><input type="text" name="petitioners[${petitionerIndex}][represented_by]" class="form-control"></td>
             <td><input type="text" name="petitioners[${petitionerIndex}][designation]" class="form-control"></td>
             <td><textarea name="petitioners[${petitionerIndex}][address]" class="form-control" rows="1"></textarea></td>
-            <td><button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button></td>
+            <td><button type="button" class="btn btn-remove btn-sm removeRow"><i class="bi bi-trash"></i></button></td>
         `;
         table.appendChild(row);
         petitionerIndex++;
@@ -229,7 +251,7 @@ if (respondentBtn) {
             <td><input type="text" name="respondents[${respondentIndex}][represented_by]" class="form-control"></td>
             <td><input type="text" name="respondents[${respondentIndex}][designation]" class="form-control"></td>
             <td><textarea name="respondents[${respondentIndex}][address]" class="form-control" rows="1"></textarea></td>
-            <td><button type="button" class="btn btn-danger btn-sm removeRow">{{ __('tracking.filing.remove_row') }}</button></td>
+            <td><button type="button" class="btn btn-remove btn-sm removeRow"><i class="bi bi-trash"></i></button></td>
         `;
         table.appendChild(row);
         respondentIndex++;
@@ -237,8 +259,9 @@ if (respondentBtn) {
 }
 
 document.addEventListener('click', function (event) {
-    if (event.target && event.target.classList.contains('removeRow')) {
-        event.target.closest('tr').remove();
+    const removeButton = event.target.closest('.removeRow');
+    if (removeButton) {
+        removeButton.closest('tr').remove();
     }
 });
 </script>

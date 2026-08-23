@@ -1,77 +1,128 @@
 @extends('admin.layouts.adminlayout')
 
 @section('content')
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background:#00284d;color:#fff;">
-        <h4 class="mb-0">{{ __('messages.courts') }}</h4>
-        <button class="btn btn-gold btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addCourtModal">
-            <i class="bi bi-plus-circle"></i> {{ __('messages.add_court') }}
+@php
+    $activeCourtCount = $courts->where('is_active', true)->count();
+    $inactiveCourtCount = $courts->count() - $activeCourtCount;
+    $lockedCourtCount = $courts->filter(fn ($court) => $court->movements_exists || $court->dispatch_batches_exists)->count();
+@endphp
+
+<div class="container py-4 courts-page">
+    <div class="page-heading mb-3">
+        <div>
+            <div class="system-mark">RTFTS Setup</div>
+            <h4 class="mb-0">{{ __('messages.courts') }}</h4>
+            <small>Manage court names used for file dispatch and court return records.</small>
+        </div>
+        <button class="btn btn-gold btn-sm" data-bs-toggle="modal" data-bs-target="#addCourtModal">
+            <i class="bi bi-plus-circle"></i> Add
         </button>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
-            <div class="row g-2 mb-3">
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="summary-box">
+                <i class="bi bi-building"></i>
+                <span>Total Courts</span>
+                <strong>{{ $courts->count() }}</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-box active">
+                <i class="bi bi-check-circle"></i>
+                <span>Active Courts</span>
+                <strong>{{ $activeCourtCount }}</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-box locked">
+                <i class="bi bi-lock"></i>
+                <span>History Locked</span>
+                <strong>{{ $lockedCourtCount }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-panel">
+        <div class="panel-heading">
+            <div>
+                <h5>Court List</h5>
+                <span>{{ $activeCourtCount }} active, {{ $inactiveCourtCount }} inactive</span>
+            </div>
+        </div>
+        <div class="filter-bar">
+            <div class="row g-2">
                 <div class="col-md-5">
-                    <input type="text" id="courtSearch" class="form-control" placeholder="Search by name/code...">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="courtSearch" class="form-control" placeholder="Search name or code">
+                    </div>
                 </div>
                 <div class="col-md-3">
-                    <select id="statusFilter" class="form-select">
+                    <select id="statusFilter" class="form-select form-select-sm">
                         <option value="all">All Status</option>
                         <option value="active">{{ __('messages.active') }}</option>
                         <option value="inactive">{{ __('messages.inactive') }}</option>
                     </select>
                 </div>
             </div>
+        </div>
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr class="table-light">
-                            <th width="60">#</th>
-                            <th>{{ __('messages.court_name_en') }}</th>
-                            <th>{{ __('messages.court_name_bn') }}</th>
-                            <th>{{ __('messages.court_code') }}</th>
-                            <th width="120">{{ __('messages.status') }}</th>
-                            <th width="180">{{ __('messages.action') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($courts as $index => $court)
-                            <tr id="row-{{ $court->id }}"
-                                class="court-row"
-                                data-name-en="{{ strtolower($court->name_en) }}"
-                                data-name-bn="{{ strtolower((string) $court->name_bn) }}"
-                                data-code="{{ strtolower($court->code) }}"
-                                data-status="{{ $court->is_active ? 'active' : 'inactive' }}">
-                                <td>{{ $index + 1 }}</td>
-                                <td class="fw-semibold">{{ $court->name_en }}</td>
-                                <td>{{ $court->name_bn ?? '-' }}</td>
-                                <td>{{ $court->code }}</td>
-                                <td>
-                                    <span class="badge {{ $court->is_active ? 'bg-success' : 'bg-danger' }}">
-                                        {{ $court->is_active ? __('messages.active') : __('messages.inactive') }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button class="btn btn-info btn-sm me-1 edit-btn">
-                                        <i class="bi bi-pencil"></i>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle modern-table mb-0">
+                <thead>
+                    <tr>
+                        <th width="60">#</th>
+                        <th>{{ __('messages.court_name_en') }}</th>
+                        <th>{{ __('messages.court_name_bn') }}</th>
+                        <th width="120">{{ __('messages.court_code') }}</th>
+                        <th width="110">{{ __('messages.status') }}</th>
+                        <th width="120">Usage</th>
+                        <th width="130" class="text-end">{{ __('messages.action') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($courts as $index => $court)
+                        <tr id="row-{{ $court->id }}"
+                            class="court-row"
+                            data-name-en="{{ strtolower($court->name_en) }}"
+                            data-name-bn="{{ strtolower((string) $court->name_bn) }}"
+                            data-code="{{ strtolower($court->code) }}"
+                            data-status="{{ $court->is_active ? 'active' : 'inactive' }}">
+                            <td>{{ $index + 1 }}</td>
+                            <td class="fw-bold text-dark">{{ $court->name_en }}</td>
+                            <td>{{ $court->name_bn ?? '-' }}</td>
+                            <td><code>{{ $court->code }}</code></td>
+                            <td>
+                                <span class="status-badge {{ $court->is_active ? 'active' : 'inactive' }}">
+                                    {{ $court->is_active ? __('messages.active') : __('messages.inactive') }}
+                                </span>
+                            </td>
+                            <td>
+                                @if($court->movements_exists || $court->dispatch_batches_exists)
+                                    <span class="usage-badge locked">Locked</span>
+                                @else
+                                    <span class="usage-badge">Unused</span>
+                                @endif
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-action edit-btn" title="Edit court">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                @unless($court->movements_exists || $court->dispatch_batches_exists)
+                                    <button class="btn btn-action danger delete-btn" title="Delete unused court">
+                                        <i class="bi bi-trash"></i>
                                     </button>
-                                    @unless($court->movements_exists || $court->dispatch_batches_exists)
-                                        <button class="btn btn-danger btn-sm delete-btn" title="Delete unused court">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    @endunless
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center text-muted">No court found.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                @endunless
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No court found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -80,9 +131,9 @@
     <div class="modal-dialog">
         <form id="addCourtForm">
             @csrf
-            <div class="modal-content p-3 border-0">
-                <div class="modal-header border-0">
-                    <h5>{{ __('messages.add_court') }}</h5>
+            <div class="modal-content modal-panel">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ __('messages.add_court') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -103,8 +154,8 @@
                         <label class="form-check-label">{{ __('messages.active') }}</label>
                     </div>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-gold px-4">{{ __('messages.save') }}</button>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-gold">{{ __('messages.save') }}</button>
                 </div>
             </div>
         </form>
@@ -116,9 +167,9 @@
         <form id="editCourtForm">
             @csrf
             <input type="hidden" id="edit_id">
-            <div class="modal-content p-3 border-0">
-                <div class="modal-header border-0">
-                    <h5>{{ __('messages.edit_court') }}</h5>
+            <div class="modal-content modal-panel">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ __('messages.edit_court') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -139,8 +190,8 @@
                         <label class="form-check-label">{{ __('messages.active') }}</label>
                     </div>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-gold px-4">{{ __('messages.update') }}</button>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-gold">{{ __('messages.update') }}</button>
                 </div>
             </div>
         </form>
@@ -150,8 +201,132 @@
 
 @push('css')
 <style>
-    .btn-gold { background:#d4a017; color:#fff; border-color:#d4a017; }
-    .btn-gold:hover { background:#b38b0f; color:#fff; border-color:#b38b0f; }
+    .courts-page { max-width: 1120px; }
+    .page-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .85rem 1rem;
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-top: 3px solid #00284d;
+        border-bottom-color: #d4a017;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .08);
+    }
+    .page-heading h4 { color: #00284d; font-size: 1.15rem; font-weight: 800; }
+    .page-heading small { color: #6b7280; font-weight: 600; }
+    .system-mark { color: #b87d08; font-size: .82rem; font-weight: 800; }
+    .summary-box {
+        position: relative;
+        min-height: 94px;
+        padding: .85rem .9rem;
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-left: 4px solid #00284d;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .06);
+    }
+    .summary-box.active { border-left-color: #21854a; }
+    .summary-box.locked { border-left-color: #d4a017; }
+    .summary-box i { position: absolute; right: .85rem; top: .85rem; color: #d4a017; font-size: 1.35rem; }
+    .summary-box span { display: block; color: #6b7280; font-size: .82rem; font-weight: 800; text-transform: uppercase; }
+    .summary-box strong { display: block; color: #111827; font-size: 2rem; line-height: 1.1; margin-top: .45rem; }
+    .admin-panel {
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .07);
+        overflow: hidden;
+    }
+    .panel-heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .75rem 1rem;
+        background: #fbfcfe;
+        border-top: 3px solid #00284d;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .panel-heading h5 { margin: 0; color: #1f2937; font-size: 1rem; font-weight: 800; }
+    .panel-heading span { color: #6b7280; font-size: .84rem; font-weight: 600; }
+    .filter-bar { padding: .85rem 1rem; border-bottom: 1px solid #eef2f7; background: #fff; }
+    .filter-bar .input-group-text { background: #f2f7fc; color: #0b4f8a; border-radius: 4px 0 0 4px; }
+    .filter-bar .form-control,
+    .filter-bar .form-select { border-radius: 4px; }
+    .filter-bar .form-control:focus,
+    .filter-bar .form-select:focus,
+    .modal-panel .form-control:focus { border-color: #d4a017; box-shadow: 0 0 0 .15rem rgba(212, 160, 23, .15); }
+    table.modern-table th,
+    table.modern-table td { padding: .72rem .9rem; vertical-align: middle; }
+    table.modern-table thead th {
+        background: #eef5fb;
+        color: #00284d;
+        border-bottom: 0;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    table.modern-table tbody tr:hover { background: #fffaf0; }
+    table.modern-table code {
+        color: #0b4f8a;
+        background: #f2f7fc;
+        border: 1px solid #d8e3ef;
+        border-radius: 4px;
+        padding: .18rem .4rem;
+        font-size: .82rem;
+    }
+    .status-badge,
+    .usage-badge {
+        display: inline-flex;
+        border-radius: 4px;
+        padding: .2rem .5rem;
+        font-size: .76rem;
+        font-weight: 800;
+        border: 1px solid #d8e3ef;
+        background: #f7fbff;
+        color: #0b4f8a;
+    }
+    .status-badge.active { background: #eefbf3; border-color: #bce8ca; color: #186a36; }
+    .status-badge.inactive { background: #fff5f5; border-color: #f1b7b7; color: #a93b2d; }
+    .usage-badge.locked { background: #fff7e6; border-color: #f3d58e; color: #805500; }
+    .btn-gold {
+        background-color: #d4a017;
+        color: #111827;
+        border: 1px solid #c89313;
+        border-radius: 4px;
+        font-weight: 800;
+    }
+    .btn-gold:hover { background-color: #b38b0f; color: #fff; border-color: #b38b0f; }
+    .btn-action {
+        width: 2rem;
+        height: 2rem;
+        display: inline-grid;
+        place-items: center;
+        padding: 0;
+        border-radius: 4px;
+        border: 1px solid #bcd0e2;
+        color: #0b4f8a;
+        background: #f2f7fc;
+    }
+    .btn-action:hover { background: #0b4f8a; color: #fff; }
+    .btn-action.danger { border-color: #f1b7b7; color: #a93b2d; background: #fff5f5; }
+    .btn-action.danger:hover { background: #a93b2d; color: #fff; }
+    .modal-panel { border: 0; border-radius: 4px; overflow: hidden; }
+    .modal-panel .modal-header {
+        background: #00284d;
+        color: #fff;
+        border-bottom: 3px solid #d4a017;
+    }
+    .modal-panel .modal-title { color: #fff; font-weight: 800; }
+    .modal-panel .modal-body,
+    .modal-panel .modal-footer { padding: 1rem; }
+    .modal-panel .form-control { border-radius: 4px; }
+    @media (max-width: 768px) {
+        .page-heading { align-items: stretch; flex-direction: column; }
+        .page-heading .btn { width: 100%; }
+        table.modern-table { min-width: 820px; }
+    }
 </style>
 @endpush
 

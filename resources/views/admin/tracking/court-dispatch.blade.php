@@ -2,19 +2,20 @@
 
 @section('content')
 <div class="container py-4 dispatch-page">
-    <div class="dispatch-toolbar d-flex align-items-center justify-content-between gap-3 mb-4">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-box-arrow-up-right dispatch-heading-icon" aria-hidden="true"></i>
-            <h3 class="dispatch-heading mb-0">{{ auth()->user()->name }}: {{ __('tracking.court.dispatch_title') }}</h3>
+    <div class="dispatch-header mb-3">
+        <div>
+            <div class="system-mark">RTFTS Court</div>
+            <h4 class="mb-0">{{ auth()->user()->name }}: {{ __('tracking.court.dispatch_title') }}</h4>
+            <small>{{ __('tracking.receive.send_to_court') }}</small>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{{ route('admin.tracking.court.batches.index') }}" class="btn btn-report">
+        <div class="dispatch-actions">
+            <a href="{{ route('admin.tracking.court.batches.index') }}" class="btn btn-report btn-sm">
                 <i class="bi bi-collection" aria-hidden="true"></i> Batches
             </a>
-            <a href="{{ route('admin.tracking.section.receive') }}" class="btn btn-receive">
+            <a href="{{ route('admin.tracking.section.receive') }}" class="btn btn-receive btn-sm">
                 <i class="bi bi-upc-scan" aria-hidden="true"></i> {{ __('messages.section_receive') }}
             </a>
-            <a href="{{ route('admin.tracking.register-report') }}" class="btn btn-report">
+            <a href="{{ route('admin.tracking.register-report') }}" class="btn btn-report btn-sm">
                 <i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i> {{ __('tracking.receive.report') }}
             </a>
         </div>
@@ -30,9 +31,16 @@
         <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
 
-    <form method="POST" action="{{ route('admin.tracking.court.dispatch.store') }}" class="dispatch-workspace">
+    <form method="POST" action="{{ route('admin.tracking.court.dispatch.store') }}" class="dispatch-workspace admin-panel">
         @csrf
+        <div class="panel-heading">
+            <div>
+                <h5>{{ __('tracking.receive.send_to_court') }}</h5>
+                <span>{{ __('tracking.court.select_court') }}</span>
+            </div>
+        </div>
 
+        <div class="panel-body">
         <div class="row g-3 dispatch-details">
             <div class="col-lg-6">
                 <label class="form-label">{{ __('tracking.court.court') }}</label>
@@ -59,7 +67,7 @@
             </div>
         </div>
 
-        <div class="mt-4">
+        <div class="scan-block mt-4">
             <label for="barcode_input" class="visually-hidden">{{ __('tracking.receive.identifier_label') }}</label>
             <div class="input-group dispatch-scan-focus">
                 <span class="input-group-text bg-white"><i class="bi bi-upc-scan" aria-hidden="true"></i></span>
@@ -94,22 +102,30 @@
             <input name="notes" class="form-control" value="{{ old('notes') }}">
         </div>
 
-        <button type="submit" class="btn btn-brand btn-lg dispatch-submit mt-4">
-            <i class="bi bi-box-arrow-up-right me-2" aria-hidden="true"></i>{{ __('tracking.court.dispatch_submit') }}
-        </button>
+        <div class="submit-bar">
+            <button type="submit" class="btn btn-brand btn-lg dispatch-submit">
+                <i class="bi bi-box-arrow-up-right me-2" aria-hidden="true"></i>{{ __('tracking.court.dispatch_submit') }}
+            </button>
 
-        @if(session('court_batch_id'))
-            <a class="btn btn-gold mt-3 ms-2" target="_blank" href="{{ route('admin.tracking.court.batch.pdf', session('court_batch_id')) }}">
-                {{ __('tracking.court.print_batch_pdf') }}
-            </a>
-        @endif
+            @if(session('court_batch_id'))
+                <a class="btn btn-gold btn-lg" target="_blank" href="{{ route('admin.tracking.court.batch.pdf', session('court_batch_id')) }}">
+                    <i class="bi bi-printer"></i> {{ __('tracking.court.print_batch_pdf') }}
+                </a>
+            @endif
+        </div>
+        </div>
     </form>
 
     @if(session('court_processed'))
-        <div class="card p-3 mt-3">
-            <h6 class="mb-2">{{ __('tracking.court.processed_files') }}</h6>
+        <div class="admin-panel result-panel mt-3">
+            <div class="panel-heading success">
+                <div>
+                    <h5>{{ __('tracking.court.processed_files') }}</h5>
+                    <span>{{ count(session('court_processed', [])) }} file(s)</span>
+                </div>
+            </div>
             <div class="table-responsive">
-                <table class="table table-bordered table-sm mb-0">
+                <table class="table result-table table-sm mb-0">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -123,8 +139,8 @@
                             <tr>
                                 <td>{{ $i + 1 }}</td>
                                 <td>{{ $item['case_no'] }}</td>
-                                <td>{{ $item['from_section'] }}</td>
-                                <td>{{ $item['to_section'] }}</td>
+                                <td><span class="section-badge">{{ $item['from_section'] }}</span></td>
+                                <td><span class="section-badge">{{ $item['to_section'] }}</span></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -134,10 +150,15 @@
     @endif
 
     @if(session('court_failed'))
-        <div class="card p-3 mt-3">
-            <h6 class="mb-2">{{ __('tracking.receive.failed_files') }}</h6>
+        <div class="admin-panel result-panel mt-3">
+            <div class="panel-heading danger">
+                <div>
+                    <h5>{{ __('tracking.receive.failed_files') }}</h5>
+                    <span>{{ count(session('court_failed', [])) }} file(s)</span>
+                </div>
+            </div>
             <div class="table-responsive">
-                <table class="table table-bordered table-sm mb-0">
+                <table class="table result-table table-sm mb-0">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -164,39 +185,83 @@
 @push('css')
 <style>
     .dispatch-page { max-width: 1040px; }
-    .dispatch-heading { font-size: 1.35rem; font-weight: 650; color: #1f2937; }
-    .dispatch-heading-icon { color: #0f766e; font-size: 1.45rem; }
-    .dispatch-workspace { border-top: 1px solid #e5e7eb; padding-top: 1.5rem; }
+    .dispatch-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .85rem 1rem;
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-top: 3px solid #00284d;
+        border-bottom-color: #d4a017;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .08);
+    }
+    .dispatch-header h4 { color: #00284d; font-size: 1.15rem; font-weight: 800; }
+    .dispatch-header small { color: #6b7280; font-weight: 600; }
+    .system-mark { color: #b87d08; font-size: .82rem; font-weight: 800; }
+    .dispatch-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
+    .admin-panel {
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .07);
+        overflow: hidden;
+    }
+    .panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .75rem 1rem;
+        background: #fbfcfe;
+        border-top: 3px solid #00284d;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .panel-heading.success { border-top-color: #21854a; }
+    .panel-heading.danger { border-top-color: #a93b2d; }
+    .panel-heading h5 { margin: 0; color: #1f2937; font-size: 1rem; font-weight: 800; }
+    .panel-heading span { color: #6b7280; font-size: .84rem; font-weight: 600; }
+    .panel-body { padding: 1rem; }
     .dispatch-details .form-control, .dispatch-details .form-select { min-height: 48px; }
-    .dispatch-scan-focus { border: 2px solid #0f766e; border-radius: .5rem; box-shadow: 0 0 0 4px rgba(15, 118, 110, .1); }
+    .dispatch-details .form-label, .form-label { color: #374151; font-size: .84rem; font-weight: 800; }
+    .dispatch-details .form-control, .dispatch-details .form-select, .form-control { border-radius: 4px; }
+    .dispatch-details .form-control:focus, .dispatch-details .form-select:focus, .form-control:focus { border-color: #d4a017; box-shadow: 0 0 0 .15rem rgba(212, 160, 23, .15); }
+    .dispatch-scan-focus { border: 2px solid #0f766e; border-radius: 4px; box-shadow: 0 0 0 4px rgba(15, 118, 110, .1); }
     .dispatch-scan-focus .input-group-text,
     .dispatch-scan-focus .form-control,
     .dispatch-scan-focus .btn { min-height: 58px; border: 0; }
     .dispatch-scan-focus:focus-within { border-color: #0b5f59; box-shadow: 0 0 0 5px rgba(15, 118, 110, .18); }
-    .dispatch-queue { min-height: 150px; border: 1px solid #e5e7eb; }
-    .dispatch-queue thead th { background: #f7f8fa; color: #4b5563; font-size: .8rem; text-transform: uppercase; border-bottom-width: 1px; }
+    .dispatch-queue { min-height: 150px; border: 1px solid #e5e7eb; border-radius: 4px; }
+    .dispatch-queue thead th { background: #eef5fb; color: #00284d; font-size: .8rem; font-weight: 800; border-bottom: 0; }
     .dispatch-queue td, .dispatch-queue th { padding: .8rem; }
     .queue-barcode { margin-top: .15rem; color: #6b7280; font-size: .8rem; font-family: monospace; }
+    .submit-bar { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: flex-end; margin-top: 1rem; }
     .dispatch-submit { min-width: 220px; min-height: 54px; }
-    .btn-receive, .btn-report { min-height: 44px; display: inline-flex; align-items: center; gap: .4rem; color: #fff; font-weight: 600; }
+    .result-table thead th { background: #eef5fb; color: #00284d; font-weight: 800; border-bottom: 0; white-space: nowrap; }
+    .result-table td, .result-table th { padding: .65rem .75rem; }
+    .section-badge { display: inline-flex; border-radius: 4px; border: 1px solid #d8e3ef; background: #f7fbff; color: #0b4f8a; font-size: .76rem; font-weight: 800; padding: .18rem .45rem; white-space: nowrap; }
+    .btn-receive, .btn-report { min-height: 38px; display: inline-flex; align-items: center; gap: .4rem; color: #fff; font-weight: 800; border-radius: 4px; }
     .btn-receive { background: #0f766e; border-color: #0f766e; }
     .btn-report { background: #2563eb; border-color: #2563eb; }
     .btn-receive:hover, .btn-receive:focus-visible { color: #fff; background: #0b5f59; border-color: #0b5f59; }
     .btn-report:hover, .btn-report:focus-visible { color: #fff; background: #1d4ed8; border-color: #1d4ed8; }
     .btn-brand { background: #00284d; color: #fff; border-color: #00284d; }
     .btn-brand:hover { background: #001e3a; color: #fff; border-color: #001e3a; }
-    .btn-gold { background: #d4a017; color: #1f2933; border-color: #d4a017; }
+    .btn-gold { background: #d4a017; color: #1f2933; border-color: #d4a017; font-weight: 800; }
     .btn-gold:hover { background: #bc8d12; color: #fff; border-color: #bc8d12; }
     @media (max-width: 767.98px) {
         .dispatch-page { padding-top: 1rem !important; }
-        .dispatch-toolbar { align-items: stretch !important; flex-direction: column; }
-        .dispatch-toolbar > .d-flex:last-child { display: grid !important; grid-template-columns: 1fr 1fr; }
+        .dispatch-header { align-items: stretch; flex-direction: column; }
+        .dispatch-actions { display: grid !important; grid-template-columns: 1fr 1fr; }
         .btn-receive, .btn-report { justify-content: center; }
         .dispatch-scan-focus { flex-wrap: wrap; }
         .dispatch-scan-focus .input-group-text { display: none; }
         .dispatch-scan-focus .form-control { width: 100%; border-radius: .375rem !important; }
         .dispatch-scan-focus .btn { width: 100%; margin-top: .5rem; border-radius: .375rem !important; }
-        .dispatch-submit { width: 100%; }
+        .dispatch-submit, .submit-bar .btn { width: 100%; }
+        .result-table { min-width: 720px; }
     }
 </style>
 @endpush

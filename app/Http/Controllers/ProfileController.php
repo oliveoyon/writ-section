@@ -16,8 +16,14 @@ class ProfileController extends Controller
     /**
      * Display the user's profile form.
      */
-    public function edit(Request $request): View
+    public function edit(Request $request): View|RedirectResponse
     {
+        if ($request->user()?->user_type === 'lawyer') {
+            return Redirect::route('lawyer.settings');
+        }
+
+        $request->user()->loadMissing(['departmentRelation', 'roles']);
+
         return view('profile.edit', [
             'user' => $request->user(),
         ]);
@@ -28,6 +34,10 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        if ($request->user()->user_type !== 'admin') {
+            return Redirect::route('profile.edit')->with('status', 'profile-readonly');
+        }
+
         $request->user()->fill($request->validated());
 
         if ($request->user()->isDirty('email')) {

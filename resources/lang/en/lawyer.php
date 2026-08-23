@@ -62,6 +62,7 @@ return [
         'quick_links' => 'Quick Links',
         'follow_us' => 'Follow Us',
         'copyright' => '© ' . date('Y') . ' RTFTS - Real Time File Tracking System',
+        'implemented_by' => 'Implemented by The Supreme Court of Bangladesh',
         'technical_assistance' => 'Technical Assistance by Access to Justice For Women, GIZ Bangladesh',
     ],
     'placeholder' => [

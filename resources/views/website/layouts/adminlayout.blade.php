@@ -54,6 +54,38 @@
         footer a:hover {
             text-decoration: underline;
         }
+
+        .footer-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: .35rem .75rem;
+            margin-top: .5rem;
+            font-size: .86rem;
+            color: rgba(255, 255, 255, .82);
+        }
+
+        .footer-meta span + span::before {
+            content: "|";
+            margin-right: .75rem;
+            color: #d4a017;
+        }
+
+        @media (max-width: 575.98px) {
+            .footer-meta {
+                display: block;
+                line-height: 1.45;
+            }
+
+            .footer-meta span {
+                display: block;
+            }
+
+            .footer-meta span + span::before {
+                content: "";
+                margin: 0;
+            }
+        }
     </style>
 </head>
 
@@ -157,7 +189,10 @@
 
             <hr class="mt-3" style="border-color: #d4a017;">
             <p class="text-center mt-2 mb-1">© {{ date('Y') }} RTFTS - Real Time File Tracking System</p>
-            <p class="text-center small mb-0">Technical Assistance by Access to Justice For Women, GIZ Bangladesh</p>
+            <div class="footer-meta">
+                <span>Implemented by The Supreme Court of Bangladesh</span>
+                <span>Technical Assistance by Access to Justice For Women, GIZ Bangladesh</span>
+            </div>
         </div>
     </footer>
 

@@ -276,6 +276,12 @@ class CourtDispatchController extends Controller
         $user = $request->user();
         $canViewAll = $this->canViewAllBatches($user);
         $queryText = trim((string) $request->input('q', ''));
+        $hasBatchSearch = $queryText !== ''
+            || $request->filled('type')
+            || $request->filled('court_id')
+            || ($canViewAll && $request->filled('creator_id'))
+            || $request->filled('date_from')
+            || $request->filled('date_to');
         $dateFrom = $request->filled('date_from')
             ? Carbon::createFromFormat('d-m-Y', (string) $request->date_from)->toDateString()
             : null;
@@ -284,7 +290,18 @@ class CourtDispatchController extends Controller
             : null;
 
         $query = CourtDispatchBatch::query()
-            ->with(['court', 'createdBy', 'items'])
+            ->select([
+                'id',
+                'batch_no',
+                'court_id',
+                'created_by_user_id',
+                'type',
+                'dispatched_at',
+                'returned_at',
+                'created_at',
+            ])
+            ->with(['court:id,name_en,name_bn,code', 'createdBy:id,name'])
+            ->withCount('items')
             ->when(!$canViewAll, fn ($builder) => $builder->where('created_by_user_id', $user->id))
             ->when($queryText !== '', function ($builder) use ($queryText) {
                 $builder->where(function ($inner) use ($queryText) {
@@ -302,15 +319,20 @@ class CourtDispatchController extends Controller
             ->when($dateTo, fn ($builder) => $builder->whereDate(DB::raw('COALESCE(dispatched_at, returned_at)'), '<=', $dateTo))
             ->latest(DB::raw('COALESCE(dispatched_at, returned_at)'));
 
-        $batches = $query->paginate(20)->withQueryString();
-        $this->attachBatchReturnCounts($batches->getCollection());
+        $batches = $hasBatchSearch
+            ? $query->paginate(20)->withQueryString()
+            : $query->whereRaw('1 = 0')->paginate(20)->withQueryString();
+
+        if ($hasBatchSearch) {
+            $this->attachBatchReturnCounts($batches->getCollection());
+        }
 
         $courts = Court::orderBy('name_en')->get();
         $creators = $canViewAll
             ? User::whereHas('courtDispatchBatches')->orderBy('name')->get(['id', 'name'])
             : collect();
 
-        return view('admin.tracking.court-batches', compact('batches', 'courts', 'creators', 'canViewAll'));
+        return view('admin.tracking.court-batches', compact('batches', 'courts', 'creators', 'canViewAll', 'hasBatchSearch'));
     }
 
     public function batchShow(CourtDispatchBatch $batch, Request $request)
@@ -341,22 +363,29 @@ class CourtDispatchController extends Controller
 
     private function attachBatchReturnCounts($batches): void
     {
-        $items = $batches->pluck('items')->flatten();
-        $returnMovements = FileMovement::query()
-            ->whereIn('case_id', $items->pluck('case_id')->unique())
-            ->where('movement_type', 'returned_from_court_handover')
-            ->orderBy('received_at')
-            ->get()
-            ->groupBy('case_id');
+        $dispatchIds = $batches
+            ->where('type', 'dispatch')
+            ->pluck('id')
+            ->values();
+
+        $returnedCounts = $dispatchIds->isEmpty()
+            ? collect()
+            : CourtDispatchBatchItem::query()
+                ->join('court_dispatch_batches', 'court_dispatch_batches.id', '=', 'court_dispatch_batch_items.batch_id')
+                ->join('file_movements', function ($join) {
+                    $join->on('file_movements.case_id', '=', 'court_dispatch_batch_items.case_id')
+                        ->where('file_movements.movement_type', '=', 'returned_from_court_handover')
+                        ->whereRaw('file_movements.received_at >= COALESCE(court_dispatch_batch_items.processed_at, court_dispatch_batches.dispatched_at, court_dispatch_batch_items.created_at)');
+                })
+                ->whereIn('court_dispatch_batch_items.batch_id', $dispatchIds)
+                ->selectRaw('court_dispatch_batch_items.batch_id as batch_id, COUNT(DISTINCT court_dispatch_batch_items.id) as total')
+                ->groupBy('court_dispatch_batch_items.batch_id')
+                ->pluck('total', 'batch_id');
 
         foreach ($batches as $batch) {
             $returned = $batch->type === 'return'
-                ? $batch->items->count()
-                : $batch->items->filter(function (CourtDispatchBatchItem $item) use ($batch, $returnMovements) {
-                    $processedAt = $item->processed_at ?? $batch->dispatched_at ?? $item->created_at;
-                    return ($returnMovements->get($item->case_id) ?? collect())
-                        ->contains(fn (FileMovement $movement) => $movement->received_at?->greaterThanOrEqualTo($processedAt));
-                })->count();
+                ? (int) $batch->items_count
+                : (int) ($returnedCounts[$batch->id] ?? 0);
 
             $batch->setAttribute('returned_items_count', $returned);
         }
