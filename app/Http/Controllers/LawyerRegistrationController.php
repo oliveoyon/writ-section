@@ -61,16 +61,34 @@ class LawyerRegistrationController extends Controller
             curl_setopt_array($ch, $curlOptions);
 
             $response = curl_exec($ch);
-            if (curl_errno($ch)) {
+            $curlErrno = curl_errno($ch);
+
+            if ($curlErrno !== 0 && $sslCipherList !== 'DEFAULT@SECLEVEL=0') {
+                $apiDiagnostics['first_attempt'] = [
+                    'curl_errno' => $curlErrno,
+                    'curl_error' => curl_error($ch),
+                    'ssl_cipher_list' => $sslCipherList,
+                ];
+
+                curl_setopt($ch, CURLOPT_SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=0');
+                $response = curl_exec($ch);
+                $curlErrno = curl_errno($ch);
+            }
+
+            if ($curlErrno !== 0) {
                 $curlError = curl_error($ch);
+                $apiDiagnostics['curl_errno'] = $curlErrno;
+                $apiDiagnostics['curl_error'] = $curlError;
+                $apiDiagnostics['curl_info'] = curl_getinfo($ch);
                 curl_close($ch);
                 throw new \Exception($curlError);
             }
             $apiDiagnostics = [
                 'http_status' => curl_getinfo($ch, CURLINFO_HTTP_CODE),
                 'content_type' => curl_getinfo($ch, CURLINFO_CONTENT_TYPE),
+                'effective_url' => curl_getinfo($ch, CURLINFO_EFFECTIVE_URL),
                 'response_bytes' => is_string($response) ? strlen($response) : 0,
-            ];
+            ] + $apiDiagnostics;
             curl_close($ch);
 
             if ($apiDiagnostics['http_status'] < 200 || $apiDiagnostics['http_status'] >= 300) {
@@ -111,7 +129,7 @@ class LawyerRegistrationController extends Controller
             return response()->json([
                 'found' => false,
                 'message' => __('writ.lawyer.api_error')
-            ], 500);
+            ]);
         }
     }
 
