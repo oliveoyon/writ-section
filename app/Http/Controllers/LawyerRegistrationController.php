@@ -38,8 +38,9 @@ class LawyerRegistrationController extends Controller
         // Call API only if not already registered
         try {
             $ch = curl_init();
-            $verifySsl = (bool) config('services.scba.verify_ssl', true);
-            curl_setopt_array($ch, [
+            $verifySsl = filter_var(config('services.scba.verify_ssl', false), FILTER_VALIDATE_BOOL);
+            $sslCipherList = trim((string) config('services.scba.ssl_cipher_list', 'DEFAULT@SECLEVEL=1'));
+            $curlOptions = [
                 CURLOPT_URL => config('services.scba.member_list_url'),
                 CURLOPT_POST => true,
                 CURLOPT_RETURNTRANSFER => true,
@@ -47,12 +48,17 @@ class LawyerRegistrationController extends Controller
                 CURLOPT_TIMEOUT => 30,
                 CURLOPT_SSL_VERIFYPEER => $verifySsl,
                 CURLOPT_SSL_VERIFYHOST => $verifySsl ? 2 : 0,
-                CURLOPT_SSL_CIPHER_LIST => config('services.scba.ssl_cipher_list', 'DEFAULT@SECLEVEL=1'),
                 CURLOPT_HTTPHEADER => ['Accept: application/json'],
                 CURLOPT_ENCODING => '',
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 CURLOPT_USERAGENT => 'WritFileTracking/1.0',
-            ]);
+            ];
+
+            if ($sslCipherList !== '') {
+                $curlOptions[CURLOPT_SSL_CIPHER_LIST] = $sslCipherList;
+            }
+
+            curl_setopt_array($ch, $curlOptions);
 
             $response = curl_exec($ch);
             if (curl_errno($ch)) {
