@@ -43,6 +43,7 @@ class LawyerRegistrationController extends Controller
             $curlOptions = [
                 CURLOPT_URL => config('services.scba.member_list_url'),
                 CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => '',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_CONNECTTIMEOUT => 10,
                 CURLOPT_TIMEOUT => 30,
