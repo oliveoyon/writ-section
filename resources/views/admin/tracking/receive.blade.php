@@ -320,7 +320,7 @@
         const barcodes = [];
         const inputError = document.getElementById('barcodeInputError');
         const permanentBarcodePattern = /^13\d{10}$/;
-        const finalCasePattern = /^WRPET\s+\d+\/\d{4}$/i;
+        const finalCasePattern = /^(?:WRPET|WRITPET)\s+\d+\/\d{4}$/i;
         const validateIdentifierUrl = @json(route('admin.tracking.movement.validate-identifier'));
 
         function escapeHtml(value) {

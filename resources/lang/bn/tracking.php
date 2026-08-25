@@ -189,6 +189,7 @@ return [
         'override_receive' => 'ওভাররাইড গ্রহণ',
         'dispatch_to_court' => 'কোর্টে পাঠানো',
         'returned_from_court_handover' => 'কোর্ট থেকে গ্রহণ',
+        'old_case_receive' => 'পুরাতন মামলা গ্রহণ',
         'filter' => 'ফিল্টার',
         'print_title' => 'ফাইল মুভমেন্ট রেজিস্টার',
         'print_range' => 'তারিখ পরিসর',

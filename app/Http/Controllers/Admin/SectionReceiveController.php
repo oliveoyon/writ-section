@@ -7,6 +7,7 @@ use App\Models\CourtCase;
 use App\Models\CourtDispatchBatch;
 use App\Models\CourtDispatchBatchItem;
 use App\Models\FileMovement;
+use App\Services\RtftsCaseReference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -57,6 +58,15 @@ class SectionReceiveController extends Controller
                 'valid' => true,
                 'permanent_barcode' => $case->permanent_barcode,
                 'case_number' => $case->final_case_number,
+            ]);
+        }
+
+        $parsed = RtftsCaseReference::parseIdentifier($identifier);
+        if ($parsed) {
+            return response()->json([
+                'valid' => true,
+                'permanent_barcode' => $parsed['barcode'],
+                'case_number' => $parsed['reference'],
             ]);
         }
 
@@ -124,10 +134,23 @@ class SectionReceiveController extends Controller
             $case = $this->findMovementCase($barcode);
 
             if (!$case) {
-                $failureReason = CourtCase::where('temporary_barcode', $barcode)->exists()
-                    ? __('tracking.receive.temporary_not_accepted')
-                    : __('tracking.receive.permanent_not_found');
-                $failed[] = ['barcode' => $barcode, 'reason' => $failureReason];
+                $parsed = RtftsCaseReference::parseIdentifier($barcode);
+
+                if (!$parsed) {
+                    $failureReason = CourtCase::where('temporary_barcode', $barcode)->exists()
+                        ? __('tracking.receive.temporary_not_accepted')
+                        : __('tracking.receive.permanent_not_found');
+                    $failed[] = ['barcode' => $barcode, 'reason' => $failureReason];
+                    continue;
+                }
+
+                $case = $this->createOldCaseForReceive($parsed, $user, $section, $reason);
+                $received[] = [
+                    'barcode' => $case->permanent_barcode,
+                    'case_no' => $case->case_reference ?: ('CASE-' . $case->id),
+                    'from_section' => 'Old Case Record',
+                    'to_section' => $section,
+                ];
                 continue;
             }
 
@@ -225,15 +248,99 @@ class SectionReceiveController extends Controller
     private function findMovementCase(string $identifier): ?CourtCase
     {
         $identifier = trim(preg_replace('/\s+/', ' ', $identifier) ?? '');
+        $normalizedBarcode = RtftsCaseReference::barcodeFromSearch($identifier);
+        $normalizedReference = RtftsCaseReference::parseIdentifier($identifier)['reference'] ?? null;
 
         return CourtCase::query()
-            ->whereNotNull('permanent_barcode')
-            ->where('permanent_barcode', $identifier)
-            ->orWhere(function ($query) use ($identifier) {
-                $query->whereNotNull('permanent_barcode')
-                    ->where('final_case_number', $identifier);
+            ->where(function ($query) use ($identifier, $normalizedBarcode, $normalizedReference) {
+                $query->where(function ($inner) use ($identifier) {
+                    $inner->whereNotNull('permanent_barcode')
+                        ->where('permanent_barcode', $identifier);
+                })
+                    ->orWhere(function ($inner) use ($identifier) {
+                        $inner->whereNotNull('permanent_barcode')
+                            ->where('final_case_number', $identifier);
+                    });
+
+                if ($normalizedBarcode) {
+                    $query->orWhere(function ($inner) use ($normalizedBarcode) {
+                        $inner->whereNotNull('permanent_barcode')
+                            ->where('permanent_barcode', $normalizedBarcode);
+                    });
+                }
+
+                if ($normalizedReference) {
+                    $query->orWhere(function ($inner) use ($normalizedReference) {
+                        $inner->whereNotNull('permanent_barcode')
+                            ->where('final_case_number', $normalizedReference);
+                    });
+                }
             })
             ->first();
+    }
+
+    private function createOldCaseForReceive(array $parsed, $user, string $section, ?string $reason): CourtCase
+    {
+        return DB::transaction(function () use ($parsed, $user, $section, $reason) {
+            $case = $this->findMovementCase($parsed['barcode']);
+            if ($case) {
+                return $case;
+            }
+
+            $now = now();
+            $case = CourtCase::create([
+                'initiated_by_user_id' => $user->id,
+                'entry_source' => 'legacy',
+                'status' => 'in_progress',
+                'permanent_barcode' => $parsed['barcode'],
+                'permanent_barcode_generated_at' => $now,
+                'final_case_number' => $parsed['reference'],
+                'final_case_year' => $parsed['year'],
+                'registration_serial' => $parsed['serial'],
+                'current_section' => $section,
+                'current_holder_user_id' => $user->id,
+                'current_holder_at' => $now,
+            ]);
+
+            FileMovement::create([
+                'case_id' => $case->id,
+                'barcode_scanned' => $parsed['input'],
+                'from_section' => 'Old Case Record',
+                'to_section' => $section,
+                'movement_type' => 'legacy_intake',
+                'received_by_user_id' => $user->id,
+                'received_at' => $now,
+                'notes' => $reason ?: 'Old case received by scan.',
+            ]);
+
+            $this->syncRegistrationSequence($parsed['year'], $parsed['serial']);
+
+            return $case->fresh(['currentHolder']);
+        });
+    }
+
+    private function syncRegistrationSequence(string $year, int $serial): void
+    {
+        DB::table('case_registration_sequences')->insertOrIgnore([
+            'year' => $year,
+            'last_serial' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $current = DB::table('case_registration_sequences')
+            ->where('year', $year)
+            ->lockForUpdate()
+            ->value('last_serial');
+
+        if ((int) $current < $serial) {
+            DB::table('case_registration_sequences')
+                ->where('year', $year)
+                ->update([
+                    'last_serial' => $serial,
+                    'updated_at' => now(),
+                ]);
+        }
     }
 
     private function receiveFromCourt(CourtCase $case, $user, string $section, ?string $reason, array &$batches): ?string

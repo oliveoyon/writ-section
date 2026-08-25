@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\CourtController;
 use App\Http\Controllers\Admin\FilingController;
 use App\Http\Controllers\Admin\CourtDispatchController;
+use App\Http\Controllers\Admin\LegacyIntakeController;
 use App\Http\Controllers\Admin\RegistrarTrackingController;
 use App\Http\Controllers\Admin\RoleLabelController;
 use App\Http\Controllers\Admin\SectionReceiveController;
@@ -99,6 +100,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
         Route::get('filing/print/{case}/tspl', [FilingController::class, 'printLabelTspl'])->name('filing.print-label-tspl');
         Route::post('filing/print/{case}/direct', [FilingController::class, 'printLabelDirect'])->name('filing.print-label-direct');
         Route::get('movement/validate-identifier', [SectionReceiveController::class, 'validateIdentifier'])->name('movement.validate-identifier');
+        Route::get('old-case-receive', [LegacyIntakeController::class, 'show'])->name('old-case-receive');
+        Route::post('old-case-receive', [LegacyIntakeController::class, 'store'])->name('old-case-receive.store');
         Route::get('court/batches', [CourtDispatchController::class, 'batches'])->name('court.batches.index');
         Route::get('court/batches/{batch}', [CourtDispatchController::class, 'batchShow'])->name('court.batches.show');
         Route::get('court/batches/{batch}/pdf', [CourtDispatchController::class, 'batchPdf'])->name('court.batch.pdf');

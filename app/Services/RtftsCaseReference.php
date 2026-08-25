@@ -78,23 +78,53 @@ class RtftsCaseReference
         return self::humanReference($matches[1], (int) $matches[2]);
     }
 
-    public static function barcodeFromSearch(?string $value): ?string
+    public static function parseIdentifier(?string $value): ?array
     {
-        $value = trim((string) $value);
-        if (preg_match('/^13\d{10}$/', $value)) {
-            return $value;
+        $value = trim(preg_replace('/\s+/', ' ', (string) $value) ?? '');
+        if ($value === '') {
+            return null;
         }
 
-        if (!preg_match('/^(?:(?:WRPET|WRITPET)\s*)?(\d{1,6})\s*\/\s*(\d{4})$/i', $value, $matches)) {
+        if (preg_match('/^13(\d{4})(\d{6})$/', $value, $matches)) {
+            $year = $matches[1];
+            $serial = (int) $matches[2];
+
+            if (!self::isValidLegacyYear($year) || $serial < 1) {
+                return null;
+            }
+
+            return [
+                'input' => $value,
+                'year' => $year,
+                'serial' => $serial,
+                'barcode' => self::barcode($year, $serial),
+                'reference' => self::humanReference($year, $serial),
+            ];
+        }
+
+        if (!preg_match('/^(?:(?:WRPET|WRITPET)\s*)?0*(\d{1,6})\s*\/\s*(\d{4})$/i', $value, $matches)) {
             return null;
         }
 
         $serial = (int) $matches[1];
-        if ($serial < 1) {
+        $year = $matches[2];
+
+        if (!self::isValidLegacyYear($year) || $serial < 1) {
             return null;
         }
 
-        return self::barcode($matches[2], $serial);
+        return [
+            'input' => $value,
+            'year' => $year,
+            'serial' => $serial,
+            'barcode' => self::barcode($year, $serial),
+            'reference' => self::humanReference($year, $serial),
+        ];
+    }
+
+    public static function barcodeFromSearch(?string $value): ?string
+    {
+        return self::parseIdentifier($value)['barcode'] ?? null;
     }
 
     private function normalizeYear(int|string $year): string
@@ -105,5 +135,12 @@ class RtftsCaseReference
         }
 
         return $year;
+    }
+
+    private static function isValidLegacyYear(string $year): bool
+    {
+        $numericYear = (int) $year;
+
+        return $numericYear >= 1971 && $numericYear <= ((int) date('Y') + 1);
     }
 }

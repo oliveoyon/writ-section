@@ -8,6 +8,8 @@
         'dispatch_to_court' => 'Sent to Court',
         'returned_from_court_handover' => 'Court Return',
         'override_receive' => 'Override',
+        'legacy_intake' => 'Old Case Receive',
+        'legacy_receive' => 'Old Case Receive',
     ];
     $activeTotal = max($pendingCount + $inProgressCount + $completedCount, 1);
     $pendingPercent = round(($pendingCount / $activeTotal) * 100);

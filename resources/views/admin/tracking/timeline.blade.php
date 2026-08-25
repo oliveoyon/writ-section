@@ -83,6 +83,8 @@
             'dispatch_to_court' => __('tracking.register.dispatch_to_court'),
             'returned_from_court_handover' => __('tracking.register.returned_from_court_handover'),
             'returned_to_lawyer' => 'Returned to Lawyer',
+            'legacy_intake' => __('tracking.register.old_case_receive'),
+            'legacy_receive' => __('tracking.register.old_case_receive'),
         ];
         $previousHolderByMovement = [];
         $lastKnownHolder = null;

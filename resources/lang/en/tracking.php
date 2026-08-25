@@ -189,6 +189,7 @@ return [
         'override_receive' => 'Override Receive',
         'dispatch_to_court' => 'Send to Court',
         'returned_from_court_handover' => 'Receive from Court',
+        'old_case_receive' => 'Old Case Receive',
         'filter' => 'Filter',
         'print_title' => 'File Movement Register',
         'print_range' => 'Date Range',

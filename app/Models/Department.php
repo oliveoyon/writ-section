@@ -31,5 +31,6 @@ class Department extends Model
         'Others',
         'Court Operator',
         'Registrar',
+        'Disposal Table',
     ];
 }

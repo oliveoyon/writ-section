@@ -29,14 +29,87 @@
             background: #00284d;
         }
 
+        .navbar .container {
+            gap: .75rem;
+        }
+
         .navbar-brand,
         .navbar-nav .nav-link {
             color: #fff;
         }
 
+        .navbar-brand {
+            letter-spacing: 0;
+            white-space: nowrap;
+        }
+
+        .navbar-nav {
+            gap: .15rem;
+        }
+
+        .navbar-nav .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            white-space: nowrap;
+            padding-left: .55rem;
+            padding-right: .55rem;
+            font-weight: 700;
+        }
+
+        .navbar-nav .nav-link i {
+            line-height: 1;
+        }
+
         .navbar-nav .nav-link:hover,
         .dropdown-item:hover {
             color: #d4a017 !important;
+        }
+
+        .dropdown-menu {
+            border: 0;
+            border-radius: 4px;
+            box-shadow: 0 8px 24px rgba(0, 40, 77, .18);
+            padding: .45rem;
+        }
+
+        .dropdown-header {
+            color: #64748b;
+            font-size: .72rem;
+            font-weight: 900;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            border-radius: 4px;
+            color: #1f2937;
+            font-weight: 700;
+            padding: .48rem .65rem;
+        }
+
+        .dropdown-item i {
+            width: 1.05rem;
+            color: #0b4f8a;
+            text-align: center;
+        }
+
+        .dropdown-item.text-danger i {
+            color: #dc3545;
+        }
+
+        .navbar-identity {
+            min-width: 0;
+        }
+
+        .user-menu-label {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         footer {
@@ -85,6 +158,32 @@
                 margin: 0;
             }
         }
+
+        @media (max-width: 991.98px) {
+            main {
+                padding-top: 72px;
+            }
+
+            .navbar-nav {
+                gap: 0;
+                padding-top: .75rem;
+            }
+
+            .navbar-nav .nav-link {
+                display: flex;
+                padding: .6rem 0;
+            }
+
+            .dropdown-menu {
+                box-shadow: none;
+                border: 1px solid rgba(255, 255, 255, .12);
+                background: rgba(255, 255, 255, .98);
+            }
+
+            .user-menu-label {
+                max-width: none;
+            }
+        }
     </style>
     @stack('css')
 </head>
@@ -92,12 +191,7 @@
 <body class="d-flex flex-column min-vh-100">
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
         <div class="container">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-                @php
+            @php
                     $isLoggedIn = auth()->check();
                     $currentUser = $isLoggedIn ? auth()->user() : null;
                     $currentType = $currentUser?->user_type;
@@ -136,9 +230,15 @@
                     } elseif ($canSeeSectionReceiveMenu) {
                         $brandRoute = route('admin.tracking.section.receive');
                     }
-                @endphp
+            @endphp
 
-                <a class="navbar-brand fw-bold" href="{{ $brandRoute }}">{{ __('messages.admin_panel_brand') }}</a>
+            <a class="navbar-brand fw-bold navbar-identity" href="{{ $brandRoute }}">{{ __('messages.admin_panel_brand') }}</a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
 
                 <ul class="navbar-nav ms-auto align-items-lg-center">
                     @if($canSeeAdminMenu)
@@ -150,94 +250,93 @@
 
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                <i class="bi bi-people"></i> {{ __('messages.admin_menu') }}
+                                <i class="bi bi-sliders"></i> {{ __('messages.manage_menu') }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ route('admin.users.index') }}">{{ __('messages.users') }}</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.departments.index') }}">{{ __('messages.departments') }}</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.courts.index') }}">{{ __('messages.courts') }}</a></li>
+                                <li><h6 class="dropdown-header">{{ __('messages.admin_menu') }}</h6></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.users.index') }}"><i class="bi bi-people"></i>{{ __('messages.users') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.departments.index') }}"><i class="bi bi-diagram-3"></i>{{ __('messages.departments') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('admin.courts.index') }}"><i class="bi bi-bank"></i>{{ __('messages.courts') }}</a></li>
                                 @unless($canSeeCourtMenu)
-                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.court.batches.index') }}">Court Batches</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.court.batches.index') }}"><i class="bi bi-collection"></i>{{ __('messages.court_batches') }}</a></li>
                                 @endunless
                             </ul>
                         </li>
                     @endif
 
-                    @if($canSeeFilingMenu)
+                    @if($canSeeAdminMenu || $canSeeFilingMenu || $canSeeSectionReceiveMenu || $canSeeCourtMenu || $canSeeRegistrarMenu)
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                <i class="bi bi-folder-check"></i> {{ __('messages.filing_menu') }}
+                                <i class="bi bi-upc-scan"></i> {{ __('messages.tracking_menu') }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.index') }}">{{ __('messages.filing_module') }}</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.scan-temp') }}">{{ __('messages.filing_scan_temp') }}</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.direct-create') }}">{{ __('messages.filing_direct_create') }}</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.print-index') }}">{{ __('messages.filing_print_module') }}</a></li>
-                            </ul>
-                        </li>
-                    @endif
-
-                    @if($canSeeSectionReceiveMenu)
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                <i class="bi bi-upc-scan"></i> {{ $isAffidavitSection ? __('messages.affidavit_menu') : __('messages.section_menu') }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.section.receive') }}">{{ $isAffidavitSection ? __('messages.affidavit_receive') : __('messages.section_receive') }}</a></li>
-                            </ul>
-                        </li>
-                    @endif
-
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.tracking.register-report') }}">
-                            <i class="bi bi-printer"></i> {{ __('messages.register_report') }}
-                        </a>
-                    </li>
-
-                    @if($canSeeCourtMenu)
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                <i class="bi bi-building"></i> {{ __('messages.court_menu') }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.court.dispatch.index') }}">{{ __('messages.court_dispatch') }}</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.tracking.court.batches.index') }}">Court Batches</a></li>
-                                @if(!$isOfficeAssistantSection)
-                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.court.return.index') }}">{{ __('messages.court_return') }}</a></li>
+                                @if($canSeeSectionReceiveMenu)
+                                    <li><h6 class="dropdown-header">{{ $isAffidavitSection ? __('messages.affidavit_menu') : __('messages.section_menu') }}</h6></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.section.receive') }}"><i class="bi bi-upc-scan"></i>{{ $isAffidavitSection ? __('messages.affidavit_receive') : __('messages.section_receive') }}</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.old-case-receive') }}"><i class="bi bi-archive"></i>{{ __('messages.old_case_receive') }}</a></li>
                                 @endif
-                            </ul>
-                        </li>
-                    @endif
 
-                    @if($canSeeRegistrarMenu)
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.tracking.lookup') }}">
-                                <i class="bi bi-search"></i> {{ __('messages.registrar_lookup') }}
-                            </a>
+                                @if($canSeeFilingMenu)
+                                    @if($canSeeSectionReceiveMenu)
+                                        <li><hr class="dropdown-divider"></li>
+                                    @endif
+                                    <li><h6 class="dropdown-header">{{ __('messages.filing_menu') }}</h6></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.index') }}"><i class="bi bi-folder-check"></i>{{ __('messages.filing_module') }}</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.scan-temp') }}"><i class="bi bi-qr-code-scan"></i>{{ __('messages.filing_scan_temp') }}</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.direct-create') }}"><i class="bi bi-file-earmark-plus"></i>{{ __('messages.filing_direct_create') }}</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.filing.print-index') }}"><i class="bi bi-printer"></i>{{ __('messages.filing_print_module') }}</a></li>
+                                @endif
+
+                                @if($canSeeCourtMenu)
+                                    @if($canSeeFilingMenu || $canSeeSectionReceiveMenu)
+                                        <li><hr class="dropdown-divider"></li>
+                                    @endif
+                                    <li><h6 class="dropdown-header">{{ __('messages.court_menu') }}</h6></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.court.dispatch.index') }}"><i class="bi bi-send"></i>{{ __('messages.court_dispatch') }}</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.court.batches.index') }}"><i class="bi bi-collection"></i>{{ __('messages.court_batches') }}</a></li>
+                                    @if(!$isOfficeAssistantSection)
+                                        <li><a class="dropdown-item" href="{{ route('admin.tracking.court.return.index') }}"><i class="bi bi-box-arrow-in-down"></i>{{ __('messages.court_return') }}</a></li>
+                                    @endif
+                                @endif
+
+                                @if($canSeeRegistrarMenu)
+                                    @if($canSeeFilingMenu || $canSeeSectionReceiveMenu || $canSeeCourtMenu)
+                                        <li><hr class="dropdown-divider"></li>
+                                    @endif
+                                    <li><h6 class="dropdown-header">{{ __('messages.search_menu') }}</h6></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.lookup') }}"><i class="bi bi-search"></i>{{ __('messages.registrar_lookup') }}</a></li>
+                                @endif
+
+                                @if($canSeeFilingMenu || $canSeeSectionReceiveMenu || $canSeeCourtMenu || $canSeeRegistrarMenu)
+                                    <li><hr class="dropdown-divider"></li>
+                                @endif
+                                <li><a class="dropdown-item" href="{{ route('admin.tracking.register-report') }}"><i class="bi bi-file-earmark-bar-graph"></i>{{ __('messages.register_report') }}</a></li>
+                            </ul>
                         </li>
                     @endif
 
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            {{ __('messages.language') }}
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" title="{{ __('messages.language') }}">
+                            <i class="bi bi-translate"></i> {{ __('messages.language') }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ route('locale.set', 'en') }}">{{ __('messages.lang_en') }}</a></li>
-                            <li><a class="dropdown-item" href="{{ route('locale.set', 'bn') }}">{{ __('messages.lang_bn') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('locale.set', 'en') }}"><i class="bi bi-type"></i>{{ __('messages.lang_en') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('locale.set', 'bn') }}"><i class="bi bi-fonts"></i>{{ __('messages.lang_bn') }}</a></li>
                         </ul>
                     </li>
 
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> {{ Auth::user()->name ?? __('messages.profile') }}
+                            <i class="bi bi-person-circle"></i> <span class="user-menu-label">{{ Auth::user()->name ?? __('messages.profile') }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ route('profile.edit') }}">{{ __('messages.my_profile') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="bi bi-person-gear"></i>{{ __('messages.my_profile') }}</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <button class="dropdown-item text-danger">{{ __('messages.logout') }}</button>
+                                    <button class="dropdown-item text-danger"><i class="bi bi-box-arrow-right"></i>{{ __('messages.logout') }}</button>
                                 </form>
                             </li>
                         </ul>
@@ -273,7 +372,7 @@
                         <li><a href="{{ route('admin.tracking.register-report') }}">{{ __('messages.register_report') }}</a></li>
                         @if($canSeeCourtMenu)
                             <li><a href="{{ route('admin.tracking.court.dispatch.index') }}">{{ __('messages.court_dispatch') }}</a></li>
-                            <li><a href="{{ route('admin.tracking.court.batches.index') }}">Court Batches</a></li>
+                            <li><a href="{{ route('admin.tracking.court.batches.index') }}">{{ __('messages.court_batches') }}</a></li>
                             @if(!$isOfficeAssistantSection)
                                 <li><a href="{{ route('admin.tracking.court.return.index') }}">{{ __('messages.court_return') }}</a></li>
                             @endif

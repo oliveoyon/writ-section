@@ -56,6 +56,8 @@
             'override_receive' => 'tracking.register.override_receive',
             'dispatch_to_court' => 'tracking.register.dispatch_to_court',
             'returned_from_court_handover' => 'tracking.register.returned_from_court_handover',
+            'legacy_intake' => 'tracking.register.old_case_receive',
+            'legacy_receive' => 'tracking.register.old_case_receive',
         ];
     @endphp
 @php
