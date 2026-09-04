@@ -55,7 +55,7 @@ class EnsureDepartment
             return 'admin.tracking.filing.scan-temp';
         }
 
-        if (str_contains($department, 'office assistant')) {
+        if (str_contains($department, 'office assistant') || str_contains($department, 'dealing assistant')) {
             return 'admin.tracking.section.receive';
         }
 
@@ -64,6 +64,7 @@ class EnsureDepartment
             str_contains($department, 'requisite') ||
             str_contains($department, 'put-up') ||
             str_contains($department, 'put up') ||
+            str_contains($department, 'dealing assistant') ||
             str_contains($department, 'typing') ||
             str_contains($department, 'compare') ||
             str_contains($department, 'superintendent') ||

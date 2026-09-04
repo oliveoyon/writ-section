@@ -2,14 +2,14 @@
 
 @section('content')
 <div class="container py-4 receive-page">
-    @php($isOfficeAssistant = str_contains(strtolower($section), 'office assistant'))
+    @php($canUseCourtMovement = str_contains(strtolower($section), 'office assistant') || str_contains(strtolower($section), 'dealing assistant'))
     <div class="receive-header mb-3">
         <div>
             <div class="system-mark">RTFTS Receive</div>
             <h4 class="mb-0">{{ auth()->user()->name }}: {{ __('tracking.receive.title') }}</h4>
             <small>{{ $section }}</small>
         </div>
-        @if($isOfficeAssistant)
+        @if($canUseCourtMovement)
             <div class="kiosk-actions">
                 <a href="{{ route('admin.tracking.court.dispatch.index') }}" class="btn kiosk-action btn-send">
                     <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>

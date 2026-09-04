@@ -94,7 +94,7 @@ class AuthenticatedSessionController extends Controller
             return route('admin.tracking.filing.scan-temp');
         }
 
-        if (str_contains($department, 'office assistant')) {
+        if (str_contains($department, 'office assistant') || str_contains($department, 'dealing assistant')) {
             return route('admin.tracking.section.receive');
         }
 
@@ -103,6 +103,7 @@ class AuthenticatedSessionController extends Controller
             str_contains($department, 'requisite') ||
             str_contains($department, 'put-up') ||
             str_contains($department, 'put up') ||
+            str_contains($department, 'dealing assistant') ||
             str_contains($department, 'typing') ||
             str_contains($department, 'compare') ||
             str_contains($department, 'superintendent') ||

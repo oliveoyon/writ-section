@@ -420,8 +420,11 @@ class SectionReceiveController extends Controller
 
     private function canReceiveFromCourt($user): bool
     {
+        $section = strtolower($this->resolveSection($user));
+
         return $user->hasRole('Super Admin')
-            || str_contains(strtolower($this->resolveSection($user)), 'office assistant');
+            || str_contains($section, 'office assistant')
+            || str_contains($section, 'dealing assistant');
     }
 
     private function nextBatchNo(string $prefix): string

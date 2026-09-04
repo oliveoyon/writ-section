@@ -198,13 +198,14 @@
                     $isSuperAdmin = $currentUser?->hasRole('Super Admin') ?? false;
                     $departmentName = strtolower((string) ($currentUser?->departmentRelation?->name ?? ''));
                     $hasAssignedDepartment = $departmentName !== '';
-                    $sectionTrackingKeywords = ['office assistant', 'affidavit', 'requisite', 'put-up', 'put up', 'typing', 'compare', 'superintendent', 'ready table', 'record room', 'court'];
+                    $sectionTrackingKeywords = ['office assistant', 'dealing assistant', 'affidavit', 'requisite', 'put-up', 'put up', 'typing', 'compare', 'superintendent', 'ready table', 'record room', 'court'];
 
                     $canSeeAdminMenu = $isLoggedIn && $currentType === 'admin';
                     $canSeeFilingMenu = $isLoggedIn && ($isSuperAdmin || str_contains($departmentName, 'filing'));
                     $canSeeRegistrarMenu = $isLoggedIn && str_contains($departmentName, 'registrar');
                     $canSeeCourtMenu = $isLoggedIn && ($isSuperAdmin ||
                         str_contains($departmentName, 'office assistant') ||
+                        str_contains($departmentName, 'dealing assistant') ||
                         str_contains($departmentName, 'assistant registrar')
                     );
                     $canSeeSectionReceiveMenu = $isLoggedIn && ($isSuperAdmin ||
@@ -214,7 +215,7 @@
                         )
                     );
                     $isAffidavitSection = str_contains($departmentName, 'affidavit');
-                    $isOfficeAssistantSection = str_contains($departmentName, 'office assistant');
+                    $isCourtMovementSection = str_contains($departmentName, 'office assistant') || str_contains($departmentName, 'dealing assistant');
 
                     $brandRoute = '#';
                     if ($canSeeAdminMenu) {
@@ -223,7 +224,7 @@
                         $brandRoute = route('admin.tracking.filing.index');
                     } elseif ($canSeeRegistrarMenu) {
                         $brandRoute = route('admin.tracking.lookup');
-                    } elseif ($canSeeSectionReceiveMenu && str_contains($departmentName, 'office assistant')) {
+                    } elseif ($canSeeSectionReceiveMenu && $isCourtMovementSection) {
                         $brandRoute = route('admin.tracking.section.receive');
                     } elseif ($canSeeCourtMenu) {
                         $brandRoute = route('admin.tracking.court.dispatch.index');
@@ -295,7 +296,7 @@
                                     <li><h6 class="dropdown-header">{{ __('messages.court_menu') }}</h6></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.tracking.court.dispatch.index') }}"><i class="bi bi-send"></i>{{ __('messages.court_dispatch') }}</a></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.tracking.court.batches.index') }}"><i class="bi bi-collection"></i>{{ __('messages.court_batches') }}</a></li>
-                                    @if(!$isOfficeAssistantSection)
+                                    @if(!$isCourtMovementSection)
                                         <li><a class="dropdown-item" href="{{ route('admin.tracking.court.return.index') }}"><i class="bi bi-box-arrow-in-down"></i>{{ __('messages.court_return') }}</a></li>
                                     @endif
                                 @endif
@@ -373,7 +374,7 @@
                         @if($canSeeCourtMenu)
                             <li><a href="{{ route('admin.tracking.court.dispatch.index') }}">{{ __('messages.court_dispatch') }}</a></li>
                             <li><a href="{{ route('admin.tracking.court.batches.index') }}">{{ __('messages.court_batches') }}</a></li>
-                            @if(!$isOfficeAssistantSection)
+                            @if(!$isCourtMovementSection)
                                 <li><a href="{{ route('admin.tracking.court.return.index') }}">{{ __('messages.court_return') }}</a></li>
                             @endif
                         @endif

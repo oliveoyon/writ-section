@@ -108,7 +108,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
         Route::get('court/batches/{batch}', [CourtDispatchController::class, 'batchShow'])->name('court.batches.show');
         Route::get('court/batches/{batch}/pdf', [CourtDispatchController::class, 'batchPdf'])->name('court.batch.pdf');
 
-        Route::middleware('ensureDepartment:Office Assistant,Assistant Registrar Office')->group(function () {
+        Route::middleware('ensureDepartment:Office Assistant,Dealing Assistant,Assistant Registrar Office')->group(function () {
             Route::get('court/dispatch', [CourtDispatchController::class, 'dispatchIndex'])->name('court.dispatch.index');
             Route::post('court/dispatch', [CourtDispatchController::class, 'dispatchStore'])->name('court.dispatch.store');
             Route::get('court/return', [CourtDispatchController::class, 'returnIndex'])->name('court.return.index');

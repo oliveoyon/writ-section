@@ -94,7 +94,7 @@ return [
         'identifier_not_found' => 'No filed case matches this number.',
         'court_dispatch_missing' => 'Court dispatch record was not found.',
         'rejected_file_not_receivable' => 'This file was rejected and cannot be received by any section.',
-        'court_return_office_assistant_only' => 'This file is in court. Only an Office Assistant or Super Admin can receive it from court.',
+        'court_return_office_assistant_only' => 'This file is in court. Only an Office Assistant, Dealing Assistant or Super Admin can receive it from court.',
         'send_to_court' => 'Send to Court',
         'receive_from_court' => 'Receive from Court',
         'report' => 'Report',
@@ -247,7 +247,7 @@ return [
         'movement_notes' => [
             'dispatch_to_court' => 'Dispatched to court custody.',
             'handover_to_section' => 'Court handed over file for section: :section',
-            'received_from_court' => 'Received from court into Office Assistant custody.',
+            'received_from_court' => 'Received from court into section custody.',
         ],
     ],
 ];
