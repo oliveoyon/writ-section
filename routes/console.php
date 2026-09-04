@@ -64,6 +64,7 @@ Artisan::command('tracking:audit-users {--show-ok : Include users who are fully 
                     $user->name,
                     $user->email,
                     $user->user_type ?? '-',
+                    $user->employee_id ?? '-',
                     $user->login_id ?? '-',
                     $user->is_active ? 'yes' : 'no',
                     $departmentName ?? '-',
@@ -83,6 +84,10 @@ Artisan::command('tracking:audit-users {--show-ok : Include users who are fully 
 
         if ($requiresCardAndDepartment && !$user->login_id) {
             $issues[] = 'Missing card login_id';
+        }
+
+        if (!$user->employee_id) {
+            $issues[] = 'Missing employee_id';
         }
 
         if (!$user->is_active) {
@@ -117,6 +122,7 @@ Artisan::command('tracking:audit-users {--show-ok : Include users who are fully 
                 $user->name,
                 $user->email,
                 $user->user_type ?? '-',
+                $user->employee_id ?? '-',
                 $user->login_id ?? '-',
                 $user->is_active ? 'yes' : 'no',
                 $departmentName ?? '-',
@@ -132,11 +138,11 @@ Artisan::command('tracking:audit-users {--show-ok : Include users who are fully 
     }
 
     $this->table(
-        ['ID', 'Name', 'Email', 'Type', 'Card ID', 'Active', 'Department', 'Roles', 'Status'],
+        ['ID', 'Name', 'Email', 'Type', 'Employee ID', 'Card ID', 'Active', 'Department', 'Roles', 'Status'],
         $rows
     );
 
-    $issueCount = collect($rows)->filter(fn ($row) => $row[8] !== 'OK')->count();
+    $issueCount = collect($rows)->filter(fn ($row) => $row[9] !== 'OK')->count();
     if ($issueCount > 0) {
         $this->warn("Audit finished with {$issueCount} user(s) needing fixes.");
     } else {
@@ -252,6 +258,9 @@ Artisan::command('tracking:health-check', function () {
             if (!($isSuperAdmin || $isAdmin)) {
                 return true;
             }
+            if (!$user->employee_id) {
+                return true;
+            }
             if (!$isSuperAdmin && !$user->login_id) {
                 return true;
             }
@@ -260,6 +269,9 @@ Artisan::command('tracking:health-check', function () {
 
         if ($type === 'staff') {
             if (!$isStaff || $isSuperAdmin) {
+                return true;
+            }
+            if (!$user->employee_id) {
                 return true;
             }
             if (!$user->login_id) {

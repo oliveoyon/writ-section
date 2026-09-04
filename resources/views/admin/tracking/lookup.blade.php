@@ -64,6 +64,7 @@
                     value="{{ request('q') }}"
                     autocomplete="off"
                     placeholder="Barcode, case number, petitioner or lawyer"
+                    autofocus
                     required
                 >
                 <button type="submit" class="btn btn-brand px-3" title="{{ __('tracking.lookup.search') }}">
@@ -175,7 +176,7 @@
     .panel-heading h5 { margin: 0; color: #1f2937; font-size: 1rem; font-weight: 800; }
     .panel-heading span { color: #6b7280; font-size: .84rem; font-weight: 600; }
     .panel-body { padding: 1rem; }
-    .lookup-search { max-width: 860px; }
+    .lookup-search { width: 100%; }
     .lookup-search .form-control,
     .lookup-search .input-group-text,
     .lookup-search .btn { min-height: 52px; }

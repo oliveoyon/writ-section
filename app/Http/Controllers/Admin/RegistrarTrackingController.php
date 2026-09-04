@@ -272,7 +272,7 @@ class RegistrarTrackingController extends Controller
         $request->validate([
             'filter_mode' => 'required|in:date_range,month,year',
             'section' => 'nullable|string|max:255',
-            'movement_type' => 'nullable|in:receive,reject,override_receive,dispatch_to_court,returned_from_court_handover,legacy_intake,legacy_receive',
+            'movement_type' => 'nullable|in:receive,reject,override_receive,dispatch_to_court,returned_from_court_handover,old_case_receive,legacy_intake,legacy_receive',
             'movement_scope' => 'required|in:all,in,out',
         ]);
 
@@ -304,7 +304,15 @@ class RegistrarTrackingController extends Controller
         $movementsQuery = FileMovement::with(['courtCase', 'receivedBy'])
             ->when($dateFrom !== '', fn($q) => $q->whereDate('received_at', '>=', $dateFrom))
             ->when($dateTo !== '', fn($q) => $q->whereDate('received_at', '<=', $dateTo))
-            ->when($movementType !== '', fn($q) => $q->where('movement_type', $movementType));
+            ->when($movementType !== '', function ($q) use ($movementType) {
+                if ($movementType === 'old_case_receive') {
+                    $q->whereIn('movement_type', ['legacy_intake', 'legacy_receive']);
+
+                    return;
+                }
+
+                $q->where('movement_type', $movementType);
+            });
 
         if (!$canViewAllSections && $userSection !== '') {
             if ($movementScope === 'in') {

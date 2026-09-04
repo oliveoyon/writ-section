@@ -511,7 +511,7 @@
                     <section class="login-card" id="passwordLogin">
                         <div class="login-card-header">
                             <h2>System Login</h2>
-                            <p>Use card tap or user ID and password.</p>
+                            <p>Use card tap or Employee ID and password.</p>
                         </div>
 
                         <div class="login-card-body">
@@ -538,16 +538,16 @@
 
                             <form method="POST" action="{{ route('proximity.login') }}" id="cardForm">
                                 @csrf
-                                <input type="hidden" name="login_id" id="card_login_id" value="{{ old('login_id') }}">
+                                <input type="hidden" name="login_id" id="card_login_id" value="">
                                 <input
                                     type="password"
                                     id="card_login_mask"
-                                    class="@error('login_id') is-invalid @enderror"
-                                    value="{{ old('login_id') }}"
+                                    class="@error('card_login_id') is-invalid @enderror"
+                                    value=""
                                     autocomplete="off"
                                     autofocus
                                 >
-                                @error('login_id')
+                                @error('card_login_id')
                                     <div class="invalid-feedback d-block mt-2">{{ $message }}</div>
                                 @enderror
 
@@ -562,17 +562,17 @@
                             <form method="POST" action="{{ route('login') }}" id="passwordForm">
                                 @csrf
 
-                                <label class="form-label" for="expert_login_id">User ID</label>
+                                <label class="form-label" for="expert_employee_id">Employee ID</label>
                                 <input
                                     type="text"
-                                    id="expert_login_id"
-                                    name="login_id"
-                                    class="form-control @error('login_id') is-invalid @enderror"
-                                    value="{{ old('login_id') }}"
+                                    id="expert_employee_id"
+                                    name="employee_id"
+                                    class="form-control @error('employee_id') is-invalid @enderror"
+                                    value="{{ old('employee_id') }}"
                                     autocomplete="username"
                                     required
                                 >
-                                @error('login_id')
+                                @error('employee_id')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
 

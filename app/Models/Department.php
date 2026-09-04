@@ -23,6 +23,7 @@ class Department extends Model
         'Affidavit Section',
         'Requisite Section',
         'Put-Up Section',
+        'Dealing Assistant',
         'Typing Section',
         'Compare Section',
         'Superintendent',
@@ -32,5 +33,8 @@ class Department extends Model
         'Court Operator',
         'Registrar',
         'Disposal Table',
+        'Case Docket',
+        'Scanning',
+        'Process Service',
     ];
 }

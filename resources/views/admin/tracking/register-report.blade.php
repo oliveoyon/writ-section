@@ -80,8 +80,7 @@
                     <option value="override_receive" @selected($movementType === 'override_receive')>{{ __('tracking.register.override_receive') }}</option>
                     <option value="dispatch_to_court" @selected($movementType === 'dispatch_to_court')>{{ __('tracking.register.dispatch_to_court') }}</option>
                     <option value="returned_from_court_handover" @selected($movementType === 'returned_from_court_handover')>{{ __('tracking.register.returned_from_court_handover') }}</option>
-                    <option value="legacy_intake" @selected($movementType === 'legacy_intake')>{{ __('tracking.register.old_case_receive') }}</option>
-                    <option value="legacy_receive" @selected($movementType === 'legacy_receive')>{{ __('tracking.register.old_case_receive') }}</option>
+                    <option value="old_case_receive" @selected(in_array($movementType, ['old_case_receive', 'legacy_intake', 'legacy_receive'], true))>{{ __('tracking.register.old_case_receive') }}</option>
                 </select>
             </div>
             <div class="col-sm-6 col-lg-4">

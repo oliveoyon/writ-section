@@ -85,6 +85,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
     Route::resource('departments', DepartmentController::class)->except(['show', 'create']);
     Route::resource('courts', CourtController::class)->except(['show', 'create']);
     Route::put('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
+    Route::get('users/card-labels/print', [UserController::class, 'cardLabels'])->name('users.card-labels');
     Route::resource('users', UserController::class)->except(['show']);
     Route::put('roles/{role}/display-name', [RoleLabelController::class, 'update'])->name('roles.display-name.update');
 
@@ -95,6 +96,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
         Route::get('register-report', [RegistrarTrackingController::class, 'registerReport'])->name('register-report');
         Route::get('register-report/pdf', [RegistrarTrackingController::class, 'registerReportPdf'])->name('register-report.pdf');
         Route::get('filing/print', [FilingController::class, 'printIndex'])->name('filing.print-index');
+        Route::get('filing/print-suggest', [FilingController::class, 'printSuggest'])->name('filing.print-suggest');
         Route::get('filing/print/{case}', [FilingController::class, 'printLabel'])->name('filing.print-label');
         Route::get('filing/print/{case}/pdf', [FilingController::class, 'printLabelPdf'])->name('filing.print-label-pdf');
         Route::get('filing/print/{case}/tspl', [FilingController::class, 'printLabelTspl'])->name('filing.print-label-tspl');

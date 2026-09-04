@@ -7,7 +7,7 @@
         }
 
         .profile-shell {
-            max-width: 980px;
+            max-width: 1120px;
         }
 
         .profile-hero {
@@ -172,7 +172,11 @@
                                 <strong>{{ $user->email }}</strong>
                             </div>
                             <div class="profile-meta-item">
-                                <span>Login / Card ID</span>
+                                <span>Employee ID</span>
+                                <strong>{{ $user->employee_id ?: 'Not set' }}</strong>
+                            </div>
+                            <div class="profile-meta-item">
+                                <span>Card ID</span>
                                 <strong>{{ $user->login_id ?: 'Not set' }}</strong>
                             </div>
                             <div class="profile-meta-item">

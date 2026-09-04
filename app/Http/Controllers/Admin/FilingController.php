@@ -375,6 +375,43 @@ class FilingController extends Controller
         return view('admin.tracking.filing-print-search', compact('case', 'barcode', 'widthMm', 'heightMm'));
     }
 
+    public function printSuggest(Request $request)
+    {
+        $query = trim((string) $request->input('q', ''));
+
+        if (mb_strlen($query) < 3) {
+            return response()->json(['items' => []]);
+        }
+
+        $cases = $this->buildPrintLookupQuery($query)
+            ->with(['petitioners', 'lawyer'])
+            ->latest('id')
+            ->limit(8)
+            ->get();
+
+        $items = $cases->map(function (CourtCase $case) {
+            $title = $case->case_reference
+                ?: $case->permanent_barcode
+                ?: ('CASE-' . $case->id);
+
+            $parts = array_values(array_filter([
+                $case->permanent_barcode,
+                $case->petitioners->first()?->name_or_organization,
+                $case->lawyer?->full_name,
+            ]));
+
+            return [
+                'id' => $case->id,
+                'title' => $title,
+                'subtitle' => implode(' | ', $parts),
+                'value' => $title,
+                'url' => route('admin.tracking.filing.print-index', ['permanent_barcode' => $title]),
+            ];
+        })->values();
+
+        return response()->json(['items' => $items]);
+    }
+
     public function printLabel(Request $request, CourtCase $case)
     {
         if (empty($case->permanent_barcode)) {
@@ -389,6 +426,39 @@ class FilingController extends Controller
         $next = $request->query('next');
 
         return view('admin.tracking.filing-print-label', compact('case', 'barcodeSvg', 'widthMm', 'heightMm', 'autoPrint', 'next'));
+    }
+
+    private function buildPrintLookupQuery(string $query)
+    {
+        $query = trim(preg_replace('/\s+/', ' ', $query) ?? '');
+        $normalizedBarcode = RtftsCaseReference::barcodeFromSearch($query);
+        $normalizedReference = RtftsCaseReference::parseIdentifier($query)['reference'] ?? null;
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
+
+        return CourtCase::query()
+            ->whereNotNull('permanent_barcode')
+            ->where(function ($q) use ($query, $like, $normalizedBarcode, $normalizedReference) {
+                $q->where('permanent_barcode', $query)
+                    ->orWhere('final_case_number', $query)
+                    ->orWhere('permanent_barcode', 'like', $like)
+                    ->orWhere('final_case_number', 'like', $like)
+                    ->orWhereHas('petitioners', function ($p) use ($like) {
+                        $p->where('name_or_organization', 'like', $like)
+                            ->orWhere('represented_by', 'like', $like);
+                    })
+                    ->orWhereHas('lawyer', function ($l) use ($like) {
+                        $l->where('full_name', 'like', $like)
+                            ->orWhere('bar_council_id', 'like', $like);
+                    });
+
+                if ($normalizedBarcode) {
+                    $q->orWhere('permanent_barcode', $normalizedBarcode);
+                }
+
+                if ($normalizedReference) {
+                    $q->orWhere('final_case_number', $normalizedReference);
+                }
+            });
     }
 
     public function printLabelPdf(Request $request, CourtCase $case)

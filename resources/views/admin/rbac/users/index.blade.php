@@ -8,7 +8,12 @@
             <h4 class="mb-0">User Management</h4>
             <small>Manage staff/admin users and lawyer accounts separately.</small>
         </div>
-        <a href="{{ route('admin.users.create') }}" class="btn btn-warning btn-sm fw-bold">Create User</a>
+        <div class="header-actions">
+            <a href="{{ route('admin.users.card-labels') }}" target="_blank" class="btn btn-light btn-sm fw-bold">
+                <i class="bi bi-upc-scan" aria-hidden="true"></i> Print Cards
+            </a>
+            <a href="{{ route('admin.users.create') }}" class="btn btn-warning btn-sm fw-bold">Create User</a>
+        </div>
     </div>
 
     @if(session('swal-success'))
@@ -42,7 +47,7 @@
             </div>
             <form method="GET" action="{{ route('admin.users.index') }}" class="panel-search">
                 <input type="hidden" name="tab" value="users">
-                <input type="search" name="staff_q" class="form-control form-control-sm" value="{{ $staffSearch }}" placeholder="Search user">
+                <input type="search" name="staff_q" class="form-control form-control-sm" value="{{ $staffSearch }}" placeholder="Name, employee ID, card">
                 <button class="btn btn-sm btn-outline-brand" type="submit">Search</button>
                 @if($staffSearch !== '')
                     <a class="btn btn-sm btn-light" href="{{ route('admin.users.index', ['tab' => 'users']) }}">Clear</a>
@@ -56,7 +61,8 @@
                         <tr>
                             <th>Name</th>
                             <th>Email</th>
-                            <th>Login ID</th>
+                            <th>Employee ID</th>
+                            <th>Card ID</th>
                             <th>Department</th>
                             <th>User Type</th>
                             <th>Status</th>
@@ -68,6 +74,7 @@
                             <tr>
                                 <td>{{ $user->name }}</td>
                                 <td>{{ $user->email }}</td>
+                                <td>{{ $user->employee_id ?? '-' }}</td>
                                 <td>{{ $user->login_id ?? '-' }}</td>
                                 <td>{{ $user->departmentRelation?->label ?? '-' }}</td>
                                 <td><span class="badge bg-info text-dark">{{ $userTypeLabels[$user->user_type] ?? ucfirst($user->user_type) }}</span></td>
@@ -88,7 +95,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted">No users found.</td>
+                                <td colspan="8" class="text-center text-muted">No users found.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -186,6 +193,7 @@
 <style>
     .user-page-header { background:#00284d; color:#fff; }
     .user-page-header small { color: rgba(255,255,255,.8); }
+    .header-actions { display: flex; flex-wrap: wrap; gap: .45rem; justify-content: flex-end; }
     .user-tabs { border-bottom-color: #d7dde5; gap: .35rem; }
     .user-tabs .nav-link { border: 1px solid #d7dde5; color: #374151; background: #f8fafc; font-weight: 700; padding: .65rem 1rem; }
     .user-tabs .nav-link.active { background: #00284d; border-color: #00284d; color: #fff; }

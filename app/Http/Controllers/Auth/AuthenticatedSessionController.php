@@ -35,18 +35,22 @@ class AuthenticatedSessionController extends Controller
 
     public function proximityLogin(Request $request): RedirectResponse
     {
-        $request->validate([
-            'login_id' => ['required', 'string', 'max:255'],
-        ]);
+        $loginId = trim((string) $request->input('login_id', ''));
 
-        $user = User::where('login_id', trim((string) $request->login_id))
+        if ($loginId === '' || strlen($loginId) > 255) {
+            return back()->withErrors([
+                'card_login_id' => 'Wrong card. Please try again.',
+            ]);
+        }
+
+        $user = User::where('login_id', $loginId)
             ->where('is_active', true)
             ->first();
 
         if (!$user) {
             return back()->withErrors([
-                'login_id' => 'Invalid proximity card login.',
-            ])->onlyInput('login_id');
+                'card_login_id' => 'Wrong card. Please try again.',
+            ]);
         }
 
         Auth::login($user, true);

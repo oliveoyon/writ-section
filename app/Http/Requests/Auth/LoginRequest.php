@@ -29,7 +29,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'login_id' => ['required', 'string', 'max:255'],
+            'employee_id' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ];
     }
@@ -43,13 +43,10 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $login = trim((string) $this->input('login_id'));
+        $employeeId = trim((string) $this->input('employee_id'));
 
         $user = User::query()
-            ->where(function ($query) use ($login) {
-                $query->where('login_id', $login)
-                    ->orWhere('email', $login);
-            })
+            ->where('employee_id', $employeeId)
             ->whereIn('user_type', ['admin', 'staff'])
             ->where('is_active', true)
             ->first();
@@ -58,7 +55,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'login_id' => trans('auth.failed'),
+                'employee_id' => trans('auth.failed'),
             ]);
         }
 
@@ -82,7 +79,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'login_id' => trans('auth.throttle', [
+            'employee_id' => trans('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
@@ -94,6 +91,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('login_id')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('employee_id')).'|'.$this->ip());
     }
 }

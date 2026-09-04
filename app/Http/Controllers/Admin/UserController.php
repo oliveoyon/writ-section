@@ -10,6 +10,7 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Picqer\Barcode\BarcodeGeneratorSVG;
 use Spatie\Permission\PermissionRegistrar;
 
 class UserController extends Controller
@@ -28,7 +29,7 @@ class UserController extends Controller
 
         if ($activeTab === 'users') {
             $users = User::query()
-                ->select('users.id', 'users.name', 'users.email', 'users.login_id', 'users.department', 'users.user_type', 'users.is_active')
+                ->select('users.id', 'users.name', 'users.email', 'users.login_id', 'users.employee_id', 'users.department', 'users.user_type', 'users.is_active')
                 ->with(['roles', 'departmentRelation:id,name,display_name'])
                 ->leftJoin('departments', 'departments.id', '=', 'users.department')
                 ->whereIn('users.user_type', ['admin', 'staff'])
@@ -37,6 +38,7 @@ class UserController extends Controller
                     $query->where(function ($inner) use ($like) {
                         $inner->where('users.name', 'like', $like)
                             ->orWhere('users.email', 'like', $like)
+                            ->orWhere('users.employee_id', 'like', $like)
                             ->orWhere('users.login_id', 'like', $like)
                             ->orWhere('departments.name', 'like', $like)
                             ->orWhere('departments.display_name', 'like', $like);
@@ -97,6 +99,7 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'employee_id' => 'required|string|max:255|unique:users,employee_id',
             'login_id' => 'nullable|string|max:255|unique:users,login_id',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
@@ -111,6 +114,7 @@ class UserController extends Controller
 
         $user = new User();
         $user->name = $request->name;
+        $user->employee_id = $request->employee_id;
         $user->login_id = $request->login_id;
         $user->email = $request->email;
         $user->department = $request->department; // store department id
@@ -146,6 +150,7 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'employee_id' => 'required|string|max:255|unique:users,employee_id,' . $user->id,
             'login_id' => 'nullable|string|max:255|unique:users,login_id,' . $user->id,
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
@@ -171,6 +176,7 @@ class UserController extends Controller
         }
 
         $user->name = $request->name;
+        $user->employee_id = $request->employee_id;
         $user->login_id = $request->login_id;
         $user->email = $request->email;
         $user->department = $request->department; // store department id
@@ -228,6 +234,30 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('swal-success', 'User activated successfully.');
+    }
+
+    public function cardLabels()
+    {
+        $generator = new BarcodeGeneratorSVG();
+        $users = User::query()
+            ->select('users.id', 'users.name', 'users.employee_id', 'users.login_id', 'users.department', 'users.user_type', 'users.is_active')
+            ->with('departmentRelation:id,name,display_name')
+            ->whereIn('users.user_type', ['admin', 'staff'])
+            ->where('users.is_active', true)
+            ->whereNotNull('users.login_id')
+            ->where('users.login_id', '<>', '')
+            ->leftJoin('departments', 'departments.id', '=', 'users.department')
+            ->orderByRaw('COALESCE(departments.display_name, departments.name, users.department)')
+            ->orderBy('users.name')
+            ->get()
+            ->map(function (User $user) use ($generator) {
+                $cardId = (string) $user->login_id;
+                $user->barcode_svg = $generator->getBarcode($cardId, $generator::TYPE_CODE_128, 2, 58);
+
+                return $user;
+            });
+
+        return view('admin.rbac.users.card-labels', compact('users'));
     }
 
     private function resolveRolesForUserType(string $userType): array

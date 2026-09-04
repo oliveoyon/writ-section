@@ -25,6 +25,7 @@ class User extends Authenticatable
         'user_type',
         'is_active',
         'login_id',
+        'employee_id',
         'department', // stores the FK (departments.id)
         'face_descriptor',
     ];
