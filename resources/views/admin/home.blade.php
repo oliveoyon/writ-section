@@ -25,7 +25,7 @@
         <div>
             <div class="system-mark">RTFTS</div>
             <h4 class="mb-1">Real Time File Tracking Dashboard</h4>
-            <p class="mb-0">Writ file movement, court dispatch and section custody.</p>
+            <p class="mb-0">Writ file movement, files sent to court and section custody.</p>
         </div>
         <div class="period-switch" aria-label="Report period">
             <a class="{{ $periodDays === 7 ? 'active' : '' }}" href="{{ route('admin.dashboard', ['period' => 7]) }}">7 Days</a>
@@ -268,8 +268,10 @@
                 @endif
                 <a href="{{ route('admin.tracking.register-report') }}"><i class="bi bi-printer"></i><span>Register Report</span></a>
                 <a href="{{ route('admin.tracking.court.batches.index') }}"><i class="bi bi-collection"></i><span>Court Batches</span></a>
-                <a href="{{ route('admin.users.index') }}"><i class="bi bi-people"></i><span>Users and Lawyers</span></a>
-                <a href="{{ route('admin.departments.index') }}"><i class="bi bi-diagram-3"></i><span>Departments</span></a>
+                @if($dashboardUser?->hasRole('Super Admin'))
+                    <a href="{{ route('admin.users.index') }}"><i class="bi bi-people"></i><span>Users and Lawyers</span></a>
+                    <a href="{{ route('admin.departments.index') }}"><i class="bi bi-diagram-3"></i><span>Departments</span></a>
+                @endif
             </div>
         </div>
     </section>
@@ -287,7 +289,7 @@
                     <a class="list-group-item list-group-item-action" href="{{ route('admin.tracking.register-report', ['filter_mode' => 'date_range', 'date_from' => now()->toDateString(), 'date_to' => now()->toDateString(), 'movement_scope' => 'all']) }}">Today's Register</a>
                     <a class="list-group-item list-group-item-action" href="{{ route('admin.tracking.register-report', ['filter_mode' => 'date_range', 'date_from' => now()->toDateString(), 'date_to' => now()->toDateString(), 'movement_scope' => 'in']) }}">Today's Received Files</a>
                     <a class="list-group-item list-group-item-action" href="{{ route('admin.tracking.register-report', ['filter_mode' => 'date_range', 'date_from' => now()->toDateString(), 'date_to' => now()->toDateString(), 'movement_scope' => 'out']) }}">Today's Sent Files</a>
-                    <a class="list-group-item list-group-item-action" href="{{ route('admin.tracking.register-report', ['filter_mode' => 'date_range', 'date_from' => now()->toDateString(), 'date_to' => now()->toDateString(), 'movement_type' => 'dispatch_to_court']) }}">Today's Court Dispatch</a>
+                    <a class="list-group-item list-group-item-action" href="{{ route('admin.tracking.register-report', ['filter_mode' => 'date_range', 'date_from' => now()->toDateString(), 'date_to' => now()->toDateString(), 'movement_type' => 'dispatch_to_court']) }}">Today's Files Sent to Court</a>
                 </div>
             </div>
         </div>

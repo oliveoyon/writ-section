@@ -74,4 +74,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(CourtDispatchBatch::class, 'created_by_user_id');
     }
+
+    public function sentTransferBatches()
+    {
+        return $this->hasMany(FileTransferBatch::class, 'sender_user_id');
+    }
+
+    public function incomingTransferBatches()
+    {
+        return $this->hasMany(FileTransferBatch::class, 'recipient_user_id');
+    }
+
+    public function receivedTransferItems()
+    {
+        return $this->hasMany(FileTransferItem::class, 'received_by_user_id');
+    }
 }

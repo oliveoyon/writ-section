@@ -12,7 +12,7 @@
         <div>
             <div class="system-mark">RTFTS Setup</div>
             <h4 class="mb-0">{{ __('messages.courts') }}</h4>
-            <small>Manage court names used for file dispatch and court return records.</small>
+            <small>Manage court names used for sending files and court return records.</small>
         </div>
         <button class="btn btn-gold btn-sm" data-bs-toggle="modal" data-bs-target="#addCourtModal">
             <i class="bi bi-plus-circle"></i> Add

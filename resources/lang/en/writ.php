@@ -26,7 +26,7 @@ return [
         'f2_title' => 'Real-time Tracking',
         'f2_text' => 'Track the status of your files in real-time, receive alerts, and updates.',
         'f3_title' => 'Secure Storage',
-        'f3_text' => 'All documents are encrypted and protected with role-based access control.',
+        'f3_text' => 'Documents are kept in private storage and access is limited to authorized users.',
     ],
     'process' => [
         'title' => 'How It Works',
@@ -51,7 +51,7 @@ return [
         'items' => [
             ['q' => 'How do I register as a lawyer?', 'a' => 'Use the "Register as Lawyer" button in the hero section and fill in your credentials.'],
             ['q' => 'Can I track my writ application status online?', 'a' => 'Yes, after logging in you can view real-time updates and notifications for your files.'],
-            ['q' => 'Is my data secure?', 'a' => 'Yes, all documents are encrypted and stored securely with role-based access control.'],
+            ['q' => 'Is my data secure?', 'a' => 'Documents are kept in private storage and access is limited to authorized users.'],
         ],
     ],
     'cta' => [

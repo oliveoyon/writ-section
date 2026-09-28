@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CourtCase;
 use App\Models\FileMovement;
 use App\Services\RtftsCaseReference;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +33,7 @@ class LegacyIntakeController extends Controller
         ]);
 
         $parsed = RtftsCaseReference::parseIdentifier($validated['identifier']);
-        if (!$parsed) {
+        if (! $parsed) {
             return back()
                 ->withInput()
                 ->with('error', 'Invalid RTFTS barcode or case number. Please scan/write like 132026004788 or WRPET 4788/2026.');
@@ -45,90 +46,89 @@ class LegacyIntakeController extends Controller
             return back()->with('error', 'Department is not assigned.');
         }
 
-        $result = DB::transaction(function () use ($parsed, $user, $section, $validated) {
-            $case = $this->findExistingCase($parsed);
-            $now = now();
+        try {
+            $result = DB::transaction(function () use ($parsed, $user, $section, $validated) {
+                $case = $this->findExistingCase($parsed);
+                $now = now();
 
-            if (!$case) {
-                $case = CourtCase::create([
-                    'initiated_by_user_id' => $user->id,
-                    'entry_source' => 'legacy',
-                    'status' => 'in_progress',
-                    'permanent_barcode' => $parsed['barcode'],
-                    'permanent_barcode_generated_at' => $now,
-                    'final_case_number' => $parsed['reference'],
-                    'final_case_year' => $parsed['year'],
-                    'registration_serial' => $parsed['serial'],
-                    'current_section' => $section,
-                    'current_holder_user_id' => $user->id,
-                    'current_holder_at' => $now,
-                ]);
+                if (! $case) {
+                    $case = CourtCase::create([
+                        'initiated_by_user_id' => $user->id,
+                        'entry_source' => 'legacy',
+                        'status' => 'in_progress',
+                        'permanent_barcode' => $parsed['barcode'],
+                        'permanent_barcode_generated_at' => $now,
+                        'final_case_number' => $parsed['reference'],
+                        'final_case_year' => $parsed['year'],
+                        'registration_serial' => $parsed['serial'],
+                        'current_section' => $section,
+                        'current_holder_user_id' => $user->id,
+                        'current_holder_at' => $now,
+                    ]);
 
-                FileMovement::create([
-                    'case_id' => $case->id,
-                    'barcode_scanned' => $parsed['input'],
-                    'from_section' => 'Old Case Record',
-                    'to_section' => $section,
-                    'movement_type' => 'legacy_intake',
-                    'received_by_user_id' => $user->id,
-                    'received_at' => $now,
-                    'notes' => $validated['notes'] ?: 'Old case received by scan.',
-                ]);
+                    FileMovement::create([
+                        'case_id' => $case->id,
+                        'barcode_scanned' => $parsed['input'],
+                        'from_section' => 'Old Case Record',
+                        'to_section' => $section,
+                        'movement_type' => 'legacy_intake',
+                        'received_by_user_id' => $user->id,
+                        'received_at' => $now,
+                        'notes' => $validated['notes'] ?: 'Old case received by scan.',
+                    ]);
 
-                $this->syncRegistrationSequence($parsed['year'], $parsed['serial']);
+                    $this->syncRegistrationSequence($parsed['year'], $parsed['serial']);
+
+                    return [
+                        'status' => 'created',
+                        'case' => $case->fresh(['currentHolder']),
+                        'from_section' => 'Old Case Record',
+                        'to_section' => $section,
+                    ];
+                }
+
+                $fromSection = $case->latestMovement?->to_section ?? $case->current_section ?? 'Existing Record';
+
+                if ((int) $case->current_holder_user_id === (int) $user->id) {
+                    return [
+                        'status' => 'same_holder',
+                        'case' => $case->fresh(['currentHolder']),
+                        'from_section' => $fromSection,
+                        'to_section' => $section,
+                    ];
+                }
 
                 return [
-                    'status' => 'created',
+                    'status' => 'already_exists',
                     'case' => $case->fresh(['currentHolder']),
-                    'from_section' => 'Old Case Record',
-                    'to_section' => $section,
+                    'from_section' => $fromSection,
+                    'to_section' => $case->current_section,
                 ];
+            }, 3);
+        } catch (QueryException $exception) {
+            // If another desk created the same old case first, show the existing custody instead of failing.
+            $case = $this->findExistingCase($parsed);
+            if (! $case) {
+                throw $exception;
             }
 
             $fromSection = $case->latestMovement?->to_section ?? $case->current_section ?? 'Existing Record';
-
-            if ((int) $case->current_holder_user_id === (int) $user->id) {
-                return [
-                    'status' => 'same_holder',
-                    'case' => $case->fresh(['currentHolder']),
-                    'from_section' => $fromSection,
-                    'to_section' => $section,
-                ];
-            }
-
-            $case->update([
-                'status' => 'in_progress',
-                'current_section' => $section,
-                'current_holder_user_id' => $user->id,
-                'current_holder_at' => $now,
-            ]);
-
-            FileMovement::create([
-                'case_id' => $case->id,
-                'barcode_scanned' => $parsed['input'],
+            $sameHolder = (int) $case->current_holder_user_id === (int) $user->id;
+            $result = [
+                'status' => $sameHolder ? 'same_holder' : 'already_exists',
+                'case' => $case,
                 'from_section' => $fromSection,
-                'to_section' => $section,
-                'movement_type' => 'legacy_receive',
-                'received_by_user_id' => $user->id,
-                'received_at' => $now,
-                'notes' => $validated['notes'] ?: 'Existing case received by scan.',
-            ]);
-
-            return [
-                'status' => 'received',
-                'case' => $case->fresh(['currentHolder']),
-                'from_section' => $fromSection,
-                'to_section' => $section,
+                'to_section' => $sameHolder ? $section : $case->current_section,
             ];
-        });
+        }
 
         $message = match ($result['status']) {
             'created' => 'Old case added and received.',
-            'received' => 'Existing file received into your custody.',
-            default => 'This file is already in your custody.',
+            'same_holder' => 'This file is already in your custody.',
+            default => 'This case already exists. Use Receive Files, or ask the current holder to send it to you.',
         };
 
-        return back()->with('success', $message)->with('legacy_intake_result', [
+        return back()->with($result['status'] === 'already_exists' ? 'error' : 'success', $message)->with('legacy_intake_result', [
             'status' => $result['status'],
             'case_no' => $result['case']->case_reference,
             'barcode' => $result['case']->permanent_barcode,

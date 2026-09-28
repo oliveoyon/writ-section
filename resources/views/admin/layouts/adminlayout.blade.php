@@ -201,8 +201,12 @@
                     $sectionTrackingKeywords = ['office assistant', 'dealing assistant', 'affidavit', 'requisite', 'put-up', 'put up', 'typing', 'compare', 'superintendent', 'ready table', 'record room', 'court'];
 
                     $canSeeAdminMenu = $isLoggedIn && $currentType === 'admin';
+                    $canManageSystem = $canSeeAdminMenu && $isSuperAdmin;
                     $canSeeFilingMenu = $isLoggedIn && ($isSuperAdmin || str_contains($departmentName, 'filing'));
                     $canSeeRegistrarMenu = $isLoggedIn && str_contains($departmentName, 'registrar');
+                    $canUseHandover = $isLoggedIn
+                        && in_array($currentType, ['admin', 'staff'], true)
+                        && ($hasAssignedDepartment || $isSuperAdmin);
                     $canSeeCourtMenu = $isLoggedIn && ($isSuperAdmin ||
                         str_contains($departmentName, 'office assistant') ||
                         str_contains($departmentName, 'dealing assistant') ||
@@ -220,6 +224,8 @@
                     $brandRoute = '#';
                     if ($canSeeAdminMenu) {
                         $brandRoute = route('admin.dashboard');
+                    } elseif ($currentType === 'staff') {
+                        $brandRoute = route('admin.tracking.handover.workspace');
                     } elseif ($canSeeFilingMenu) {
                         $brandRoute = route('admin.tracking.filing.index');
                     } elseif ($canSeeRegistrarMenu) {
@@ -249,6 +255,7 @@
                             </a>
                         </li>
 
+                        @if($canManageSystem)
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                 <i class="bi bi-sliders"></i> {{ __('messages.manage_menu') }}
@@ -264,14 +271,22 @@
                                 @endunless
                             </ul>
                         </li>
+                        @endif
                     @endif
 
-                    @if($canSeeAdminMenu || $canSeeFilingMenu || $canSeeSectionReceiveMenu || $canSeeCourtMenu || $canSeeRegistrarMenu)
+                    @if($canUseHandover || $canSeeAdminMenu || $canSeeFilingMenu || $canSeeSectionReceiveMenu || $canSeeCourtMenu || $canSeeRegistrarMenu)
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                 <i class="bi bi-upc-scan"></i> {{ __('messages.tracking_menu') }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                @if($canUseHandover)
+                                    <li><h6 class="dropdown-header">File Handover</h6></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.handover.workspace') }}"><i class="bi bi-grid"></i>File Desk</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.handover.recipients') }}"><i class="bi bi-send"></i>Send Files</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.tracking.handover.index') }}"><i class="bi bi-arrow-left-right"></i>Handovers</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                @endif
                                 @if($canSeeSectionReceiveMenu)
                                     <li><h6 class="dropdown-header">{{ $isAffidavitSection ? __('messages.affidavit_menu') : __('messages.section_menu') }}</h6></li>
                                     <li><a class="dropdown-item" href="{{ route('admin.tracking.section.receive') }}"><i class="bi bi-upc-scan"></i>{{ $isAffidavitSection ? __('messages.affidavit_receive') : __('messages.section_receive') }}</a></li>
@@ -363,6 +378,9 @@
                     <ul class="list-unstyled">
                         @if($canSeeAdminMenu)
                             <li><a href="{{ route('admin.dashboard') }}">{{ __('messages.dashboard') }}</a></li>
+                        @endif
+                        @if($canUseHandover)
+                            <li><a href="{{ route('admin.tracking.handover.workspace') }}">File Desk</a></li>
                         @endif
                         @if($canSeeFilingMenu)
                             <li><a href="{{ route('admin.tracking.filing.index') }}">{{ __('messages.filing_module') }}</a></li>

@@ -6,21 +6,33 @@
     <div class="receive-header mb-3">
         <div>
             <div class="system-mark">RTFTS Receive</div>
-            <h4 class="mb-0">{{ auth()->user()->name }}: {{ __('tracking.receive.title') }}</h4>
+            <h4 class="mb-0">{{ auth()->user()->name }}: {{ __('tracking.receive.title') }}
+                @if($incomingPending > 0)
+                    <span class="incoming-count">{{ $incomingPending }} waiting</span>
+                @endif
+            </h4>
             <small>{{ $section }}</small>
         </div>
-        @if($canUseCourtMovement)
-            <div class="kiosk-actions">
+        <div class="kiosk-actions">
+                <a href="{{ route('admin.tracking.handover.workspace') }}" class="btn kiosk-action btn-desk">
+                    <i class="bi bi-grid" aria-hidden="true"></i>
+                    <span>File Desk</span>
+                </a>
+                <a href="{{ route('admin.tracking.handover.recipients') }}" class="btn kiosk-action btn-transfer">
+                    <i class="bi bi-send" aria-hidden="true"></i>
+                    <span>Send Files</span>
+                </a>
+            @if($canUseCourtMovement)
                 <a href="{{ route('admin.tracking.court.dispatch.index') }}" class="btn kiosk-action btn-send">
                     <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
                     <span>{{ __('tracking.receive.send_to_court') }}</span>
                 </a>
+            @endif
                 <a href="{{ route('admin.tracking.register-report') }}" class="btn kiosk-action btn-report">
                     <i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i>
                     <span>{{ __('tracking.receive.report') }}</span>
                 </a>
-            </div>
-        @endif
+        </div>
     </div>
 
     @if (session('success'))
@@ -229,13 +241,18 @@
         box-shadow: 0 1px 5px rgba(0, 40, 77, .08);
     }
     .receive-header h4 { color: #00284d; font-size: 1.15rem; font-weight: 800; }
+    .incoming-count { display:inline-flex; vertical-align:middle; margin-left:.35rem; padding:.18rem .4rem; color:#fff; background:#187246; border-radius:4px; font-size:.7rem; font-weight:800; }
     .receive-header small { color: #6b7280; font-weight: 600; }
     .system-mark { color: #b87d08; font-size: .82rem; font-weight: 800; }
     .kiosk-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
     .kiosk-action { min-height: 38px; display: inline-flex; align-items: center; gap: .45rem; color: #fff; font-weight: 800; border-radius: 4px; }
     .kiosk-action:hover, .kiosk-action:focus-visible { color: #fff; }
     .btn-send { background: #0f766e; border-color: #0f766e; }
+    .btn-desk { background: #475569; border-color: #475569; }
+    .btn-transfer { background: #0b5f78; border-color: #0b5f78; }
     .btn-report { background: #2563eb; border-color: #2563eb; }
+    .btn-desk:hover, .btn-desk:focus-visible { background: #334155; border-color: #334155; }
+    .btn-transfer:hover, .btn-transfer:focus-visible { background: #084b61; border-color: #084b61; }
     .btn-send:hover, .btn-send:focus-visible { background: #0b5f59; border-color: #0b5f59; }
     .btn-report:hover, .btn-report:focus-visible { background: #1d4ed8; border-color: #1d4ed8; }
     .admin-panel {
@@ -272,6 +289,7 @@
     .receive-queue thead th { background: #eef5fb; color: #00284d; font-size: .8rem; font-weight: 800; border-bottom: 0; }
     .receive-queue td, .receive-queue th { padding: .8rem; }
     .queue-barcode { margin-top: .15rem; color: #6b7280; font-size: .8rem; font-family: monospace; }
+    .queue-handover { margin-top:.2rem; color:#0f766e; font-size:.78rem; font-weight:700; }
     .form-label { color: #374151; font-size: .84rem; font-weight: 800; }
     .form-control { border-radius: 4px; }
     .form-control:focus { border-color: #d4a017; box-shadow: 0 0 0 .15rem rgba(212, 160, 23, .15); }
@@ -351,10 +369,13 @@
                 const secondary = item.label !== item.barcode
                     ? `<div class="queue-barcode">${escapeHtml(item.barcode)}</div>`
                     : '';
+                const handover = item.sentBy
+                    ? `<div class="queue-handover">From ${escapeHtml(item.sentBy)}${item.waitingTime ? ` | ${escapeHtml(item.waitingTime)}` : ''}</div>`
+                    : '';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${index + 1}</td>
-                    <td><strong>${escapeHtml(item.label)}</strong>${secondary}</td>
+                    <td><strong>${escapeHtml(item.label)}</strong>${secondary}${handover}</td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-danger removeBarcodeBtn" data-index="${index}" title="{{ __('tracking.receive.remove_barcode') }}">
                             <i class="bi bi-trash" aria-hidden="true"></i>
@@ -408,7 +429,9 @@
 
             barcodes.push({
                 barcode: code,
-                label: caseNumber || code
+                label: caseNumber || code,
+                sentBy: result.sent_by || null,
+                waitingTime: result.waiting_time || null
             });
             syncHiddenField();
             drawRows();

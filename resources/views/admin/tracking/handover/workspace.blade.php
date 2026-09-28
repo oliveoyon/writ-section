@@ -1,0 +1,259 @@
+@extends('admin.layouts.adminlayout')
+
+@section('content')
+<div class="container py-4 handover-home">
+    <div class="desk-header mb-3">
+        <div>
+            <div class="system-mark">RTFTS File Desk</div>
+            <h4 class="mb-0">{{ auth()->user()->name }}</h4>
+            <small>{{ $section }}</small>
+        </div>
+        <div class="header-actions">
+            <a href="{{ route('admin.tracking.handover.index') }}" class="btn btn-handovers btn-sm">
+                <i class="bi bi-arrow-left-right" aria-hidden="true"></i> Handovers
+            </a>
+            @if($isFiling)
+                <a href="{{ route('admin.tracking.filing.scan-temp') }}" class="btn btn-filing btn-sm">
+                    <i class="bi bi-folder-plus" aria-hidden="true"></i> Filing
+                </a>
+            @endif
+            <a href="{{ route('admin.tracking.register-report') }}" class="btn btn-report btn-sm">
+                <i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i> Report
+            </a>
+        </div>
+    </div>
+
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    <div class="desk-layout">
+        <div class="action-grid">
+            <a class="desk-action send-action" href="{{ route('admin.tracking.handover.recipients') }}">
+                <span class="action-icon"><i class="bi bi-send" aria-hidden="true"></i></span>
+                <span class="action-copy">
+                    <strong>Send Files</strong>
+                    <span>{{ number_format($heldFiles) }} in your custody</span>
+                </span>
+                @if($outgoingPending > 0)
+                    <span class="action-count">{{ number_format($outgoingPending) }} waiting</span>
+                @endif
+                <i class="bi bi-chevron-right action-arrow" aria-hidden="true"></i>
+            </a>
+
+            <a class="desk-action receive-action" href="{{ $receiveRoute }}">
+                <span class="action-icon"><i class="bi bi-upc-scan" aria-hidden="true"></i></span>
+                <span class="action-copy">
+                    <strong>Receive Files</strong>
+                    <span>Scan Case No. or barcode</span>
+                </span>
+                @if($incomingPending > 0)
+                    <span class="action-count">{{ number_format($incomingPending) }} for you</span>
+                @endif
+                <i class="bi bi-chevron-right action-arrow" aria-hidden="true"></i>
+            </a>
+        </div>
+
+        <aside class="notification-column" aria-label="File handover notifications">
+            @if($incomingPending > 0)
+                <section class="notice-panel incoming-panel" aria-labelledby="incomingHeading">
+                    <div class="notice-heading incoming-heading">
+                        <span class="notice-heading-icon"><i class="bi bi-bell-fill" aria-hidden="true"></i></span>
+                        <span>
+                            <strong id="incomingHeading">Files Waiting for You</strong>
+                            <small>{{ number_format($incomingPending) }} {{ $incomingPending === 1 ? 'file needs' : 'files need' }} to be received</small>
+                        </span>
+                        <a href="{{ $receiveRoute }}" class="btn btn-receive-now">
+                            <i class="bi bi-upc-scan" aria-hidden="true"></i> Receive
+                        </a>
+                    </div>
+
+                    <div class="notice-list">
+                        @foreach($incomingBatches as $batch)
+                            <a class="notice-row" href="{{ route('admin.tracking.handover.show', $batch) }}">
+                                <span class="person-avatar incoming-avatar"><i class="bi bi-person" aria-hidden="true"></i></span>
+                                <span class="person-copy">
+                                    <strong>{{ $batch->sender_name }}</strong>
+                                    <span>{{ $batch->sender_section ?: 'Unassigned Section' }}</span>
+                                </span>
+                                <span class="batch-copy incoming-batch">
+                                    <strong>{{ $batch->pending_items_count }} {{ $batch->pending_items_count === 1 ? 'file' : 'files' }}</strong>
+                                    <span>{{ $batch->batch_no }}</span>
+                                </span>
+                                <span class="waiting-copy">
+                                    <strong>{{ $batch->sent_at->diffForHumans(now(), true, true, 2) }}</strong>
+                                    <span>{{ $batch->sent_at->format('d-m-Y h:i A') }}</span>
+                                </span>
+                                <i class="bi bi-chevron-right row-arrow" aria-hidden="true"></i>
+                            </a>
+                        @endforeach
+                    </div>
+
+                    <a class="more-batches" href="{{ route('admin.tracking.handover.index', ['direction' => 'incoming']) }}">
+                        {{ $hasMoreIncomingBatches ? 'View all incoming handovers' : 'View incoming history' }}
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                    </a>
+                </section>
+            @endif
+
+            @if($outgoingPending > 0)
+                <section class="notice-panel outgoing-panel" aria-labelledby="outgoingHeading">
+                    <div class="notice-heading outgoing-heading">
+                        <span class="notice-heading-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
+                        <span>
+                            <strong id="outgoingHeading">Waiting for Receipt</strong>
+                            <small>{{ number_format($outgoingPending) }} {{ $outgoingPending === 1 ? 'sent file is' : 'sent files are' }} still pending</small>
+                        </span>
+                    </div>
+
+                    <div class="notice-list">
+                        @foreach($outgoingBatches as $batch)
+                            <a class="notice-row" href="{{ route('admin.tracking.handover.show', $batch) }}">
+                                <span class="person-avatar outgoing-avatar"><i class="bi bi-person" aria-hidden="true"></i></span>
+                                <span class="person-copy">
+                                    <strong>{{ $batch->recipient_name }}</strong>
+                                    <span>{{ $batch->recipient_section ?: 'Unassigned Section' }}</span>
+                                </span>
+                                <span class="batch-copy outgoing-batch">
+                                    <strong>{{ $batch->pending_items_count }} not received</strong>
+                                    <span>{{ $batch->batch_no }}</span>
+                                </span>
+                                <span class="waiting-copy">
+                                    <strong>{{ $batch->sent_at->diffForHumans(now(), true, true, 2) }}</strong>
+                                    <span>{{ $batch->sent_at->format('d-m-Y h:i A') }}</span>
+                                </span>
+                                <i class="bi bi-chevron-right row-arrow" aria-hidden="true"></i>
+                            </a>
+                        @endforeach
+                    </div>
+
+                    <a class="more-batches outgoing-more" href="{{ route('admin.tracking.handover.index', ['direction' => 'outgoing']) }}">
+                        {{ $hasMoreOutgoingBatches ? 'View all sent handovers' : 'View sent history' }}
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                    </a>
+                </section>
+            @endif
+
+            @if($incomingPending === 0 && $outgoingPending === 0)
+                <div class="notice-empty">
+                    <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                    <strong>No pending handovers</strong>
+                    <span>Your incoming and sent files are up to date.</span>
+                </div>
+            @endif
+        </aside>
+    </div>
+</div>
+@endsection
+
+@push('css')
+<style>
+    .handover-home { max-width: 1160px; }
+    .desk-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .85rem 1rem;
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-top: 3px solid #00284d;
+        border-bottom-color: #d4a017;
+        border-radius: 4px;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .08);
+    }
+    .desk-header h4 { color: #00284d; font-size: 1.15rem; font-weight: 800; }
+    .desk-header small { color: #6b7280; font-weight: 700; }
+    .system-mark { color: #b87d08; font-size: .82rem; font-weight: 800; }
+    .btn-report { display: inline-flex; align-items: center; gap: .4rem; color: #fff; background: #2563eb; border-color: #2563eb; font-weight: 800; border-radius: 4px; }
+    .btn-report:hover, .btn-report:focus-visible { color: #fff; background: #1d4ed8; border-color: #1d4ed8; }
+    .btn-handovers { display:inline-flex; align-items:center; gap:.4rem; color:#fff; background:#0b5f78; border-color:#0b5f78; font-weight:800; border-radius:4px; }
+    .btn-handovers:hover, .btn-handovers:focus-visible { color:#fff; background:#084b5e; border-color:#084b5e; }
+    .header-actions { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .btn-filing { display:inline-flex; align-items:center; gap:.4rem; color:#fff; background:#8a5a12; border-color:#8a5a12; font-weight:800; border-radius:4px; }
+    .btn-filing:hover, .btn-filing:focus-visible { color:#fff; background:#71480d; border-color:#71480d; }
+    .desk-layout { display:grid; grid-template-columns:minmax(320px,.72fr) minmax(0,1.28fr); align-items:start; gap:1rem; }
+    .notification-column { display:grid; gap:1rem; min-width:0; }
+    .notice-panel { overflow:hidden; background:#fff; border-radius:4px; box-shadow:0 3px 10px rgba(0,40,77,.11); }
+    .incoming-panel { border:2px solid #d4a017; }
+    .outgoing-panel { border:2px solid #3b82a0; }
+    .notice-heading { display:grid; grid-template-columns:40px minmax(0,1fr) auto; align-items:center; gap:.7rem; padding:.75rem .85rem; border-bottom:1px solid; }
+    .incoming-heading { background:#fff8e5; border-bottom-color:#ead9a7; }
+    .outgoing-heading { grid-template-columns:40px minmax(0,1fr); background:#eaf5f8; border-bottom-color:#bfdbe4; }
+    .notice-heading-icon { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; color:#fff; background:#b7790b; font-size:1.05rem; }
+    .outgoing-heading .notice-heading-icon { background:#0b5f78; }
+    .notice-heading strong, .notice-heading small { display:block; }
+    .notice-heading strong { color:#5b3a00; font-size:.96rem; font-weight:800; }
+    .outgoing-heading strong { color:#003c4d; }
+    .notice-heading small { margin-top:.08rem; color:#765a25; font-size:.8rem; font-weight:700; }
+    .outgoing-heading small { color:#416b78; }
+    .btn-receive-now { display:inline-flex; align-items:center; gap:.4rem; min-height:40px; color:#fff; background:#187246; border-color:#187246; font-weight:800; border-radius:4px; }
+    .btn-receive-now:hover, .btn-receive-now:focus-visible { color:#fff; background:#115c37; border-color:#115c37; }
+    .notice-list { display:grid; }
+    .notice-row { display:grid; grid-template-columns:36px minmax(0,1.35fr) minmax(105px,.75fr) minmax(115px,.8fr) 16px; align-items:center; gap:.65rem; padding:.65rem .85rem; color:inherit; border-bottom:1px solid #edf0f3; text-decoration:none; transition:background-color .12s ease; }
+    .notice-row:last-child { border-bottom:0; }
+    .notice-row:hover, .notice-row:focus-visible { color:inherit; background:#f8fafc; }
+    .row-arrow { color:#94a3b8; font-size:.8rem; }
+    .person-avatar { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; }
+    .incoming-avatar { color:#187246; background:#e8f5ed; }
+    .outgoing-avatar { color:#0b5f78; background:#e7f3f7; }
+    .person-copy, .batch-copy, .waiting-copy { min-width:0; }
+    .person-copy strong, .person-copy span, .batch-copy strong, .batch-copy span, .waiting-copy strong, .waiting-copy span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .person-copy strong { color:#00284d; font-size:.88rem; font-weight:800; }
+    .person-copy span, .batch-copy span, .waiting-copy span { color:#6b7280; font-size:.72rem; font-weight:600; }
+    .batch-copy strong { font-size:.82rem; font-weight:800; }
+    .incoming-batch strong { color:#187246; }
+    .outgoing-batch strong { color:#0b5f78; }
+    .waiting-copy { text-align:right; }
+    .waiting-copy strong { color:#8a5a12; font-size:.8rem; font-weight:800; }
+    .more-batches { display:flex; align-items:center; justify-content:center; gap:.4rem; padding:.55rem 1rem; color:#765a25; background:#fffaf0; border-top:1px solid #ead9a7; font-size:.78rem; font-weight:800; text-align:center; text-decoration:none; }
+    .more-batches:hover, .more-batches:focus-visible { color:#5b3a00; background:#fff3d6; }
+    .outgoing-more { color:#416b78; background:#f1f8fa; border-top-color:#bfdbe4; }
+    .notice-empty { display:grid; place-items:center; min-height:180px; padding:1.5rem; text-align:center; background:#fff; border:1px solid #dbe3ec; border-radius:4px; }
+    .notice-empty i { color:#187246; font-size:2rem; }
+    .notice-empty strong { color:#00284d; font-weight:800; }
+    .notice-empty span { color:#6b7280; font-size:.84rem; }
+    .action-grid { display:grid; grid-template-columns:1fr; gap:1rem; }
+    .desk-action {
+        position: relative;
+        display: grid;
+        grid-template-columns: 64px minmax(0, 1fr) auto 22px;
+        align-items: center;
+        gap: 1rem;
+        min-height: 142px;
+        padding: 1.25rem;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 40, 77, .13);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .desk-action:hover, .desk-action:focus-visible { color: #fff; transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0, 40, 77, .2); }
+    .send-action { background: #0b5f78; border-left: 6px solid #d4a017; }
+    .receive-action { background: #187246; border-left: 6px solid #efb929; }
+    .action-icon { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; background: rgba(255,255,255,.12); font-size: 1.8rem; }
+    .action-copy { min-width: 0; }
+    .action-copy strong { display: block; font-size: 1.35rem; font-weight: 800; }
+    .action-copy span { display: block; margin-top: .25rem; color: rgba(255,255,255,.85); font-size: .9rem; font-weight: 700; }
+    .action-count { align-self: start; padding: .28rem .5rem; border-radius: 4px; background: rgba(255,255,255,.16); font-size: .76rem; font-weight: 800; white-space: nowrap; }
+    .action-arrow { font-size: 1.2rem; }
+    @media (max-width: 767.98px) {
+        .handover-home { padding-top: 1rem !important; }
+        .desk-layout { grid-template-columns:1fr; }
+        .notification-column { grid-row:2; }
+        .notice-heading { grid-template-columns:38px minmax(0,1fr); }
+        .notice-heading .btn { grid-column:1/-1; justify-content:center; }
+        .notice-row { grid-template-columns:34px minmax(0,1fr) auto; }
+        .row-arrow { display:none; }
+        .person-avatar { width:34px; height:34px; }
+        .batch-copy { text-align:right; }
+        .waiting-copy { grid-column:2/-1; text-align:left; padding-top:.35rem; border-top:1px dashed #e5e7eb; }
+        .desk-action { min-height: 128px; grid-template-columns: 54px minmax(0, 1fr) 20px; padding: 1rem; }
+        .action-icon { width: 54px; height: 54px; }
+        .action-count { position: absolute; right: 1rem; top: .75rem; }
+    }
+</style>
+@endpush

@@ -51,6 +51,10 @@ class EnsureDepartment
         $department = strtolower((string) ($user->departmentRelation?->name ?? ''));
         $isStaff = $user->user_type === 'staff';
 
+        if ($isStaff && $department !== '') {
+            return 'admin.tracking.handover.workspace';
+        }
+
         if (str_contains($department, 'filing')) {
             return 'admin.tracking.filing.scan-temp';
         }

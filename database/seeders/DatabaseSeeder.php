@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
 
         try {
             foreach ([
+                'file_transfer_items',
+                'file_transfer_batches',
                 'court_dispatch_batch_items',
                 'file_movements',
                 'case_files',

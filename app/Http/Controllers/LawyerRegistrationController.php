@@ -38,7 +38,7 @@ class LawyerRegistrationController extends Controller
         // Call API only if not already registered
         try {
             $ch = curl_init();
-            $verifySsl = filter_var(config('services.scba.verify_ssl', false), FILTER_VALIDATE_BOOL);
+            $verifySsl = filter_var(config('services.scba.verify_ssl', true), FILTER_VALIDATE_BOOL);
             $sslCipherList = trim((string) config('services.scba.ssl_cipher_list', 'DEFAULT@SECLEVEL=1'));
             $curlOptions = [
                 CURLOPT_URL => config('services.scba.member_list_url'),
@@ -150,7 +150,7 @@ class LawyerRegistrationController extends Controller
                 // 'regex:/^01\d{9}$/', // 11 digits, starts with 01
             ],
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|confirmed|min:6|regex:/^[\x20-\x7E]+$/', // English characters only
+            'password' => 'required|confirmed|min:8|regex:/^[\x20-\x7E]+$/', // English characters only
         ], [
             'member_id.unique' => __('writ.lawyer.already_registered'),
             'full_name.required' => __('writ.lawyer.validation_full_name'),

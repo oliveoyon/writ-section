@@ -120,6 +120,23 @@
                                         @if($item->currentHolder?->name)
                                             <div class="table-secondary-text">{!! $highlight($item->currentHolder->name) !!}</div>
                                         @endif
+                                        @if($item->activeTransferItem?->batch)
+                                            <div class="pending-handover">
+                                                <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                                                <span>
+                                                    Waiting for {{ $item->activeTransferItem->batch->recipient_name }}
+                                                    <small>{{ $item->activeTransferItem->sent_at->diffForHumans(now(), true, true, 2) }}</small>
+                                                </span>
+                                            </div>
+                                        @elseif($item->latestMovement?->transferItem?->batch)
+                                            <div class="completed-handover">
+                                                <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                                                <span>
+                                                    Received from {{ $item->latestMovement->transferItem->batch->sender_name }}
+                                                    <small>{{ optional($item->latestMovement->transferItem->received_at)->format('d-m-Y h:i A') }}</small>
+                                                </span>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="text-end">
                                         <a href="{{ route('admin.tracking.timeline', $item) }}" class="btn btn-action" title="{{ __('tracking.lookup.timeline') }}">
@@ -193,6 +210,12 @@
     .file-reference { font-weight: 800; color: #111827; }
     .file-barcode, .table-secondary-text { margin-top: .15rem; color: #6b7280; font-size: .8rem; }
     .custody-badge { display: inline-flex; border-radius: 4px; border: 1px solid #d8e3ef; background: #f7fbff; color: #0b4f8a; font-size: .78rem; font-weight: 800; padding: .18rem .45rem; }
+    .pending-handover { display:flex; align-items:flex-start; gap:.35rem; margin-top:.35rem; color:#8a5a12; font-size:.76rem; font-weight:800; }
+    .pending-handover span, .pending-handover small { display:block; }
+    .pending-handover small { margin-top:.05rem; color:#786438; font-size:.7rem; font-weight:700; }
+    .completed-handover { display:flex; align-items:flex-start; gap:.35rem; margin-top:.35rem; color:#187246; font-size:.76rem; font-weight:800; }
+    .completed-handover span, .completed-handover small { display:block; }
+    .completed-handover small { margin-top:.05rem; color:#64748b; font-size:.7rem; font-weight:700; }
     .lookup-empty { color: #6b7280; }
     .lookup-empty .bi { font-size: 1.75rem; color: #9ca3af; }
     .btn-brand { background: #00284d; color: #fff; border-color: #00284d; }

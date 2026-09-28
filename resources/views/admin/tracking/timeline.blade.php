@@ -34,6 +34,47 @@
         </div>
     </div>
 
+    @if($case->activeTransferItem?->batch)
+        @php
+            $pendingBatch = $case->activeTransferItem->batch;
+        @endphp
+        <section class="pending-transfer mb-3" aria-label="Pending file handover">
+            <div class="pending-transfer-icon"><i class="bi bi-hourglass-split" aria-hidden="true"></i></div>
+            <div class="pending-transfer-route">
+                <span>Waiting for Receipt</span>
+                <strong>{{ $pendingBatch->sender_name }} <i class="bi bi-arrow-right" aria-hidden="true"></i> {{ $pendingBatch->recipient_name }}</strong>
+                <small>{{ $pendingBatch->batch_no }} | {{ $pendingBatch->sender_section ?: '-' }} to {{ $pendingBatch->recipient_section ?: '-' }}</small>
+            </div>
+            <div class="pending-transfer-time">
+                <strong>{{ $case->activeTransferItem->sent_at->diffForHumans(now(), true, true, 2) }}</strong>
+                <small>{{ $case->activeTransferItem->sent_at->format('d-m-Y h:i A') }}</small>
+            </div>
+        </section>
+    @endif
+
+    @if($case->cancelledTransferItems->isNotEmpty())
+        <section class="cancelled-transfers mb-3" aria-label="Cancelled handovers">
+            <div class="cancelled-heading">
+                <i class="bi bi-x-circle" aria-hidden="true"></i>
+                <strong>Cancelled Handovers</strong>
+                <span>{{ $case->cancelledTransferItems->count() }}</span>
+            </div>
+            @foreach($case->cancelledTransferItems as $cancelledItem)
+                <div class="cancelled-row">
+                    <div>
+                        <strong>{{ $cancelledItem->batch?->sender_name ?: '-' }} <i class="bi bi-arrow-right" aria-hidden="true"></i> {{ $cancelledItem->batch?->recipient_name ?: '-' }}</strong>
+                        <small>{{ $cancelledItem->batch?->batch_no ?: '-' }}</small>
+                    </div>
+                    <div>
+                        <strong>{{ $cancelledItem->cancelledBy?->name ?: 'System' }}</strong>
+                        <small>{{ optional($cancelledItem->cancelled_at)->format('d-m-Y h:i A') }}</small>
+                    </div>
+                    <p>{{ $cancelledItem->cancellation_reason ?: '-' }}</p>
+                </div>
+            @endforeach
+        </section>
+    @endif
+
     <div class="collapse {{ $errors->any() ? 'show' : '' }} mb-3" id="overridePanel">
       <div class="override-panel admin-panel">
         <div class="panel-heading warning">
@@ -85,6 +126,7 @@
             'returned_to_lawyer' => 'Returned to Lawyer',
             'legacy_intake' => __('tracking.register.old_case_receive'),
             'legacy_receive' => __('tracking.register.old_case_receive'),
+            'user_handover' => __('tracking.register.user_handover'),
         ];
         $previousHolderByMovement = [];
         $lastKnownHolder = null;
@@ -114,8 +156,12 @@
             @forelse ($movements->sortByDesc('received_at')->values() as $index => $move)
                 @php
                     $movementText = $movementLabels[$move->movement_type] ?? str($move->movement_type)->replace('_', ' ')->title();
-                    $fromHolder = strtolower((string) $move->from_section) !== 'court' ? ($previousHolderByMovement[$move->id] ?? null) : null;
-                    $toHolder = strtolower((string) $move->to_section) !== 'court' ? $move->receivedBy?->name : null;
+                    $handoverItem = $move->transferItem;
+                    $handoverBatch = $handoverItem?->batch;
+                    $fromHolder = $handoverBatch?->sender_name
+                        ?? (strtolower((string) $move->from_section) !== 'court' ? ($previousHolderByMovement[$move->id] ?? null) : null);
+                    $toHolder = $handoverBatch?->recipient_name
+                        ?? (strtolower((string) $move->to_section) !== 'court' ? $move->receivedBy?->name : null);
                     $journeyNote = $move->override_reason ?? $move->notes;
                 @endphp
                 <article class="journey-stop movement-row type-{{ $move->movement_type }}" data-movement-type="{{ $move->movement_type }}">
@@ -149,6 +195,15 @@
                                 @endif
                             </div>
                         </div>
+
+                        @if($handoverBatch && $handoverItem->received_at)
+                            <div class="handover-facts">
+                                <span><small>Batch</small><strong>{{ $handoverBatch->batch_no }}</strong></span>
+                                <span><small>Sent</small><strong>{{ $handoverItem->sent_at->format('d-m-Y h:i A') }}</strong></span>
+                                <span><small>Received</small><strong>{{ $handoverItem->received_at->format('d-m-Y h:i A') }}</strong></span>
+                                <span><small>Time Taken</small><strong>{{ $handoverItem->sent_at->diffForHumans($handoverItem->received_at, true, true, 2) }}</strong></span>
+                            </div>
+                        @endif
 
                         @if($journeyNote)
                             <div class="journey-note">
@@ -201,6 +256,24 @@
     .custody-strip span { display: block; color: #64748b; font-size: .74rem; font-weight: 700; text-transform: uppercase; }
     .custody-strip strong { color: #1f2937; }
     .custody-strip small { display: block; margin-top: 2px; color: #64748b; }
+    .pending-transfer { display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:.8rem; padding:.8rem 1rem; border:1px solid #e5c978; border-left:4px solid #d4a017; border-radius:4px; background:#fff9e8; }
+    .pending-transfer-icon { display:grid; place-items:center; width:42px; height:42px; color:#fff; background:#a96f08; border-radius:4px; }
+    .pending-transfer-route span, .pending-transfer-route strong, .pending-transfer-route small, .pending-transfer-time strong, .pending-transfer-time small { display:block; }
+    .pending-transfer-route span { color:#8a5a12; font-size:.72rem; font-weight:800; text-transform:uppercase; }
+    .pending-transfer-route strong { color:#493108; font-size:.9rem; }
+    .pending-transfer-route small, .pending-transfer-time small { color:#786438; font-size:.74rem; font-weight:700; }
+    .pending-transfer-time { text-align:right; }
+    .pending-transfer-time strong { color:#8a5a12; font-size:.82rem; }
+    .cancelled-transfers { overflow:hidden; border:1px solid #fecaca; border-radius:4px; background:#fff; }
+    .cancelled-heading { display:flex; align-items:center; gap:.45rem; padding:.55rem .75rem; color:#991b1b; background:#fff1f2; border-bottom:1px solid #fecaca; }
+    .cancelled-heading strong { font-size:.84rem; }
+    .cancelled-heading span { margin-left:auto; padding:.12rem .4rem; border-radius:4px; background:#fee2e2; font-size:.7rem; font-weight:800; }
+    .cancelled-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(150px,.5fr) minmax(0,1.2fr); gap:.75rem; padding:.6rem .75rem; border-bottom:1px solid #f3f4f6; }
+    .cancelled-row:last-child { border-bottom:0; }
+    .cancelled-row strong, .cancelled-row small { display:block; }
+    .cancelled-row strong { color:#374151; font-size:.78rem; }
+    .cancelled-row small { color:#6b7280; font-size:.7rem; }
+    .cancelled-row p { margin:0; color:#7f1d1d; font-size:.76rem; }
     .custody-divider { align-self: stretch; width: 1px; background: #e2e8f0; }
     .override-panel .form-label { color: #374151; font-size: .84rem; font-weight: 800; }
     .override-panel .form-select { border-radius: 4px; min-height: 42px; }
@@ -284,6 +357,11 @@
         font-weight: 700;
     }
     .journey-note i { margin-top: .1rem; }
+    .handover-facts { display:grid; grid-template-columns:1.2fr repeat(3,minmax(0,1fr)); gap:1px; margin:0 .7rem .7rem; overflow:hidden; border:1px solid #d8e3ef; border-radius:4px; background:#d8e3ef; }
+    .handover-facts > span { min-width:0; padding:.45rem .55rem; background:#f7fbff; }
+    .handover-facts small, .handover-facts strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .handover-facts small { color:#64748b; font-size:.66rem; font-weight:800; text-transform:uppercase; }
+    .handover-facts strong { margin-top:.1rem; color:#1f2937; font-size:.75rem; }
     .journey-empty { padding: 2rem; color: #64748b; text-align: center; }
     .movement-badge { display: inline-block; padding: 4px 7px; border-radius: 4px; background: #e6f5f2; color: #0f766e; font-size: .72rem; font-weight: 750; }
     .movement-badge.type-reject { background: #fee2e2; color: #b91c1c; }
@@ -296,6 +374,10 @@
         .timeline-header .btn-gold { width: 100%; }
         .custody-strip { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
         .custody-divider { display: none; }
+        .pending-transfer { grid-template-columns:36px minmax(0,1fr); }
+        .pending-transfer-icon { width:36px; height:36px; }
+        .pending-transfer-time { grid-column:2; text-align:left; }
+        .cancelled-row { grid-template-columns:1fr; }
         .movement-filters { width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
         .filter-button { white-space: nowrap; }
         .journey-stop { grid-template-columns: 32px 1fr; gap: .6rem; }
@@ -303,6 +385,7 @@
         .journey-line { top: 28px; }
         .journey-card-head { flex-direction: column; gap: .4rem; }
         .journey-route { grid-template-columns: 1fr; }
+        .handover-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .route-arrow { min-height: 28px; transform: rotate(90deg); }
     }
 </style>

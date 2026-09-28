@@ -7,6 +7,7 @@ use App\Models\CourtCase;
 use App\Models\Department;
 use App\Models\FileMovement;
 use App\Models\User;
+use App\Services\FileTransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -95,8 +96,7 @@ class PermanentBarcodeMovementTest extends TestCase
 
         $this->actingAs($user)->post(route('admin.tracking.filing.receive-temp'), [
             'temporary_barcode' => $case->temporary_barcode,
-            'case_type' => 'Writ',
-            'subject' => 'Super Admin filing conversion',
+            'case_type' => 'Constitutional Matter',
             'description' => null,
             'petitioners' => [[
                 'name_or_organization' => 'Test Petitioner',
@@ -104,9 +104,9 @@ class PermanentBarcodeMovementTest extends TestCase
                 'phone' => null,
             ]],
             'respondents' => [[
-                'name' => 'Test Respondent',
+                'name_or_organization' => 'Test Respondent',
+                'represented_by' => null,
                 'designation' => null,
-                'organization' => null,
                 'address' => null,
             ]],
         ])->assertSessionHasNoErrors();
@@ -166,7 +166,7 @@ class PermanentBarcodeMovementTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('admin.dashboard'))
-            ->assertRedirect(route('admin.tracking.section.receive'));
+            ->assertRedirect(route('admin.tracking.handover.workspace'));
 
         $this->actingAs($user)->post(route('admin.tracking.section.receive.store'), [
             'action' => 'receive',
@@ -207,7 +207,7 @@ class PermanentBarcodeMovementTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('admin.dashboard'))
-            ->assertRedirect(route('admin.tracking.section.receive'));
+            ->assertRedirect(route('admin.tracking.handover.workspace'));
 
         $this->actingAs($user)->post(route('admin.tracking.section.receive.store'), [
             'action' => 'receive',
@@ -228,7 +228,7 @@ class PermanentBarcodeMovementTest extends TestCase
         ]);
     }
 
-    public function test_same_holder_cannot_receive_again_but_colleague_can_take_custody(): void
+    public function test_colleague_can_receive_only_after_current_holder_sends_the_file(): void
     {
         $department = Department::create(['name' => 'Typing Section', 'display_name' => 'Typing Section']);
         $currentHolder = User::factory()->create([
@@ -241,6 +241,7 @@ class PermanentBarcodeMovementTest extends TestCase
         ]);
         $case = $this->createCase([
             'permanent_barcode' => '132026000005',
+            'final_case_number' => 'WRPET 5/2026',
             'status' => 'in_progress',
             'current_section' => 'Typing Section',
             'current_holder_user_id' => $currentHolder->id,
@@ -260,6 +261,16 @@ class PermanentBarcodeMovementTest extends TestCase
         $this->actingAs($colleague)->post(route('admin.tracking.section.receive.store'), [
             'action' => 'receive',
             'barcodes' => $case->permanent_barcode,
+        ])->assertSessionHas('receive_summary', function (array $summary): bool {
+            return count($summary['received']) === 0
+                && $summary['failed'][0]['reason'] === 'The current holder has not sent this file to you.';
+        });
+
+        app(FileTransferService::class)->send($currentHolder, $colleague, [$case->id]);
+
+        $this->actingAs($colleague)->post(route('admin.tracking.section.receive.store'), [
+            'action' => 'receive',
+            'barcodes' => $case->permanent_barcode,
         ])->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('cases', [
@@ -271,7 +282,7 @@ class PermanentBarcodeMovementTest extends TestCase
             'case_id' => $case->id,
             'from_section' => 'Typing Section',
             'to_section' => 'Typing Section',
-            'movement_type' => 'receive',
+            'movement_type' => 'user_handover',
             'received_by_user_id' => $colleague->id,
         ]);
     }
@@ -367,7 +378,7 @@ class PermanentBarcodeMovementTest extends TestCase
         $this->assertSame(0, FileMovement::where('case_id', $filingRejected->id)->count());
     }
 
-    public function test_only_office_assistant_can_receive_a_file_from_court(): void
+    public function test_unrelated_section_cannot_receive_a_file_from_court(): void
     {
         $department = Department::create(['name' => 'Typing Section', 'display_name' => 'Typing Section']);
         $user = User::factory()->create([
@@ -385,7 +396,7 @@ class PermanentBarcodeMovementTest extends TestCase
             'barcodes' => $case->permanent_barcode,
         ])->assertSessionHas('receive_summary', function (array $summary): bool {
             return count($summary['received']) === 0
-                && $summary['failed'][0]['reason'] === 'This file is in court. Only an Office Assistant or Super Admin can receive it from court.';
+                && $summary['failed'][0]['reason'] === 'This file is in court. Only an Office Assistant, Dealing Assistant or Super Admin can receive it from court.';
         });
 
         $this->assertSame('Court', $case->fresh()->current_section);

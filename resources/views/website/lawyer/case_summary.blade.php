@@ -138,7 +138,7 @@
                         <ul>
                             @foreach ($case->files as $file)
                                 <li>
-                                    <a href="{{ Storage::url($file->file_path) }}" target="_blank">{{ $file->original_name }}</a>
+                                    <a href="{{ route('lawyer.case.file', [$case, $file]) }}" target="_blank" rel="noopener">{{ $file->original_name }}</a>
                                 </li>
                             @endforeach
                         </ul>

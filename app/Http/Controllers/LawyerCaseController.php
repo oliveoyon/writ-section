@@ -50,7 +50,7 @@ class LawyerCaseController extends Controller
             'lawyer_id' => auth()->user()->lawyer->id,
             'case_type' => $request->case_type,
             'description' => $request->description,
-            'temporary_barcode' => 'TEMP' . time(),
+            'temporary_barcode' => $this->generateUniqueTempBarcode(),
             'temporary_barcode_generated_at' => now(),
         ]);
 
@@ -79,7 +79,7 @@ class LawyerCaseController extends Controller
         // Save uploaded files
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('case_files', 'public');
+                $path = $file->store('case_files');
 
                 CaseFile::create([
                     'case_id' => $case->id,
@@ -171,7 +171,7 @@ class LawyerCaseController extends Controller
         // Handle new file uploads
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('case_files', 'public');
+                $path = $file->store('case_files');
 
                 CaseFile::create([
                     'case_id' => $case->id,
@@ -232,6 +232,18 @@ class LawyerCaseController extends Controller
         $case->delete();
 
         return redirect()->back()->with('success', 'Draft case deleted successfully.');
+    }
+
+    public function downloadFile(CourtCase $case, CaseFile $file)
+    {
+        $this->ensureCaseOwner($case);
+        abort_unless((int) $file->case_id === (int) $case->id, 404);
+        abort_unless(Storage::disk('local')->exists($file->file_path), 404);
+
+        return Storage::disk('local')->download(
+            $file->file_path,
+            $file->original_name ?: basename($file->file_path)
+        );
     }
 
 

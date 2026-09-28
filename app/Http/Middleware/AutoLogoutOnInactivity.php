@@ -15,7 +15,7 @@ class AutoLogoutOnInactivity
             return $next($request);
         }
 
-        $timeoutMinutes = max((int) env('AUTO_LOGOUT_MINUTES', 10), 0);
+        $timeoutMinutes = max((int) config('session.inactivity_timeout', 10), 0);
 
         if ($timeoutMinutes === 0) {
             return $next($request);

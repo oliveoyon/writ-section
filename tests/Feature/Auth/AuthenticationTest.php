@@ -17,12 +17,12 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
+    public function test_users_can_authenticate_with_employee_id_and_password(): void
     {
         $user = User::factory()->create();
 
         $response = $this->post('/login', [
-            'login_id' => $user->login_id,
+            'employee_id' => $user->employee_id,
             'password' => 'password',
         ]);
 
@@ -30,17 +30,17 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('admin.dashboard', absolute: false));
     }
 
-    public function test_admin_users_can_authenticate_with_email_and_password(): void
+    public function test_admin_users_cannot_use_email_in_the_employee_id_field(): void
     {
         $user = User::factory()->create();
 
         $response = $this->post('/login', [
-            'login_id' => $user->email,
+            'employee_id' => $user->email,
             'password' => 'password',
         ]);
 
-        $this->assertAuthenticatedAs($user);
-        $response->assertRedirect(route('admin.dashboard', absolute: false));
+        $this->assertGuest();
+        $response->assertSessionHasErrors('employee_id');
     }
 
     public function test_card_punch_logs_active_user_in_directly(): void
@@ -79,7 +79,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $response = $this->post('/login', [
-            'login_id' => $user->login_id,
+            'employee_id' => $user->employee_id,
             'password' => 'password',
         ]);
 

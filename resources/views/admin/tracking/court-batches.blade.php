@@ -6,7 +6,7 @@
         <div>
             <div class="system-mark">RTFTS Court</div>
             <h4 class="mb-0">Court Batches</h4>
-            <small>Paginated dispatch and return batches</small>
+            <small>Sent-to-court and return batches</small>
         </div>
         <a href="{{ route('admin.tracking.court.dispatch.index') }}" class="btn btn-brand btn-sm">
             <i class="bi bi-box-arrow-up-right me-1"></i>{{ __('tracking.receive.send_to_court') }}
@@ -30,7 +30,7 @@
                 <label class="form-label" for="type">Type</label>
                 <select id="type" name="type" class="form-select">
                     <option value="">All</option>
-                    <option value="dispatch" @selected(request('type') === 'dispatch')>Dispatch</option>
+                    <option value="dispatch" @selected(request('type') === 'dispatch')>Sent to Court</option>
                     <option value="return" @selected(request('type') === 'return')>Return</option>
                 </select>
             </div>
@@ -88,7 +88,7 @@
                     $statusClass = $batch->type === 'return' || $returned === $total && $total > 0 ? 'complete' : ($returned > 0 ? 'partial' : 'open');
                 @endphp
                 <tr>
-                    <td><a class="batch-number" href="{{ route('admin.tracking.court.batches.show', $batch) }}">{{ $batch->batch_no }}</a><small>{{ ucfirst($batch->type) }}</small></td>
+                    <td><a class="batch-number" href="{{ route('admin.tracking.court.batches.show', $batch) }}">{{ $batch->batch_no }}</a><small>{{ $batch->type === 'dispatch' ? 'Sent to Court' : 'Court Return' }}</small></td>
                     <td>{{ $batch->court?->displayName() ?? '-' }}</td>
                     <td>{{ optional($batch->dispatched_at ?? $batch->returned_at)->format('d-m-Y') }}<small>{{ optional($batch->dispatched_at ?? $batch->returned_at)->format('h:i A') }}</small></td>
                     <td>{{ $total }}@if($batch->type === 'dispatch' && $returned > 0)<small>{{ $returned }} returned</small>@endif</td>

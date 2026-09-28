@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\FileTransferException;
 use App\Http\Controllers\Controller;
 use App\Models\CasePetitioner;
 use App\Models\CaseRespondent;
@@ -9,6 +10,7 @@ use App\Models\CourtCase;
 use App\Models\FileMovement;
 use App\Models\Lawyer;
 use App\Models\User;
+use App\Services\CourtCaseSearch;
 use App\Services\RtftsCaseReference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,9 +24,10 @@ use Illuminate\Support\Str;
 
 class FilingController extends Controller
 {
-    public function __construct(private readonly RtftsCaseReference $rtftsReference)
-    {
-    }
+    public function __construct(
+        private readonly RtftsCaseReference $rtftsReference,
+        private readonly CourtCaseSearch $caseSearch
+    ) {}
 
     public function index()
     {
@@ -99,40 +102,51 @@ class FilingController extends Controller
         $petitioners = $this->normalizePetitioners($request->input('petitioners', []));
         $respondents = $this->normalizeRespondents($request->input('respondents', []));
 
-        DB::transaction(function () use ($case, $request, $user, $section, $petitioners, $respondents) {
-            $caseYear = (string) now()->year;
-            $registration = $this->rtftsReference->issue($caseYear);
+        try {
+            DB::transaction(function () use ($case, $request, $user, $section, $petitioners, $respondents) {
+                $case = CourtCase::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
+                if (! empty($case->permanent_barcode)) {
+                    throw new FileTransferException('This file has already been converted to a permanent case.');
+                }
+                if ((string) $case->temporary_barcode !== (string) $request->temporary_barcode) {
+                    throw new FileTransferException('This temporary barcode is no longer active.');
+                }
 
-            $latest = $case->latestMovement;
+                $caseYear = (string) now()->year;
+                $registration = $this->rtftsReference->issue($caseYear);
+                $latest = $case->latestMovement;
 
-            $case->update([
-                'case_type' => $request->case_type,
-                'description' => $request->description,
-                'status' => 'filed',
-                'final_case_number' => $registration['reference'],
-                'final_case_year' => $caseYear,
-                'registration_serial' => $registration['serial'],
-                'permanent_barcode' => $registration['barcode'],
-                'permanent_barcode_generated_at' => now(),
-                'section_verified_at' => now(),
-                'section_verified_by' => $user->id,
-                'current_section' => $section,
-                'current_holder_user_id' => $user->id,
-                'current_holder_at' => now(),
-            ]);
-            $this->syncParties($case, $petitioners, $respondents);
+                $case->update([
+                    'case_type' => $request->case_type,
+                    'description' => $request->description,
+                    'status' => 'filed',
+                    'final_case_number' => $registration['reference'],
+                    'final_case_year' => $caseYear,
+                    'registration_serial' => $registration['serial'],
+                    'permanent_barcode' => $registration['barcode'],
+                    'permanent_barcode_generated_at' => now(),
+                    'section_verified_at' => now(),
+                    'section_verified_by' => $user->id,
+                    'current_section' => $section,
+                    'current_holder_user_id' => $user->id,
+                    'current_holder_at' => now(),
+                ]);
+                $this->syncParties($case, $petitioners, $respondents);
 
-            FileMovement::create([
-                'case_id' => $case->id,
-                'barcode_scanned' => $case->temporary_barcode,
-                'from_section' => $latest?->to_section,
-                'to_section' => $section,
-                'movement_type' => 'receive',
-                'received_by_user_id' => $user->id,
-                'received_at' => now(),
-                'notes' => 'Converted temporary filing to permanent case.',
-            ]);
-        });
+                FileMovement::create([
+                    'case_id' => $case->id,
+                    'barcode_scanned' => $case->temporary_barcode,
+                    'from_section' => $latest?->to_section,
+                    'to_section' => $section,
+                    'movement_type' => 'receive',
+                    'received_by_user_id' => $user->id,
+                    'received_at' => now(),
+                    'notes' => 'Converted temporary filing to permanent case.',
+                ]);
+            }, 3);
+        } catch (FileTransferException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         $freshCase = $case->fresh();
         return redirect()->route('admin.tracking.filing.print-label', [
@@ -172,17 +186,38 @@ class FilingController extends Controller
 
         try {
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, "https://api.scba.org.bd/api/esl/memberlist");
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, '');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            $verifySsl = filter_var(config('services.scba.verify_ssl', true), FILTER_VALIDATE_BOOL);
+            $sslCipherList = trim((string) config('services.scba.ssl_cipher_list', 'DEFAULT@SECLEVEL=1'));
+            $curlOptions = [
+                CURLOPT_URL => config('services.scba.member_list_url'),
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => '',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_SSL_VERIFYPEER => $verifySsl,
+                CURLOPT_SSL_VERIFYHOST => $verifySsl ? 2 : 0,
+                CURLOPT_HTTPHEADER => ['Accept: application/json'],
+                CURLOPT_ENCODING => '',
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_USERAGENT => 'WritFileTracking/1.0',
+            ];
+            if ($sslCipherList !== '') {
+                $curlOptions[CURLOPT_SSL_CIPHER_LIST] = $sslCipherList;
+            }
+            curl_setopt_array($ch, $curlOptions);
+
             $response = curl_exec($ch);
             if (curl_errno($ch)) {
                 throw new \Exception(curl_error($ch));
             }
+
+            $httpStatus = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
+
+            if ($httpStatus < 200 || $httpStatus >= 300) {
+                throw new \RuntimeException('SCBA returned HTTP '.$httpStatus);
+            }
 
             $data = json_decode($response, true);
             if (!$data || !is_array($data)) {
@@ -237,30 +272,46 @@ class FilingController extends Controller
         $section = $this->resolveSection($user);
         $previousTemp = $case->temporary_barcode;
 
-        DB::transaction(function () use ($case, $request, $user, $section, $previousTemp) {
-            $case->update([
-                'status' => 'returned_to_lawyer',
-                'current_section' => 'Lawyer',
-                'current_holder_user_id' => null,
-                'current_holder_at' => null,
-                'returned_at' => now(),
-                'returned_by_user_id' => $user->id,
-                'return_reason' => $request->return_reason,
-                'temporary_barcode' => null,
-                'temporary_barcode_generated_at' => null,
-            ]);
+        try {
+            DB::transaction(function () use ($case, $request, $user, $section, $previousTemp) {
+                $case = CourtCase::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
+                if (! $case->lawyer_id) {
+                    throw new FileTransferException('This case has no lawyer owner. Return to lawyer is not available.');
+                }
+                if (! empty($case->permanent_barcode)) {
+                    throw new FileTransferException('Permanent file already generated. Cannot return this case to lawyer.');
+                }
+                if ((string) $case->temporary_barcode !== $previousTemp) {
+                    throw new FileTransferException('This temporary barcode is no longer active.');
+                }
 
-            FileMovement::create([
-                'case_id' => $case->id,
-                'barcode_scanned' => $previousTemp,
-                'from_section' => $section,
-                'to_section' => 'Lawyer',
-                'movement_type' => 'returned_to_lawyer',
-                'received_by_user_id' => $user->id,
-                'received_at' => now(),
-                'notes' => $request->return_reason,
-            ]);
-        });
+                $returnedAt = now();
+                $case->update([
+                    'status' => 'returned_to_lawyer',
+                    'current_section' => 'Lawyer',
+                    'current_holder_user_id' => null,
+                    'current_holder_at' => null,
+                    'returned_at' => $returnedAt,
+                    'returned_by_user_id' => $user->id,
+                    'return_reason' => $request->return_reason,
+                    'temporary_barcode' => null,
+                    'temporary_barcode_generated_at' => null,
+                ]);
+
+                FileMovement::create([
+                    'case_id' => $case->id,
+                    'barcode_scanned' => $previousTemp,
+                    'from_section' => $section,
+                    'to_section' => 'Lawyer',
+                    'movement_type' => 'returned_to_lawyer',
+                    'received_by_user_id' => $user->id,
+                    'received_at' => $returnedAt,
+                    'notes' => $request->return_reason,
+                ]);
+            }, 3);
+        } catch (FileTransferException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return back()->with('success', 'Case returned to lawyer for correction.');
     }
@@ -430,35 +481,7 @@ class FilingController extends Controller
 
     private function buildPrintLookupQuery(string $query)
     {
-        $query = trim(preg_replace('/\s+/', ' ', $query) ?? '');
-        $normalizedBarcode = RtftsCaseReference::barcodeFromSearch($query);
-        $normalizedReference = RtftsCaseReference::parseIdentifier($query)['reference'] ?? null;
-        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
-
-        return CourtCase::query()
-            ->whereNotNull('permanent_barcode')
-            ->where(function ($q) use ($query, $like, $normalizedBarcode, $normalizedReference) {
-                $q->where('permanent_barcode', $query)
-                    ->orWhere('final_case_number', $query)
-                    ->orWhere('permanent_barcode', 'like', $like)
-                    ->orWhere('final_case_number', 'like', $like)
-                    ->orWhereHas('petitioners', function ($p) use ($like) {
-                        $p->where('name_or_organization', 'like', $like)
-                            ->orWhere('represented_by', 'like', $like);
-                    })
-                    ->orWhereHas('lawyer', function ($l) use ($like) {
-                        $l->where('full_name', 'like', $like)
-                            ->orWhere('bar_council_id', 'like', $like);
-                    });
-
-                if ($normalizedBarcode) {
-                    $q->orWhere('permanent_barcode', $normalizedBarcode);
-                }
-
-                if ($normalizedReference) {
-                    $q->orWhere('final_case_number', $normalizedReference);
-                }
-            });
+        return $this->caseSearch->query($query)->whereNotNull('permanent_barcode');
     }
 
     public function printLabelPdf(Request $request, CourtCase $case)

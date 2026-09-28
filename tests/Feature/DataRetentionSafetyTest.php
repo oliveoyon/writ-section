@@ -6,6 +6,7 @@ use App\Models\Court;
 use App\Models\CourtCase;
 use App\Models\CourtDispatchBatch;
 use App\Models\Department;
+use App\Models\FileMovement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -15,9 +16,33 @@ class DataRetentionSafetyTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_file_movement_history_cannot_be_edited_or_deleted_through_the_model(): void
+    {
+        $case = CourtCase::create(['status' => 'filed']);
+        $movement = FileMovement::create([
+            'case_id' => $case->id,
+            'barcode_scanned' => '132026000001',
+            'to_section' => 'Filing Section',
+            'movement_type' => 'receive',
+            'received_at' => now(),
+        ]);
+
+        try {
+            $movement->update(['notes' => 'Changed']);
+            $this->fail('Movement update should have been blocked.');
+        } catch (\LogicException $exception) {
+            $this->assertSame('File movement history is append-only.', $exception->getMessage());
+        }
+
+        $this->expectException(\LogicException::class);
+        $movement->delete();
+    }
+
     public function test_admin_user_action_deactivates_user_instead_of_deleting_record(): void
     {
+        $role = Role::create(['name' => 'Super Admin', 'guard_name' => 'web']);
         $admin = User::factory()->create(['user_type' => 'admin']);
+        $admin->assignRole($role);
         $staff = User::factory()->create(['user_type' => 'staff', 'is_active' => true]);
 
         $this->actingAs($admin)
@@ -35,9 +60,7 @@ class DataRetentionSafetyTest extends TestCase
         $role = Role::create(['name' => 'Super Admin', 'guard_name' => 'web']);
         $superAdmin = User::factory()->create(['user_type' => 'admin', 'is_active' => true]);
         $superAdmin->assignRole($role);
-        $admin = User::factory()->create(['user_type' => 'admin']);
-
-        $this->actingAs($admin)
+        $this->actingAs($superAdmin)
             ->delete(route('admin.users.destroy', $superAdmin))
             ->assertSessionHasErrors('user');
 
@@ -46,7 +69,9 @@ class DataRetentionSafetyTest extends TestCase
 
     public function test_used_court_cannot_be_deleted(): void
     {
+        $role = Role::create(['name' => 'Super Admin', 'guard_name' => 'web']);
         $admin = User::factory()->create(['user_type' => 'admin']);
+        $admin->assignRole($role);
         $court = Court::create([
             'name_en' => 'Used Court',
             'name_bn' => null,
@@ -83,7 +108,9 @@ class DataRetentionSafetyTest extends TestCase
     public function test_operational_department_user_cannot_be_created_as_admin(): void
     {
         Role::create(['name' => 'Staff', 'guard_name' => 'web']);
+        $superAdminRole = Role::create(['name' => 'Super Admin', 'guard_name' => 'web']);
         $admin = User::factory()->create(['user_type' => 'admin']);
+        $admin->assignRole($superAdminRole);
         $filing = Department::create([
             'name' => 'Filing Section',
             'display_name' => 'Filing Section',
@@ -92,6 +119,7 @@ class DataRetentionSafetyTest extends TestCase
         $this->actingAs($admin)
             ->post(route('admin.users.store'), [
                 'name' => 'Filing User',
+                'employee_id' => 'EMP-FILING-001',
                 'login_id' => 'FILING-USER',
                 'email' => 'filing@example.test',
                 'password' => 'Password123',
@@ -110,6 +138,6 @@ class DataRetentionSafetyTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('admin.dashboard'))
-            ->assertRedirect(route('admin.tracking.filing.scan-temp'));
+            ->assertRedirect(route('admin.tracking.handover.workspace'));
     }
 }

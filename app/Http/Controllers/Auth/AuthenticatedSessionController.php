@@ -53,7 +53,7 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        Auth::login($user, true);
+        Auth::login($user, false);
         $request->session()->regenerate();
         $request->session()->put('last_activity_at', time());
 
@@ -89,6 +89,10 @@ class AuthenticatedSessionController extends Controller
 
         $department = strtolower((string) ($user->departmentRelation?->name ?? ''));
         $isStaff = $user->user_type === 'staff';
+
+        if ($isStaff && $department !== '') {
+            return route('admin.tracking.handover.workspace');
+        }
 
         if (str_contains($department, 'filing')) {
             return route('admin.tracking.filing.scan-temp');

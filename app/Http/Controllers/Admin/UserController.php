@@ -148,6 +148,11 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        if ($user->user_type === 'lawyer') {
+            return redirect()->route('admin.users.index', ['tab' => 'lawyers'])
+                ->withErrors(['user' => 'Lawyer accounts cannot be modified through the staff edit endpoint.']);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'employee_id' => 'required|string|max:255|unique:users,employee_id,' . $user->id,

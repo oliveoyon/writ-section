@@ -9,6 +9,7 @@ use App\Models\CourtDispatchBatch;
 use App\Models\CourtDispatchBatchItem;
 use App\Models\FileMovement;
 use App\Models\User;
+use App\Services\FileTransferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,12 @@ use Mpdf\Mpdf;
 
 class CourtDispatchController extends Controller
 {
+    private const MAX_FILES_PER_BATCH = 200;
+
+    public function __construct(private readonly FileTransferService $transfers)
+    {
+    }
+
     public function dispatchIndex(Request $request)
     {
         $courts = Court::where('is_active', true)->orderBy('name_en')->get();
@@ -39,6 +46,9 @@ class CourtDispatchController extends Controller
         $barcodes = $this->extractBarcodes((string) $request->barcodes);
         if (count($barcodes) === 0) {
             return back()->with('error', __('tracking.court.errors.no_barcodes'));
+        }
+        if (count($barcodes) > self::MAX_FILES_PER_BATCH) {
+            return back()->with('error', 'A court batch can contain at most '.self::MAX_FILES_PER_BATCH.' files.');
         }
 
         $court = Court::findOrFail((int) $request->court_id);
@@ -68,11 +78,23 @@ class CourtDispatchController extends Controller
                     continue;
                 }
 
+                $case = CourtCase::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
+
                 $latest = $case->latestMovement;
                 $fromSection = $latest?->to_section ?? $case->current_section;
 
                 if (strtolower((string) $fromSection) === 'court') {
                     $failed[] = ['barcode' => $barcode, 'reason' => __('tracking.court.errors.already_in_court')];
+                    continue;
+                }
+
+                if ((int) $case->current_holder_user_id !== (int) $user->id) {
+                    $failed[] = ['barcode' => $barcode, 'reason' => 'You can send only files currently in your custody.'];
+                    continue;
+                }
+
+                if ($this->transfers->pendingTransferForCase($case->id, true)) {
+                    $failed[] = ['barcode' => $barcode, 'reason' => 'This file is waiting for another user to receive it. Cancel the handover first.'];
                     continue;
                 }
 
@@ -112,8 +134,14 @@ class CourtDispatchController extends Controller
                 ];
             }
 
+            if (count($processed) === 0) {
+                $batch->delete();
+
+                return null;
+            }
+
             return $batch;
-        });
+        }, 3);
 
         if (count($processed) === 0) {
             return back()->with('error', __('tracking.court.errors.none_processed'))->with('court_failed', $failed);
@@ -148,6 +176,9 @@ class CourtDispatchController extends Controller
         if (count($barcodes) === 0) {
             return back()->with('error', __('tracking.court.errors.no_barcodes'));
         }
+        if (count($barcodes) > self::MAX_FILES_PER_BATCH) {
+            return back()->with('error', 'A court batch can contain at most '.self::MAX_FILES_PER_BATCH.' files.');
+        }
 
         $court = Court::findOrFail((int) $request->court_id);
         $user = $request->user();
@@ -175,11 +206,18 @@ class CourtDispatchController extends Controller
                     continue;
                 }
 
+                $case = CourtCase::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
+
                 $latest = $case->latestMovement;
                 $fromSection = $latest?->to_section ?? $case->current_section;
 
                 if (strtolower((string) $fromSection) !== 'court') {
                     $failed[] = ['barcode' => $barcode, 'reason' => __('tracking.court.errors.not_in_court')];
+                    continue;
+                }
+
+                if ($this->transfers->pendingTransferForCase($case->id, true)) {
+                    $failed[] = ['barcode' => $barcode, 'reason' => 'This file has a pending internal handover. Cancel the handover before receiving it from court.'];
                     continue;
                 }
 
@@ -220,8 +258,14 @@ class CourtDispatchController extends Controller
                 ];
             }
 
+            if (count($processed) === 0) {
+                $batch->delete();
+
+                return null;
+            }
+
             return $batch;
-        });
+        }, 3);
 
         if (count($processed) === 0) {
             return back()->with('error', __('tracking.court.errors.none_processed'))->with('court_failed', $failed);
@@ -433,11 +477,7 @@ class CourtDispatchController extends Controller
 
     private function nextBatchNo(string $prefix): string
     {
-        do {
-            $no = $prefix . '-' . now()->format('Ymd') . '-' . str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT);
-        } while (CourtDispatchBatch::where('batch_no', $no)->exists());
-
-        return $no;
+        return $prefix.'-'.now()->format('Ymd').'-'.strtoupper(bin2hex(random_bytes(5)));
     }
 
     private function invalidBarcodeReason(string $barcode): string

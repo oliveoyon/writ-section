@@ -5,39 +5,40 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CourtCase;
 use App\Models\FileMovement;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         $periodDays = (int) request()->integer('period', 30);
-        if (!in_array($periodDays, [7, 30, 90], true)) {
+        if (! in_array($periodDays, [7, 30, 90], true)) {
             $periodDays = 30;
         }
 
-        $totalCases = CourtCase::count();
+        $caseTotals = CourtCase::query()
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN status IN ('draft', 'resubmitted', 'returned_to_lawyer') THEN 1 ELSE 0 END) as pending")
+            ->selectRaw("SUM(CASE WHEN current_section = 'Record Room' OR status = 'completed' THEN 1 ELSE 0 END) as completed")
+            ->first();
 
-        $pendingCount = CourtCase::query()
-            ->whereIn('status', ['draft', 'resubmitted', 'returned_to_lawyer'])
-            ->count();
-
-        $completedCount = CourtCase::query()
-            ->where(function ($q) {
-                $q->where('current_section', 'Record Room')
-                    ->orWhere('status', 'completed');
-            })
-            ->count();
+        $totalCases = (int) ($caseTotals->total ?? 0);
+        $pendingCount = (int) ($caseTotals->pending ?? 0);
+        $completedCount = (int) ($caseTotals->completed ?? 0);
 
         $inProgressCount = max($totalCases - $pendingCount - $completedCount, 0);
 
         $start = now()->startOfMonth()->subMonths(11);
+        $monthExpression = DB::getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', created_at)"
+            : "DATE_FORMAT(created_at, '%Y-%m')";
         $monthlyRows = CourtCase::query()
-            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, COUNT(*) as total')
+            ->selectRaw("{$monthExpression} as month_key, COUNT(*) as total")
             ->where('created_at', '>=', $start)
-            ->groupByRaw('YEAR(created_at), MONTH(created_at)')
-            ->orderByRaw('YEAR(created_at), MONTH(created_at)')
+            ->groupByRaw($monthExpression)
+            ->orderByRaw($monthExpression)
             ->get()
-            ->keyBy(fn ($r) => sprintf('%04d-%02d', (int) $r->y, (int) $r->m));
+            ->keyBy('month_key');
 
         $monthlyLabels = [];
         $monthlyCounts = [];
@@ -56,14 +57,23 @@ class DashboardController extends Controller
 
         $todayStart = now()->startOfDay();
         $todayEnd = now()->endOfDay();
-        $todayMovements = FileMovement::query()->whereBetween('received_at', [$todayStart, $todayEnd]);
+        $todayMovementTotals = FileMovement::query()
+            ->whereBetween('received_at', [$todayStart, $todayEnd])
+            ->selectRaw("SUM(CASE WHEN movement_type = 'receive' THEN 1 ELSE 0 END) as received")
+            ->selectRaw("SUM(CASE WHEN movement_type = 'reject' THEN 1 ELSE 0 END) as rejected")
+            ->selectRaw("SUM(CASE WHEN movement_type = 'dispatch_to_court' THEN 1 ELSE 0 END) as court_dispatch")
+            ->selectRaw("SUM(CASE WHEN movement_type = 'returned_from_court_handover' THEN 1 ELSE 0 END) as court_return")
+            ->selectRaw('SUM(CASE WHEN is_override = 1 THEN 1 ELSE 0 END) as overridden')
+            ->first();
 
-        $todayReceived = (clone $todayMovements)->where('movement_type', 'receive')->count();
-        $todayRejected = (clone $todayMovements)->where('movement_type', 'reject')->count();
-        $todayCourtDispatch = (clone $todayMovements)->where('movement_type', 'dispatch_to_court')->count();
-        $todayCourtReturn = (clone $todayMovements)->where('movement_type', 'returned_from_court_handover')->count();
-        $todayOverride = (clone $todayMovements)->where('is_override', true)->count();
-        $todayCasesCount = CourtCase::query()->whereDate('created_at', now()->toDateString())->count();
+        $todayReceived = (int) ($todayMovementTotals->received ?? 0);
+        $todayRejected = (int) ($todayMovementTotals->rejected ?? 0);
+        $todayCourtDispatch = (int) ($todayMovementTotals->court_dispatch ?? 0);
+        $todayCourtReturn = (int) ($todayMovementTotals->court_return ?? 0);
+        $todayOverride = (int) ($todayMovementTotals->overridden ?? 0);
+        $todayCasesCount = CourtCase::query()
+            ->whereBetween('created_at', [$todayStart, $todayEnd])
+            ->count();
 
         $pendingTempCount = CourtCase::query()
             ->whereNotNull('temporary_barcode')
@@ -107,15 +117,22 @@ class DashboardController extends Controller
 
         $rangeStart = now()->subDays($periodDays - 1)->startOfDay();
         $rangeEnd = now()->endOfDay();
-        $periodMovements = FileMovement::query()
-            ->whereBetween('received_at', [$rangeStart, $rangeEnd]);
+        $periodMovementTotals = FileMovement::query()
+            ->whereBetween('received_at', [$rangeStart, $rangeEnd])
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN movement_type = 'receive' THEN 1 ELSE 0 END) as received")
+            ->selectRaw("SUM(CASE WHEN movement_type = 'reject' THEN 1 ELSE 0 END) as rejected")
+            ->selectRaw("SUM(CASE WHEN movement_type = 'dispatch_to_court' THEN 1 ELSE 0 END) as court_dispatch")
+            ->selectRaw("SUM(CASE WHEN movement_type = 'returned_from_court_handover' THEN 1 ELSE 0 END) as court_return")
+            ->selectRaw("SUM(CASE WHEN movement_type = 'override_receive' THEN 1 ELSE 0 END) as overridden")
+            ->first();
 
-        $totalPeriodMovements = (clone $periodMovements)->count();
-        $periodReceive = (clone $periodMovements)->where('movement_type', 'receive')->count();
-        $periodReject = (clone $periodMovements)->where('movement_type', 'reject')->count();
-        $periodCourtDispatch = (clone $periodMovements)->where('movement_type', 'dispatch_to_court')->count();
-        $periodCourtReturn = (clone $periodMovements)->where('movement_type', 'returned_from_court_handover')->count();
-        $periodOverride = (clone $periodMovements)->where('movement_type', 'override_receive')->count();
+        $totalPeriodMovements = (int) ($periodMovementTotals->total ?? 0);
+        $periodReceive = (int) ($periodMovementTotals->received ?? 0);
+        $periodReject = (int) ($periodMovementTotals->rejected ?? 0);
+        $periodCourtDispatch = (int) ($periodMovementTotals->court_dispatch ?? 0);
+        $periodCourtReturn = (int) ($periodMovementTotals->court_return ?? 0);
+        $periodOverride = (int) ($periodMovementTotals->overridden ?? 0);
 
         $last7Start = now()->subDays(6)->startOfDay();
         $rowsByDate = FileMovement::query()

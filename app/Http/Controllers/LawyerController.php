@@ -83,7 +83,7 @@ class LawyerController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'phone' => ['required', 'regex:/^01\d{9}$/'],
             'old_password' => ['nullable', 'required_with:new_password'],
-            'new_password' => ['nullable', 'confirmed', 'min:6'],
+            'new_password' => ['nullable', 'confirmed', 'min:8'],
             'picture' => ['nullable', 'image', 'max:2048'],
         ], $messages);
 

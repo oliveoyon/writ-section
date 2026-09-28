@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\CourtController;
 use App\Http\Controllers\Admin\FilingController;
+use App\Http\Controllers\Admin\FileTransferController;
 use App\Http\Controllers\Admin\CourtDispatchController;
 use App\Http\Controllers\Admin\LegacyIntakeController;
 use App\Http\Controllers\Admin\RegistrarTrackingController;
@@ -18,36 +19,21 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WebController;
 use Illuminate\Support\Facades\Route;
 
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-
-Route::get('/logout-all', function () {
-
-    if (Auth::check()) {
-
-        DB::table('sessions')
-            ->where('user_id', Auth::id())
-            ->delete();
-
-        Auth::logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-    }
-
-    return redirect('/login');
-
-})->middleware('auth')->name('logout.all');
-
-
 Route::get('language/{locale}', [LanguageController::class, 'setLocale'])->name('locale.set');
 Route::get('/', [WebController::class, 'index'])->name('web.home');
 
 // Lawyer login and registration
 Route::get('/lawyer/login', [WebController::class, 'login'])->name('lawyer.login');
-Route::post('/lawyer/login', [WebController::class, 'lawyerLoginSubmit'])->name('lawyer.login.submit');
+Route::post('/lawyer/login', [WebController::class, 'lawyerLoginSubmit'])
+    ->middleware('throttle:5,1')
+    ->name('lawyer.login.submit');
 Route::get('/lawyer/register', [LawyerRegistrationController::class, 'showForm'])->name('lawyer.register');
-Route::post('/lawyer/check-member', [LawyerRegistrationController::class, 'checkMember'])->name('lawyer.check-member');
-Route::post('/lawyer/register', [LawyerRegistrationController::class, 'register'])->name('lawyer.register.submit');
+Route::post('/lawyer/check-member', [LawyerRegistrationController::class, 'checkMember'])
+    ->middleware('throttle:15,1')
+    ->name('lawyer.check-member');
+Route::post('/lawyer/register', [LawyerRegistrationController::class, 'register'])
+    ->middleware('throttle:5,1')
+    ->name('lawyer.register.submit');
 
 // Lawyer routes only
 Route::middleware(['auth', 'checkUserType:lawyer'])->prefix('lawyer')->group(function() {
@@ -64,6 +50,7 @@ Route::middleware(['auth', 'checkUserType:lawyer'])->prefix('lawyer')->group(fun
     Route::get('cases/create', [LawyerCaseController::class, 'create'])->name('lawyer.case.create');
     Route::post('cases', [LawyerCaseController::class, 'store'])->name('lawyer.case.store');
     Route::get('cases/{case}/summary', [LawyerCaseController::class, 'summary'])->name('lawyer.case.summary');
+    Route::get('cases/{case}/files/{file}', [LawyerCaseController::class, 'downloadFile'])->name('lawyer.case.file');
     Route::get('cases/{case}/top-sheet', [LawyerCaseController::class, 'printTopSheet'])->name('lawyer.case.top_sheet');
     Route::post('cases/{case}/resubmit', [LawyerCaseController::class, 'resubmit'])->name('lawyer.case.resubmit');
     
@@ -82,17 +69,29 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin'])->group(function () {
     Route::get('/home', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('departments', DepartmentController::class)->except(['show', 'create']);
-    Route::resource('courts', CourtController::class)->except(['show', 'create']);
-    Route::put('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
-    Route::get('users/card-labels/print', [UserController::class, 'cardLabels'])->name('users.card-labels');
-    Route::resource('users', UserController::class)->except(['show']);
-    Route::put('roles/{role}/display-name', [RoleLabelController::class, 'update'])->name('roles.display-name.update');
+
+    Route::middleware('role:Super Admin')->group(function () {
+        Route::resource('departments', DepartmentController::class)->except(['show', 'create']);
+        Route::resource('courts', CourtController::class)->except(['show', 'create']);
+        Route::put('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
+        Route::get('users/card-labels/print', [UserController::class, 'cardLabels'])->name('users.card-labels');
+        Route::resource('users', UserController::class)->except(['show']);
+        Route::put('roles/{role}/display-name', [RoleLabelController::class, 'update'])->name('roles.display-name.update');
+    });
 
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin,staff'])->group(function () {
     Route::prefix('tracking')->name('tracking.')->group(function () {
+        Route::get('file-desk', [FileTransferController::class, 'workspace'])->name('handover.workspace');
+        Route::get('handovers', [FileTransferController::class, 'index'])->name('handover.index');
+        Route::get('handovers/{transferBatch}', [FileTransferController::class, 'show'])->name('handover.show');
+        Route::post('handovers/{transferBatch}/cancel', [FileTransferController::class, 'cancelBatch'])->name('handover.cancel');
+        Route::post('handovers/{transferBatch}/items/{transferItem}/cancel', [FileTransferController::class, 'cancelItem'])->name('handover.item.cancel');
+        Route::get('send', [FileTransferController::class, 'recipients'])->name('handover.recipients');
+        Route::get('send/{recipient}', [FileTransferController::class, 'create'])->name('handover.create');
+        Route::get('send/{recipient}/validate', [FileTransferController::class, 'validateIdentifier'])->name('handover.validate');
+        Route::post('send/{recipient}', [FileTransferController::class, 'store'])->name('handover.store');
         Route::get('register-report', [RegistrarTrackingController::class, 'registerReport'])->name('register-report');
         Route::get('register-report/pdf', [RegistrarTrackingController::class, 'registerReportPdf'])->name('register-report.pdf');
         Route::get('filing/print', [FilingController::class, 'printIndex'])->name('filing.print-index');

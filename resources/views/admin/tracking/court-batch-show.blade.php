@@ -8,7 +8,7 @@
             <div>
                 <div class="system-mark">RTFTS Court</div>
                 <h4 class="mb-0">{{ $batch->batch_no }}</h4>
-                <small>{{ ucfirst($batch->type) }} Batch</small>
+                <small>{{ $batch->type === 'dispatch' ? 'Sent to Court Batch' : 'Court Return Batch' }}</small>
             </div>
         </div>
         <a target="_blank" href="{{ route('admin.tracking.court.batch.pdf', $batch) }}" class="btn btn-gold btn-sm"><i class="bi bi-printer me-1"></i>{{ __('tracking.court.print_batch_pdf') }}</a>

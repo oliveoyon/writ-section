@@ -36,7 +36,7 @@
                     <input type="text" id="lawyer_member_id" name="lawyer_member_id" class="form-control" value="{{ old('lawyer_member_id') }}" required>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-brand w-100" id="lookupLawyerBtn">{{ __('tracking.filing.lookup_button') }}</button>
+                    <button type="button" class="btn btn-outline-brand w-100" id="lookupLawyerBtn">{{ __('tracking.filing.lookup_lawyer_button') }}</button>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
                     <span id="lawyer_lookup_status" class="small text-muted"></span>

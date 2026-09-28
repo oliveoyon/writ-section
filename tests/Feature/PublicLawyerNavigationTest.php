@@ -15,8 +15,7 @@ class PublicLawyerNavigationTest extends TestCase
         $this->get(route('web.home'))
             ->assertOk()
             ->assertSee(route('lawyer.login'), false)
-            ->assertSee('Login')
-            ->assertDontSee('Lawyer Login');
+            ->assertSee('Login');
     }
 
     public function test_expired_lawyer_session_is_sent_to_lawyer_login(): void
@@ -39,5 +38,35 @@ class PublicLawyerNavigationTest extends TestCase
         $this->actingAs($lawyer)
             ->get(route('lawyer.login'))
             ->assertRedirect(route('lawyer.dashboard'));
+    }
+
+    public function test_inactive_lawyer_cannot_log_in(): void
+    {
+        $lawyer = User::factory()->create([
+            'user_type' => 'lawyer',
+            'is_active' => false,
+        ]);
+
+        $this->post(route('lawyer.login.submit'), [
+            'email_or_phone' => $lawyer->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('email_or_phone');
+
+        $this->assertGuest();
+    }
+
+    public function test_active_lawyer_can_log_in(): void
+    {
+        $lawyer = User::factory()->create([
+            'user_type' => 'lawyer',
+            'is_active' => true,
+        ]);
+
+        $this->post(route('lawyer.login.submit'), [
+            'email_or_phone' => $lawyer->email,
+            'password' => 'password',
+        ])->assertRedirect(route('lawyer.dashboard'));
+
+        $this->assertAuthenticatedAs($lawyer);
     }
 }

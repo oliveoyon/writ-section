@@ -6,16 +6,29 @@ use App\Http\Controllers\Controller;
 use App\Models\CourtCase;
 use App\Models\Department;
 use App\Models\FileMovement;
+use App\Exceptions\FileTransferException;
+use App\Services\CourtCaseSearch;
+use App\Services\FileTransferService;
 use App\Services\RtftsCaseReference;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Mpdf\Mpdf;
 
 class RegistrarTrackingController extends Controller
 {
+    private const REPORT_PAGE_SIZE = 100;
+
+    private const PDF_MAX_ROWS = 5000;
+
+    public function __construct(
+        private readonly FileTransferService $transfers,
+        private readonly CourtCaseSearch $caseSearch
+    ) {}
+
     private const OVERRIDE_REASONS = [
         'incorrect_section' => 'Correct incorrect section assignment',
         'missed_scan' => 'Record a missed barcode scan',
@@ -31,7 +44,15 @@ class RegistrarTrackingController extends Controller
         if ($request->filled('q')) {
             $query = trim((string) $request->q);
             $cases = $this->buildLookupQuery($query)
-                ->with(['latestMovement.receivedBy', 'latestMovement.court', 'currentHolder', 'petitioners', 'lawyer'])
+                ->with([
+                    'latestMovement.receivedBy',
+                    'latestMovement.court',
+                    'latestMovement.transferItem.batch',
+                    'currentHolder',
+                    'petitioners',
+                    'lawyer',
+                    'activeTransferItem.batch',
+                ])
                 ->latest('id')
                 ->limit(30)
                 ->get();
@@ -79,49 +100,25 @@ class RegistrarTrackingController extends Controller
 
     private function buildLookupQuery(string $query): Builder
     {
-        $query = trim(preg_replace('/\s+/', ' ', $query) ?? '');
-        $normalizedBarcode = RtftsCaseReference::barcodeFromSearch($query);
-        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query) . '%';
-
-        return CourtCase::query()
-            ->where(function ($q) use ($query, $like, $normalizedBarcode) {
-                $q->where('permanent_barcode', $query)
-                    ->orWhere('final_case_number', $query)
-                    ->orWhere('permanent_barcode', 'like', $like)
-                    ->orWhere('final_case_number', 'like', $like)
-                    ->orWhere('description', 'like', $like)
-                    ->orWhere('case_type', 'like', $like)
-                    ->orWhereHas('petitioners', function ($p) use ($like) {
-                        $p->where('name_or_organization', 'like', $like)
-                            ->orWhere('represented_by', 'like', $like)
-                            ->orWhere('designation', 'like', $like)
-                            ->orWhere('address', 'like', $like);
-                    })
-                    ->orWhereHas('respondents', function ($r) use ($like) {
-                        $r->where('name_or_organization', 'like', $like)
-                            ->orWhere('represented_by', 'like', $like)
-                            ->orWhere('designation', 'like', $like)
-                            ->orWhere('address', 'like', $like);
-                    })
-                    ->orWhereHas('lawyer', function ($l) use ($like) {
-                        $l->where('full_name', 'like', $like)
-                            ->orWhere('bar_council_id', 'like', $like)
-                            ->orWhere('phone', 'like', $like);
-                    });
-
-                if ($normalizedBarcode) {
-                    $q->orWhere('permanent_barcode', $normalizedBarcode);
-                }
-
-                if (ctype_digit($query)) {
-                    $q->orWhere('id', (int) $query);
-                }
-            });
+        return $this->caseSearch->query($query);
     }
 
     public function timeline(CourtCase $case)
     {
-        $movements = $case->movements()->with('receivedBy')->orderBy('received_at', 'asc')->get();
+        $case->load([
+            'currentHolder:id,name',
+            'activeTransferItem.batch',
+            'cancelledTransferItems' => fn ($query) => $query
+                ->with(['batch', 'cancelledBy:id,name'])
+                ->latest('cancelled_at'),
+        ]);
+        $movements = $case->movements()
+            ->with([
+                'receivedBy:id,name',
+                'transferItem.batch',
+            ])
+            ->orderBy('received_at', 'asc')
+            ->get();
         $departments = Department::query()
             ->where('name', '<>', (string) $case->current_section)
             ->orderByRaw('COALESCE(display_name, name)')
@@ -139,7 +136,7 @@ class RegistrarTrackingController extends Controller
 
     public function registerReportPdf(Request $request)
     {
-        $data = $this->prepareRegisterReportData($request);
+        $data = $this->prepareRegisterReportData($request, true);
         $data['generatedAt'] = now();
 
         $html = view('admin.tracking.register-report-pdf', $data)->render();
@@ -212,34 +209,44 @@ class RegistrarTrackingController extends Controller
         $user = $request->user();
         $department = Department::findOrFail((int) $request->to_department_id);
         $reason = self::OVERRIDE_REASONS[$request->reason];
-        $latest = $case->latestMovement;
-        $fromSection = $latest?->to_section ?? $case->current_section;
+        try {
+            DB::transaction(function () use ($case, $user, $department, $reason) {
+                $case = CourtCase::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
 
-        DB::transaction(function () use ($case, $user, $department, $reason, $fromSection) {
-            $case->update([
-                'current_section' => $department->name,
-                'current_holder_user_id' => null,
-                'current_holder_at' => now(),
-            ]);
+                if ($this->transfers->pendingTransferForCase($case->id, true)) {
+                    throw new FileTransferException('This file has a pending handover. Cancel that handover before using Registrar Override.');
+                }
 
-            FileMovement::create([
-                'case_id' => $case->id,
-                'barcode_scanned' => $case->permanent_barcode,
-                'from_section' => $fromSection,
-                'to_section' => $department->name,
-                'movement_type' => 'override_receive',
-                'received_by_user_id' => $user->id,
-                'received_at' => now(),
-                'notes' => 'Registrar override performed.',
-                'is_override' => true,
-                'override_reason' => $reason,
-            ]);
-        });
+                $latest = $case->latestMovement;
+                $fromSection = $latest?->to_section ?? $case->current_section;
+
+                $case->update([
+                    'current_section' => $department->name,
+                    'current_holder_user_id' => null,
+                    'current_holder_at' => now(),
+                ]);
+
+                FileMovement::create([
+                    'case_id' => $case->id,
+                    'barcode_scanned' => $case->permanent_barcode,
+                    'from_section' => $fromSection,
+                    'to_section' => $department->name,
+                    'movement_type' => 'override_receive',
+                    'received_by_user_id' => $user->id,
+                    'received_at' => now(),
+                    'notes' => 'Registrar override performed.',
+                    'is_override' => true,
+                    'override_reason' => $reason,
+                ]);
+            }, 3);
+        } catch (FileTransferException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return redirect()->route('admin.tracking.timeline', $case)->with('success', 'Override recorded with audit reason.');
     }
 
-    private function prepareRegisterReportData(Request $request): array
+    private function prepareRegisterReportData(Request $request, bool $forPdf = false): array
     {
         $user = $request->user();
         $userSection = trim((string) ($user?->departmentRelation?->name ?? $user?->department ?? ''));
@@ -272,7 +279,7 @@ class RegistrarTrackingController extends Controller
         $request->validate([
             'filter_mode' => 'required|in:date_range,month,year',
             'section' => 'nullable|string|max:255',
-            'movement_type' => 'nullable|in:receive,reject,override_receive,dispatch_to_court,returned_from_court_handover,old_case_receive,legacy_intake,legacy_receive',
+            'movement_type' => 'nullable|in:receive,reject,override_receive,dispatch_to_court,returned_from_court_handover,user_handover,old_case_receive,legacy_intake,legacy_receive',
             'movement_scope' => 'required|in:all,in,out',
         ]);
 
@@ -301,9 +308,16 @@ class RegistrarTrackingController extends Controller
             }
         }
 
-        $movementsQuery = FileMovement::with(['courtCase', 'receivedBy'])
-            ->when($dateFrom !== '', fn($q) => $q->whereDate('received_at', '>=', $dateFrom))
-            ->when($dateTo !== '', fn($q) => $q->whereDate('received_at', '<=', $dateTo))
+        $rangeStart = $dateFrom !== '' ? Carbon::parse($dateFrom)->startOfDay() : null;
+        $rangeEnd = $dateTo !== '' ? Carbon::parse($dateTo)->endOfDay() : null;
+
+        $movementsQuery = FileMovement::with([
+                'courtCase',
+                'receivedBy',
+                'transferItem.batch',
+            ])
+            ->when($rangeStart, fn($q) => $q->where('received_at', '>=', $rangeStart))
+            ->when($rangeEnd, fn($q) => $q->where('received_at', '<=', $rangeEnd))
             ->when($movementType !== '', function ($q) use ($movementType) {
                 if ($movementType === 'old_case_receive') {
                     $q->whereIn('movement_type', ['legacy_intake', 'legacy_receive']);
@@ -344,18 +358,38 @@ class RegistrarTrackingController extends Controller
             }
         }
 
-        $movements = $movementsQuery->orderBy('received_at', 'asc')->get();
+        if ($forPdf) {
+            $matchingRows = (clone $movementsQuery)->toBase()->getCountForPagination();
+            if ($matchingRows > self::PDF_MAX_ROWS) {
+                throw ValidationException::withMessages([
+                    'date_from' => 'This PDF contains '.number_format($matchingRows).' movements. Narrow the filters to '.number_format(self::PDF_MAX_ROWS).' or fewer records.',
+                ]);
+            }
+
+            $movements = $movementsQuery
+                ->orderBy('received_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+        } else {
+            $movements = $movementsQuery
+                ->orderBy('received_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->paginate(self::REPORT_PAGE_SIZE)
+                ->withQueryString();
+        }
 
         if ($canViewAllSections) {
             $fromSections = FileMovement::query()
                 ->select('from_section')
                 ->whereNotNull('from_section')
                 ->where('from_section', '<>', '')
+                ->distinct()
                 ->pluck('from_section');
             $toSections = FileMovement::query()
                 ->select('to_section')
                 ->whereNotNull('to_section')
                 ->where('to_section', '<>', '')
+                ->distinct()
                 ->pluck('to_section');
             $sections = $fromSections->merge($toSections)->unique()->sort()->values();
         } else {
@@ -377,4 +411,5 @@ class RegistrarTrackingController extends Controller
             'movementScope' => $movementScope,
         ];
     }
+
 }

@@ -42,6 +42,7 @@ class WebController extends Controller
         // Try email first
         $user = User::where('email', $request->email_or_phone)
             ->where('user_type', 'lawyer')
+            ->where('is_active', true)
             ->first();
 
         // If not found, check phone in lawyers table
@@ -50,13 +51,17 @@ class WebController extends Controller
             if ($lawyer) {
                 $user = User::where('id', $lawyer->user_id)
                     ->where('user_type', 'lawyer')
+                    ->where('is_active', true)
                     ->first();
             }
         }
 
         if ($user && Hash::check($request->password, $user->password)) {
-            Auth::login($user, $request->has('remember'));
-            return redirect()->route('lawyer.dashboard'); // your dashboard route
+            Auth::login($user, $request->boolean('remember'));
+            $request->session()->regenerate();
+            $request->session()->put('last_activity_at', time());
+
+            return redirect()->route('lawyer.dashboard');
         }
 
         return back()->withErrors([

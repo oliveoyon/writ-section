@@ -56,6 +56,7 @@
             'override_receive' => 'tracking.register.override_receive',
             'dispatch_to_court' => 'tracking.register.dispatch_to_court',
             'returned_from_court_handover' => 'tracking.register.returned_from_court_handover',
+            'user_handover' => 'tracking.register.user_handover',
             'legacy_intake' => 'tracking.register.old_case_receive',
             'legacy_receive' => 'tracking.register.old_case_receive',
         ];
@@ -160,6 +161,10 @@
 
     <tbody>
         @forelse($movements as $i => $movement)
+            @php
+                $handoverItem = $movement->transferItem;
+                $handoverBatch = $handoverItem?->batch;
+            @endphp
             <tr>
                 <td class="text-center">{{ $i + 1 }}</td>
                 <td class="mono">{{ optional($movement->received_at)->format('d-m-Y h:i A') }}</td>
@@ -168,7 +173,16 @@
                 <td class="wrap">{{ $movement->to_section ?? '-' }}</td>
                 <td class="wrap">{{ $movement->movement_type ? __(($movementTypeLabelKeys[$movement->movement_type] ?? $movement->movement_type)) : '-' }}</td>
                 <td class="wrap">{{ $movement->receivedBy?->name ?? '-' }}</td>
-                <td class="wrap">{{ $movement->notes ?: ($movement->override_reason ?: '-') }}</td>
+                <td class="wrap">
+                    @if($handoverBatch)
+                        <strong>{{ $handoverBatch->sender_name }} &rarr; {{ $handoverBatch->recipient_name }}</strong><br>
+                        Sent: {{ $handoverItem->sent_at->format('d-m-Y h:i A') }}<br>
+                        Received: {{ optional($handoverItem->received_at)->format('d-m-Y h:i A') }}<br>
+                        Time taken: {{ $handoverItem->sent_at->diffForHumans($handoverItem->received_at, true, true, 2) }}
+                    @else
+                        {{ $movement->notes ?: ($movement->override_reason ?: '-') }}
+                    @endif
+                </td>
             </tr>
         @empty
             <tr>

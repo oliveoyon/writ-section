@@ -80,6 +80,7 @@
                     <option value="override_receive" @selected($movementType === 'override_receive')>{{ __('tracking.register.override_receive') }}</option>
                     <option value="dispatch_to_court" @selected($movementType === 'dispatch_to_court')>{{ __('tracking.register.dispatch_to_court') }}</option>
                     <option value="returned_from_court_handover" @selected($movementType === 'returned_from_court_handover')>{{ __('tracking.register.returned_from_court_handover') }}</option>
+                    <option value="user_handover" @selected($movementType === 'user_handover')>{{ __('tracking.register.user_handover') }}</option>
                     <option value="old_case_receive" @selected(in_array($movementType, ['old_case_receive', 'legacy_intake', 'legacy_receive'], true))>{{ __('tracking.register.old_case_receive') }}</option>
                 </select>
             </div>
@@ -113,6 +114,7 @@
                 'override_receive' => 'tracking.register.override_receive',
                 'dispatch_to_court' => 'tracking.register.dispatch_to_court',
                 'returned_from_court_handover' => 'tracking.register.returned_from_court_handover',
+                'user_handover' => 'tracking.register.user_handover',
                 'legacy_intake' => 'tracking.register.old_case_receive',
                 'legacy_receive' => 'tracking.register.old_case_receive',
             ];
@@ -130,7 +132,7 @@
             </div>
             <div class="total-box">
                 <span>{{ __('tracking.register.total') }}</span>
-                <strong>{{ $movements->count() }}</strong>
+                <strong>{{ method_exists($movements, 'total') ? $movements->total() : $movements->count() }}</strong>
             </div>
         </div>
 
@@ -151,8 +153,12 @@
                 </thead>
                 <tbody>
                     @forelse($movements as $i => $movement)
+                        @php
+                            $handoverItem = $movement->transferItem;
+                            $handoverBatch = $handoverItem?->batch;
+                        @endphp
                         <tr>
-                            <td>{{ $i + 1 }}</td>
+                            <td>{{ (method_exists($movements, 'firstItem') ? ($movements->firstItem() ?? 1) : 1) + $i }}</td>
                             <td>{{ optional($movement->received_at)->format('d-m-Y h:i A') }}</td>
                             <td>{{ $movement->courtCase?->case_reference ?? ('CASE-' . ($movement->case_id ?? '')) }}</td>
                             {{-- <td>{{ $movement->barcode_scanned }}</td> --}}
@@ -160,7 +166,18 @@
                             <td><span class="section-badge">{{ $movement->to_section ?? '-' }}</span></td>
                             <td><span class="type-badge">{{ isset($movementTypeLabelKeys[$movement->movement_type]) ? __($movementTypeLabelKeys[$movement->movement_type]) : $movement->movement_type }}</span></td>
                             <td>{{ $movement->receivedBy?->name ?? '-' }}</td>
-                            <td>{{ $movement->notes ?: ($movement->override_reason ?: '-') }}</td>
+                            <td>
+                                @if($handoverBatch)
+                                    <div class="handover-status">
+                                        <strong>{{ $handoverBatch->sender_name }} <i class="bi bi-arrow-right"></i> {{ $handoverBatch->recipient_name }}</strong>
+                                        <small>Sent: {{ $handoverItem->sent_at->format('d-m-Y h:i A') }}</small>
+                                        <small>Received: {{ optional($handoverItem->received_at)->format('d-m-Y h:i A') }}</small>
+                                        <small>Time taken: {{ $handoverItem->sent_at->diffForHumans($handoverItem->received_at, true, true, 2) }}</small>
+                                    </div>
+                                @else
+                                    {{ $movement->notes ?: ($movement->override_reason ?: '-') }}
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
@@ -170,6 +187,12 @@
                 </tbody>
             </table>
         </div>
+
+        @if(method_exists($movements, 'hasPages') && $movements->hasPages())
+            <div class="px-3 py-3 border-top">
+                {{ $movements->links() }}
+            </div>
+        @endif
 
     </section>
 </div>
@@ -193,6 +216,9 @@
     }
     .register-header h4 { color: #00284d; font-size: 1.15rem; font-weight: 800; }
     .register-header small { color: #6b7280; font-weight: 600; }
+    .handover-status strong, .handover-status small { display:block; }
+    .handover-status strong { color:#0b5f78; font-size:.78rem; }
+    .handover-status small { margin-top:.08rem; color:#64748b; font-size:.7rem; }
     .system-mark { color: #b87d08; font-size: .82rem; font-weight: 800; }
     .report-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
     .admin-panel {

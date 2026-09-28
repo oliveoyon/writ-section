@@ -128,6 +128,22 @@ class CourtCase extends Model
         return $this->belongsTo(User::class, 'current_holder_user_id');
     }
 
+    public function transferItems()
+    {
+        return $this->hasMany(FileTransferItem::class, 'case_id');
+    }
+
+    public function activeTransferItem()
+    {
+        return $this->hasOne(FileTransferItem::class, 'active_case_id');
+    }
+
+    public function cancelledTransferItems()
+    {
+        return $this->hasMany(FileTransferItem::class, 'case_id')
+            ->where('status', FileTransferItem::STATUS_CANCELLED);
+    }
+
     public function returnedBy()
     {
         return $this->belongsTo(User::class, 'returned_by_user_id');

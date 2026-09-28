@@ -32,7 +32,7 @@
     </div>
 
     <div class="meta">
-        <p><strong>{{ __('tracking.court.type') }}:</strong> {{ strtoupper($batch->type) }}</p>
+        <p><strong>{{ __('tracking.court.type') }}:</strong> {{ $batch->type === 'dispatch' ? 'SENT TO COURT' : 'COURT RETURN' }}</p>
         <p><strong>{{ __('tracking.court.court') }}:</strong> {{ app()->getLocale() === 'bn' ? $batch->court?->name_bn : $batch->court?->name_en }}</p>
         <p><strong>{{ __('tracking.court.created_by') }}:</strong> {{ $batch->createdBy?->name ?? '-' }}</p>
         <p><strong>{{ __('tracking.court.processed_time') }}:</strong> {{ optional($batch->dispatched_at ?? $batch->returned_at)->format('d-m-Y h:i A') }}</p>

@@ -9,6 +9,17 @@ class FileMovement extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::updating(function () {
+            throw new \LogicException('File movement history is append-only.');
+        });
+
+        static::deleting(function () {
+            throw new \LogicException('File movement history is append-only.');
+        });
+    }
+
     protected $fillable = [
         'case_id',
         'court_id',
@@ -47,5 +58,10 @@ class FileMovement extends Model
     public function dispatchBatch()
     {
         return $this->belongsTo(CourtDispatchBatch::class, 'court_dispatch_batch_id');
+    }
+
+    public function transferItem()
+    {
+        return $this->hasOne(FileTransferItem::class, 'file_movement_id');
     }
 }

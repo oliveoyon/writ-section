@@ -27,14 +27,15 @@ class CourtBatchManagementTest extends TestCase
         $ownBatch = $this->createBatch($court, $staff, 'DSP-OWN-001');
         $otherBatch = $this->createBatch($court, $otherStaff, 'DSP-OTHER-001');
 
-        $this->actingAs($staff)->get(route('admin.tracking.court.batches.index'))
+        $this->actingAs($staff)->get(route('admin.tracking.court.batches.index', ['q' => 'DSP-']))
             ->assertOk()
             ->assertSee($ownBatch->batch_no)
             ->assertDontSee($otherBatch->batch_no);
 
         $this->actingAs($staff)->get(route('admin.tracking.court.batches.show', $otherBatch))->assertForbidden();
+        $this->actingAs($staff)->get(route('admin.tracking.court.batch.pdf', $otherBatch))->assertForbidden();
 
-        $this->actingAs($admin)->get(route('admin.tracking.court.batches.index'))
+        $this->actingAs($admin)->get(route('admin.tracking.court.batches.index', ['q' => 'DSP-']))
             ->assertOk()
             ->assertSee($ownBatch->batch_no)
             ->assertSee($otherBatch->batch_no);
