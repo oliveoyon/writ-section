@@ -8,6 +8,7 @@ use App\Models\CourtCase;
 use App\Models\FileTransferBatch;
 use App\Models\FileTransferItem;
 use App\Models\User;
+use App\Services\CourtCaseSearch;
 use App\Services\FileTransferService;
 use App\Services\RtftsCaseReference;
 use Illuminate\Http\JsonResponse;
@@ -17,9 +18,10 @@ use Illuminate\View\View;
 
 class FileTransferController extends Controller
 {
-    public function __construct(private readonly FileTransferService $transfers)
-    {
-    }
+    public function __construct(
+        private readonly FileTransferService $transfers,
+        private readonly CourtCaseSearch $caseSearch
+    ) {}
 
     public function workspace(Request $request): View
     {
@@ -47,9 +49,29 @@ class FileTransferController extends Controller
             ])
             ->count();
 
-        $heldFiles = CourtCase::query()
-            ->where('current_holder_user_id', $user->id)
-            ->count();
+        $custodySearch = mb_substr(trim((string) $request->query('custody_q', '')), 0, 100);
+        $heldCasesQuery = $custodySearch !== ''
+            ? $this->caseSearch->query($custodySearch)
+            : CourtCase::query();
+
+        $heldCases = $heldCasesQuery
+            ->where('cases.current_holder_user_id', $user->id)
+            ->with([
+                'petitioners:id,case_id,name_or_organization',
+                'respondents:id,case_id,name_or_organization',
+                'lawyer:id,full_name',
+                'activeTransferItem:id,batch_id,active_case_id,status,sent_at',
+                'activeTransferItem.batch:id,batch_no,recipient_name',
+            ])
+            ->orderByDesc('cases.current_holder_at')
+            ->orderByDesc('cases.id')
+            ->paginate(15, ['*'], 'custody_page')
+            ->withQueryString()
+            ->fragment('custody-files');
+
+        $heldFiles = $custodySearch === ''
+            ? $heldCases->total()
+            : CourtCase::query()->where('current_holder_user_id', $user->id)->count();
 
         $incomingBatches = FileTransferBatch::query()
             ->select([
@@ -109,7 +131,9 @@ class FileTransferController extends Controller
             'outgoingBatches',
             'hasMoreOutgoingBatches',
             'receiveRoute',
-            'isFiling'
+            'isFiling',
+            'custodySearch',
+            'heldCases'
         ));
     }
 
@@ -146,7 +170,7 @@ class FileTransferController extends Controller
         $isSuperAdmin = $user->hasRole('Super Admin');
         $direction = (string) $request->query('direction', 'incoming');
         $allowedDirections = $isSuperAdmin ? ['incoming', 'outgoing', 'all'] : ['incoming', 'outgoing'];
-        if (!in_array($direction, $allowedDirections, true)) {
+        if (! in_array($direction, $allowedDirections, true)) {
             $direction = 'incoming';
         }
 
@@ -280,7 +304,7 @@ class FileTransferController extends Controller
         $identifier = trim((string) $request->query('identifier', ''));
         $case = $this->findPermanentCase($identifier);
 
-        if (!$case) {
+        if (! $case) {
             return response()->json([
                 'valid' => false,
                 'message' => 'Valid RTFTS Case No. or barcode not found.',
@@ -330,7 +354,7 @@ class FileTransferController extends Controller
             $message .= ' '.$failedCount.' file(s) could not be sent.';
         }
 
-        if (!$batch) {
+        if (! $batch) {
             $message = 'No files were sent. Please review the results below.';
         }
 
@@ -368,7 +392,7 @@ class FileTransferController extends Controller
     private function findPermanentCase(string $identifier): ?CourtCase
     {
         $parsed = RtftsCaseReference::parseIdentifier($identifier);
-        if (!$parsed) {
+        if (! $parsed) {
             return null;
         }
 

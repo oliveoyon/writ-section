@@ -146,6 +146,84 @@
             @endif
         </aside>
     </div>
+
+    <section class="custody-register" id="custody-files" aria-labelledby="custodyHeading">
+        <div class="custody-heading">
+            <div>
+                <div class="system-mark">Current Responsibility</div>
+                <h5 id="custodyHeading">Files in My Custody</h5>
+            </div>
+            <span class="custody-total">{{ number_format($heldFiles) }} {{ $heldFiles === 1 ? 'file' : 'files' }}</span>
+        </div>
+
+        <form method="GET" action="{{ route('admin.tracking.handover.workspace') }}#custody-files" class="custody-search" role="search">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+                <input
+                    type="search"
+                    name="custody_q"
+                    class="form-control"
+                    value="{{ $custodySearch }}"
+                    maxlength="100"
+                    placeholder="Search Case No., barcode, party, lawyer or case type"
+                    aria-label="Search files in my custody"
+                >
+                <button class="btn btn-custody-search" type="submit">Search</button>
+                @if($custodySearch !== '')
+                    <a class="btn btn-outline-secondary" href="{{ route('admin.tracking.handover.workspace') }}#custody-files" title="Clear search" aria-label="Clear search">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                    </a>
+                @endif
+            </div>
+        </form>
+
+        @if($custodySearch !== '')
+            <div class="custody-result-line">
+                {{ number_format($heldCases->total()) }} {{ $heldCases->total() === 1 ? 'file' : 'files' }} found
+            </div>
+        @endif
+
+        <div class="custody-list">
+            @forelse($heldCases as $case)
+                @php
+                    $petitioner = $case->petitioners->first()?->name_or_organization;
+                    $respondent = $case->respondents->first()?->name_or_organization;
+                    $pendingTransfer = $case->activeTransferItem;
+                @endphp
+                <article class="custody-row">
+                    <span class="custody-case-icon"><i class="bi bi-folder2-open" aria-hidden="true"></i></span>
+                    <span class="custody-case-main">
+                        <strong>{{ $case->case_reference ?: $case->final_case_number }}</strong>
+                        <span>{{ $case->case_type ?: 'Case type not recorded' }}</span>
+                    </span>
+                    <span class="custody-parties">
+                        <strong>{{ $petitioner ?: 'Petitioner not recorded' }}</strong>
+                        <span>vs {{ $respondent ?: 'Respondent not recorded' }}</span>
+                    </span>
+                    <span class="custody-meta">
+                        @if($pendingTransfer)
+                            <strong class="pending-custody"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Sent to {{ $pendingTransfer->batch?->recipient_name ?: 'recipient' }}</strong>
+                            <span>{{ $pendingTransfer->batch?->batch_no }}</span>
+                        @else
+                            <strong>{{ $case->current_holder_at?->format('d-m-Y') ?: '-' }}</strong>
+                            <span>In custody</span>
+                        @endif
+                    </span>
+                </article>
+            @empty
+                <div class="custody-empty">
+                    <i class="bi bi-folder2" aria-hidden="true"></i>
+                    <strong>{{ $custodySearch !== '' ? 'No matching file found' : 'No file is currently in your custody' }}</strong>
+                </div>
+            @endforelse
+        </div>
+
+        @if($heldCases->hasPages())
+            <div class="custody-pagination">
+                {{ $heldCases->links('pagination::bootstrap-5') }}
+            </div>
+        @endif
+    </section>
 </div>
 @endsection
 
@@ -240,6 +318,36 @@
     .action-copy span { display: block; margin-top: .25rem; color: rgba(255,255,255,.85); font-size: .9rem; font-weight: 700; }
     .action-count { align-self: start; padding: .28rem .5rem; border-radius: 4px; background: rgba(255,255,255,.16); font-size: .76rem; font-weight: 800; white-space: nowrap; }
     .action-arrow { font-size: 1.2rem; }
+    .custody-register { margin-top:1rem; overflow:hidden; background:#fff; border:1px solid #dbe3ec; border-top:3px solid #0b5f78; border-radius:4px; box-shadow:0 2px 8px rgba(0,40,77,.08); }
+    .custody-heading { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.8rem 1rem; border-bottom:1px solid #e5eaf0; }
+    .custody-heading h5 { margin:0; color:#00284d; font-size:1.05rem; font-weight:800; }
+    .custody-total { padding:.3rem .6rem; color:#075b46; background:#e7f5ef; border:1px solid #b9dfcf; border-radius:4px; font-size:.8rem; font-weight:800; white-space:nowrap; }
+    .custody-search { padding:.8rem 1rem; background:#f7f9fb; border-bottom:1px solid #e5eaf0; }
+    .custody-search .input-group > * { min-height:46px; }
+    .custody-search .input-group-text { color:#52606d; background:#fff; }
+    .custody-search .form-control:focus { border-color:#d4a017; box-shadow:0 0 0 .15rem rgba(212,160,23,.15); }
+    .btn-custody-search { padding-inline:1.25rem; color:#fff; background:#00284d; border-color:#00284d; font-weight:800; }
+    .btn-custody-search:hover, .btn-custody-search:focus-visible { color:#fff; background:#001e3a; border-color:#001e3a; }
+    .custody-result-line { padding:.45rem 1rem; color:#52606d; background:#fffdf5; border-bottom:1px solid #eee2bd; font-size:.78rem; font-weight:700; }
+    .custody-list { display:grid; }
+    .custody-row { display:grid; grid-template-columns:40px minmax(150px,.8fr) minmax(220px,1.35fr) minmax(145px,.75fr); align-items:center; gap:.8rem; min-height:76px; padding:.65rem 1rem; border-bottom:1px solid #edf0f3; }
+    .custody-row:last-child { border-bottom:0; }
+    .custody-row:hover { background:#f8fafc; }
+    .custody-case-icon { display:grid; place-items:center; width:40px; height:40px; color:#0b5f78; background:#e7f3f7; border-radius:4px; font-size:1.15rem; }
+    .custody-case-main, .custody-parties, .custody-meta { min-width:0; }
+    .custody-case-main strong, .custody-case-main span, .custody-parties strong, .custody-parties span, .custody-meta strong, .custody-meta span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .custody-case-main strong { color:#00284d; font-size:.93rem; font-weight:800; }
+    .custody-case-main span, .custody-parties span, .custody-meta span { margin-top:.12rem; color:#6b7280; font-size:.75rem; font-weight:600; }
+    .custody-parties strong { color:#374151; font-size:.84rem; font-weight:750; }
+    .custody-meta { text-align:right; }
+    .custody-meta strong { color:#187246; font-size:.8rem; font-weight:800; }
+    .custody-meta .pending-custody { color:#9a6700; }
+    .custody-empty { display:grid; justify-items:center; gap:.35rem; padding:2rem 1rem; color:#6b7280; text-align:center; }
+    .custody-empty i { color:#94a3b8; font-size:1.8rem; }
+    .custody-empty strong { font-size:.9rem; }
+    .custody-pagination { display:flex; justify-content:flex-end; padding:.75rem 1rem; background:#f8fafc; border-top:1px solid #e5eaf0; }
+    .custody-pagination nav { max-width:100%; }
+    .custody-pagination svg { width:1rem; height:1rem; }
     @media (max-width: 767.98px) {
         .handover-home { padding-top: 1rem !important; }
         .desk-layout { grid-template-columns:1fr; }
@@ -254,6 +362,16 @@
         .desk-action { min-height: 128px; grid-template-columns: 54px minmax(0, 1fr) 20px; padding: 1rem; }
         .action-icon { width: 54px; height: 54px; }
         .action-count { position: absolute; right: 1rem; top: .75rem; }
+        .custody-heading { align-items:flex-start; }
+        .custody-search .input-group { flex-wrap:wrap; }
+        .custody-search .input-group-text { display:none; }
+        .custody-search .form-control { width:100%; border-radius:4px !important; }
+        .custody-search .btn { margin-top:.45rem; border-radius:4px !important; }
+        .custody-row { grid-template-columns:40px minmax(0,1fr); gap:.55rem .7rem; }
+        .custody-parties, .custody-meta { grid-column:2; text-align:left; }
+        .custody-parties { padding-top:.35rem; border-top:1px dashed #e5e7eb; }
+        .custody-case-main strong, .custody-case-main span, .custody-parties strong, .custody-parties span, .custody-meta strong, .custody-meta span { white-space:normal; }
+        .custody-pagination { justify-content:center; overflow-x:auto; }
     }
 </style>
 @endpush

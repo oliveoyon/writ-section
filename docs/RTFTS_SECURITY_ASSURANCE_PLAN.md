@@ -106,7 +106,7 @@ Do not store passwords, application keys, API secrets, session data, or full per
 As of 2026-09-24:
 
 - Production dependency audit: no known advisories.
-- Laravel test suite: 88 tests passed with 399 assertions.
+- Laravel test suite: 90 tests passed with 408 assertions.
 - Route and URL-tampering review: documented in `docs/RTFTS_ROUTE_AUTHORIZATION_MATRIX.md`; focused authorization regression tests passed.
 - Route discovery, configuration cache, and Blade cache: passed.
 - PHP syntax checks for changed application files: passed.

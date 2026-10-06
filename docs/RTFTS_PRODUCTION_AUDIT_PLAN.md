@@ -336,6 +336,6 @@ As of 2026-09-28:
 - Dashboard movement metrics use consolidated conditional aggregates instead of repeated range scans.
 - Repeatable local-only benchmark generation, cleanup, timing, and execution-plan commands are available.
 - Broad lookup uses centralized MySQL FULLTEXT search while exact RTFTS references remain uniquely indexed.
-- The full test suite passes with 88 tests and 399 assertions.
+- The full test suite passes with 90 tests and 408 assertions.
 
 These completed items must be regression-tested during the audit; they should not be redesigned unless evidence shows a defect.

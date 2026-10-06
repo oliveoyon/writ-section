@@ -55,7 +55,7 @@ Both migrations were applied successfully to the local MySQL database. Laravel s
 
 ## Verification
 
-- Full Laravel suite: 88 tests passed, 399 assertions.
+- Full Laravel suite: 90 tests passed, 408 assertions.
 - Added 5,001-row PDF limit regression coverage.
 - Added 101-row HTML pagination regression coverage.
 - Added court batch limit and empty-batch coverage.

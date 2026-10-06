@@ -3,8 +3,9 @@
 namespace Tests\Feature;
 
 use App\Exceptions\FileTransferException;
-use App\Models\CourtCase;
+use App\Models\CasePetitioner;
 use App\Models\Court;
+use App\Models\CourtCase;
 use App\Models\Department;
 use App\Models\FileTransferBatch;
 use App\Models\FileTransferItem;
@@ -54,6 +55,71 @@ class FileTransferServiceTest extends TestCase
             ->assertSee('Waiting for Receipt')
             ->assertSee($recipient->name)
             ->assertSee('1 not received');
+    }
+
+    public function test_file_desk_paginates_only_the_logged_in_users_custody(): void
+    {
+        [$sender, $recipient, $firstCase, $department] = $this->participants();
+
+        foreach (range(1, 16) as $offset) {
+            $serial = 5000 + $offset;
+            $this->createCase(
+                $sender,
+                '132026'.str_pad((string) $serial, 6, '0', STR_PAD_LEFT),
+                'WRPET '.$serial.'/2026'
+            );
+        }
+
+        $otherHolder = User::factory()->create([
+            'department' => $department->id,
+            'user_type' => 'staff',
+            'is_active' => true,
+        ]);
+        $otherCase = $this->createCase($otherHolder, '132026009999', 'WRPET 9999/2026');
+
+        $this->actingAs($sender)
+            ->get(route('admin.tracking.handover.workspace'))
+            ->assertOk()
+            ->assertViewHas('heldCases', function ($cases) use ($sender): bool {
+                return $cases->total() === 17
+                    && $cases->count() === 15
+                    && $cases->every(fn (CourtCase $case) => (int) $case->current_holder_user_id === (int) $sender->id);
+            })
+            ->assertDontSee($otherCase->final_case_number);
+
+        $this->actingAs($sender)
+            ->get(route('admin.tracking.handover.workspace', ['custody_page' => 2]))
+            ->assertOk()
+            ->assertViewHas('heldCases', fn ($cases): bool => $cases->currentPage() === 2 && $cases->count() === 2);
+    }
+
+    public function test_file_desk_search_finds_party_but_never_another_users_file(): void
+    {
+        [$sender, $recipient, $ownedCase, $department] = $this->participants();
+        CasePetitioner::create([
+            'case_id' => $ownedCase->id,
+            'name_or_organization' => 'Bangladesh Search Foundation',
+        ]);
+
+        $otherHolder = User::factory()->create([
+            'department' => $department->id,
+            'user_type' => 'staff',
+            'is_active' => true,
+        ]);
+        $otherCase = $this->createCase($otherHolder, '132026004799', 'WRPET 4799/2026');
+        CasePetitioner::create([
+            'case_id' => $otherCase->id,
+            'name_or_organization' => 'Bangladesh Search Foundation',
+        ]);
+
+        $this->actingAs($sender)
+            ->get(route('admin.tracking.handover.workspace', ['custody_q' => 'Search Foundation']))
+            ->assertOk()
+            ->assertSee($ownedCase->final_case_number)
+            ->assertDontSee($otherCase->final_case_number)
+            ->assertViewHas('heldCases', function ($cases) use ($ownedCase): bool {
+                return $cases->total() === 1 && $cases->first()?->is($ownedCase);
+            });
     }
 
     public function test_send_screen_validates_and_creates_a_pending_handover(): void
@@ -284,8 +350,7 @@ class FileTransferServiceTest extends TestCase
                 'court_id' => $court->id,
                 'barcodes' => $case->permanent_barcode,
             ])
-            ->assertSessionHas('court_failed', fn (array $failed): bool =>
-                $failed[0]['reason'] === 'You can send only files currently in your custody.'
+            ->assertSessionHas('court_failed', fn (array $failed): bool => $failed[0]['reason'] === 'You can send only files currently in your custody.'
             );
 
         app(FileTransferService::class)->send($holder, $recipient, [$case->id]);
@@ -295,8 +360,7 @@ class FileTransferServiceTest extends TestCase
                 'court_id' => $court->id,
                 'barcodes' => $case->permanent_barcode,
             ])
-            ->assertSessionHas('court_failed', fn (array $failed): bool =>
-                str_contains($failed[0]['reason'], 'Cancel the handover first')
+            ->assertSessionHas('court_failed', fn (array $failed): bool => str_contains($failed[0]['reason'], 'Cancel the handover first')
             );
 
         $this->assertSame($holder->id, $case->fresh()->current_holder_user_id);
@@ -329,8 +393,7 @@ class FileTransferServiceTest extends TestCase
                 'barcode' => $case->permanent_barcode,
                 'reason' => 'Test rejection',
             ])
-            ->assertSessionHas('error', fn (string $message): bool =>
-                str_contains($message, 'Cancel the handover before rejecting it')
+            ->assertSessionHas('error', fn (string $message): bool => str_contains($message, 'Cancel the handover before rejecting it')
             );
 
         $registrarDepartment = Department::create([
@@ -348,8 +411,7 @@ class FileTransferServiceTest extends TestCase
                 'to_department_id' => $destination->id,
                 'reason' => 'incorrect_section',
             ])
-            ->assertSessionHas('error', fn (string $message): bool =>
-                str_contains($message, 'Cancel that handover before using Registrar Override')
+            ->assertSessionHas('error', fn (string $message): bool => str_contains($message, 'Cancel that handover before using Registrar Override')
             );
 
         $this->assertSame($holder->id, $case->fresh()->current_holder_user_id);
