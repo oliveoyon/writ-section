@@ -10,18 +10,20 @@ use App\Models\CourtDispatchBatchItem;
 use App\Models\FileMovement;
 use App\Models\User;
 use App\Services\FileTransferService;
+use App\Services\RtftsCaseReference;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
 use Mpdf\Mpdf;
 
 class CourtDispatchController extends Controller
 {
     private const MAX_FILES_PER_BATCH = 200;
 
-    public function __construct(private readonly FileTransferService $transfers)
-    {
-    }
+    public function __construct(private readonly FileTransferService $transfers) {}
 
     public function dispatchIndex(Request $request)
     {
@@ -29,6 +31,29 @@ class CourtDispatchController extends Controller
 
         return view('admin.tracking.court-dispatch', [
             'courts' => $courts,
+        ]);
+    }
+
+    public function validateDispatchIdentifier(Request $request): JsonResponse
+    {
+        $identifier = trim((string) $request->query('identifier', ''));
+        $case = $this->findMovementCase($identifier);
+
+        if (! $case) {
+            return response()->json([
+                'valid' => false,
+                'message' => $this->invalidBarcodeReason($identifier),
+            ], 422);
+        }
+
+        if ($message = $this->dispatchRestrictionMessage($case, $request->user())) {
+            return response()->json(['valid' => false, 'message' => $message], 422);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'permanent_barcode' => $case->permanent_barcode,
+            'case_number' => $case->case_reference,
         ]);
     }
 
@@ -73,30 +98,22 @@ class CourtDispatchController extends Controller
             foreach ($barcodes as $barcode) {
                 $case = $this->findMovementCase($barcode);
 
-                if (!$case) {
+                if (! $case) {
                     $failed[] = ['barcode' => $barcode, 'reason' => $this->invalidBarcodeReason($barcode)];
+
                     continue;
                 }
 
                 $case = CourtCase::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
 
+                if ($message = $this->dispatchRestrictionMessage($case, $user, true)) {
+                    $failed[] = ['barcode' => $barcode, 'reason' => $message];
+
+                    continue;
+                }
+
                 $latest = $case->latestMovement;
                 $fromSection = $latest?->to_section ?? $case->current_section;
-
-                if (strtolower((string) $fromSection) === 'court') {
-                    $failed[] = ['barcode' => $barcode, 'reason' => __('tracking.court.errors.already_in_court')];
-                    continue;
-                }
-
-                if ((int) $case->current_holder_user_id !== (int) $user->id) {
-                    $failed[] = ['barcode' => $barcode, 'reason' => 'You can send only files currently in your custody.'];
-                    continue;
-                }
-
-                if ($this->transfers->pendingTransferForCase($case->id, true)) {
-                    $failed[] = ['barcode' => $barcode, 'reason' => 'This file is waiting for another user to receive it. Cancel the handover first.'];
-                    continue;
-                }
 
                 $case->update([
                     'current_section' => 'Court',
@@ -128,7 +145,7 @@ class CourtDispatchController extends Controller
 
                 $processed[] = [
                     'barcode' => $case->permanent_barcode,
-                    'case_no' => $case->case_reference ?: ('CASE-' . $case->id),
+                    'case_no' => $case->case_reference ?: ('CASE-'.$case->id),
                     'from_section' => $fromSection ?: '-',
                     'to_section' => 'Court',
                 ];
@@ -201,8 +218,9 @@ class CourtDispatchController extends Controller
             foreach ($barcodes as $barcode) {
                 $case = $this->findMovementCase($barcode);
 
-                if (!$case) {
+                if (! $case) {
                     $failed[] = ['barcode' => $barcode, 'reason' => $this->invalidBarcodeReason($barcode)];
+
                     continue;
                 }
 
@@ -213,11 +231,13 @@ class CourtDispatchController extends Controller
 
                 if (strtolower((string) $fromSection) !== 'court') {
                     $failed[] = ['barcode' => $barcode, 'reason' => __('tracking.court.errors.not_in_court')];
+
                     continue;
                 }
 
                 if ($this->transfers->pendingTransferForCase($case->id, true)) {
                     $failed[] = ['barcode' => $barcode, 'reason' => 'This file has a pending internal handover. Cancel the handover before receiving it from court.'];
+
                     continue;
                 }
 
@@ -252,7 +272,7 @@ class CourtDispatchController extends Controller
 
                 $processed[] = [
                     'barcode' => $case->permanent_barcode,
-                    'case_no' => $case->case_reference ?: ('CASE-' . $case->id),
+                    'case_no' => $case->case_reference ?: ('CASE-'.$case->id),
                     'from_section' => 'Court',
                     'to_section' => $receivingSection,
                 ];
@@ -293,17 +313,17 @@ class CourtDispatchController extends Controller
             'margin_right' => 10,
             'margin_top' => 10,
             'margin_bottom' => 10,
-            'fontDir' => array_merge((new \Mpdf\Config\ConfigVariables())->getDefaults()['fontDir'], [public_path('assets/font')]),
-            'fontdata' => (new \Mpdf\Config\FontVariables())->getDefaults()['fontdata'] + [
+            'fontDir' => array_merge((new ConfigVariables)->getDefaults()['fontDir'], [public_path('assets/font')]),
+            'fontdata' => (new FontVariables)->getDefaults()['fontdata'] + [
                 'solaimanlipi' => ['R' => 'SolaimanLipi.ttf'],
             ],
             'default_font' => 'solaimanlipi',
         ]);
         $mpdf->WriteHTML($html);
 
-        return response($mpdf->Output('CourtBatch_' . $batch->batch_no . '.pdf', 'S'))
+        return response($mpdf->Output('CourtBatch_'.$batch->batch_no.'.pdf', 'S'))
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="CourtBatch_' . $batch->batch_no . '.pdf"');
+            ->header('Content-Disposition', 'inline; filename="CourtBatch_'.$batch->batch_no.'.pdf"');
     }
 
     public function batches(Request $request)
@@ -346,13 +366,13 @@ class CourtDispatchController extends Controller
             ])
             ->with(['court:id,name_en,name_bn,code', 'createdBy:id,name'])
             ->withCount('items')
-            ->when(!$canViewAll, fn ($builder) => $builder->where('created_by_user_id', $user->id))
+            ->when(! $canViewAll, fn ($builder) => $builder->where('created_by_user_id', $user->id))
             ->when($queryText !== '', function ($builder) use ($queryText) {
                 $builder->where(function ($inner) use ($queryText) {
-                    $inner->where('batch_no', 'like', '%' . $queryText . '%')
+                    $inner->where('batch_no', 'like', '%'.$queryText.'%')
                         ->orWhereHas('items.courtCase', function ($caseQuery) use ($queryText) {
-                            $caseQuery->where('final_case_number', 'like', '%' . $queryText . '%')
-                                ->orWhere('permanent_barcode', 'like', '%' . $queryText . '%');
+                            $caseQuery->where('final_case_number', 'like', '%'.$queryText.'%')
+                                ->orWhere('permanent_barcode', 'like', '%'.$queryText.'%');
                         });
                 });
             })
@@ -464,15 +484,43 @@ class CourtDispatchController extends Controller
     private function findMovementCase(string $identifier): ?CourtCase
     {
         $identifier = trim(preg_replace('/\s+/', ' ', $identifier) ?? '');
+        $parsed = RtftsCaseReference::parseIdentifier($identifier);
+        $barcode = $parsed['barcode'] ?? $identifier;
+        $reference = $parsed['reference'] ?? $identifier;
 
         return CourtCase::query()
-            ->whereNotNull('permanent_barcode')
-            ->where('permanent_barcode', $identifier)
-            ->orWhere(function ($query) use ($identifier) {
-                $query->whereNotNull('permanent_barcode')
-                    ->where('final_case_number', $identifier);
+            ->where(function ($query) use ($barcode, $reference) {
+                $query->where('permanent_barcode', $barcode)
+                    ->orWhere('final_case_number', $reference);
             })
+            ->whereNotNull('permanent_barcode')
             ->first();
+    }
+
+    private function dispatchRestrictionMessage(CourtCase $case, $user, bool $lockTransfer = false): ?string
+    {
+        $latest = $case->latestMovement;
+        $fromSection = strtolower(trim((string) ($latest?->to_section ?? $case->current_section)));
+
+        if ($fromSection === 'court') {
+            return __('tracking.court.errors.already_in_court');
+        }
+
+        if ((int) $case->current_holder_user_id !== (int) $user?->id) {
+            return 'You can send only files currently in your custody.';
+        }
+
+        if ($this->transfers->pendingTransferForCase($case->id, $lockTransfer)) {
+            return 'This file is waiting for another user to receive it. Cancel the handover first.';
+        }
+
+        $status = strtolower(trim((string) $case->status));
+        if (in_array($status, ['rejected', 'affidavit_rejected', 'filing_rejected', 'returned_to_lawyer'], true)
+            || $latest?->movement_type === 'reject') {
+            return 'This rejected file cannot be sent to court.';
+        }
+
+        return null;
     }
 
     private function nextBatchNo(string $prefix): string

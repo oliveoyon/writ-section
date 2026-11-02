@@ -109,6 +109,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'checkUserType:admin
 
         Route::middleware('ensureDepartment:Office Assistant,Dealing Assistant,Assistant Registrar Office')->group(function () {
             Route::get('court/dispatch', [CourtDispatchController::class, 'dispatchIndex'])->name('court.dispatch.index');
+            Route::get('court/dispatch/validate-identifier', [CourtDispatchController::class, 'validateDispatchIdentifier'])->name('court.dispatch.validate-identifier');
             Route::post('court/dispatch', [CourtDispatchController::class, 'dispatchStore'])->name('court.dispatch.store');
             Route::get('court/return', [CourtDispatchController::class, 'returnIndex'])->name('court.return.index');
             Route::post('court/return', [CourtDispatchController::class, 'returnStore'])->name('court.return.store');

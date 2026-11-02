@@ -390,6 +390,7 @@
         async function addBarcode(raw) {
             let code = (raw || '').trim().replace(/\s+/g, ' ');
             let caseNumber = null;
+            let validationResult = null;
             if (!code) return;
             if (!permanentBarcodePattern.test(code) && !finalCasePattern.test(code)) {
                 inputError.textContent = @json(__('tracking.receive.invalid_identifier_format'));
@@ -404,15 +405,15 @@
                 const response = await fetch(`${validateIdentifierUrl}?identifier=${encodeURIComponent(code)}`, {
                     headers: { 'Accept': 'application/json' }
                 });
-                const result = await response.json();
-                if (!response.ok || !result.valid) {
-                    inputError.textContent = result.message || @json(__('tracking.receive.identifier_not_found'));
+                validationResult = await response.json();
+                if (!response.ok || !validationResult.valid) {
+                    inputError.textContent = validationResult.message || @json(__('tracking.receive.identifier_not_found'));
                     inputError.classList.remove('d-none');
                     barcodeInput.select();
                     return;
                 }
-                code = result.permanent_barcode;
-                caseNumber = result.case_number;
+                code = validationResult.permanent_barcode;
+                caseNumber = validationResult.case_number;
             } catch (error) {
                 inputError.textContent = @json(__('tracking.receive.identifier_not_found'));
                 inputError.classList.remove('d-none');
@@ -430,8 +431,8 @@
             barcodes.push({
                 barcode: code,
                 label: caseNumber || code,
-                sentBy: result.sent_by || null,
-                waitingTime: result.waiting_time || null
+                sentBy: validationResult?.sent_by || null,
+                waitingTime: validationResult?.waiting_time || null
             });
             syncHiddenField();
             drawRows();

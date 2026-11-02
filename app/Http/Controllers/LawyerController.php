@@ -4,12 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CourtCase;
 use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Lawyer;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -24,18 +19,12 @@ class LawyerController extends Controller
     public function myCases()
     {
         $cases = CourtCase::where('lawyer_id', auth()->user()->lawyer->id)
+            ->with('latestMovement.court')
             ->orderBy('created_at', 'desc')
             ->get();
 
         return view('website.lawyer.my_cases', compact('cases'));
     }
-
-
-  
-
-    
-
-
 
     public function notifications()
     {
@@ -106,7 +95,7 @@ class LawyerController extends Controller
         if ($request->hasFile('picture')) {
             $file = $request->file('picture');
             $stamp = now()->format('YmdHis');
-            $filename = ($lawyer->bar_council_id ?? 'lawyer_' . $lawyer->id) . '_' . $stamp . '.' . $file->getClientOriginalExtension();
+            $filename = ($lawyer->bar_council_id ?? 'lawyer_'.$lawyer->id).'_'.$stamp.'.'.$file->getClientOriginalExtension();
             $path = $file->storeAs('lawyers', $filename, 'public');
 
             // Delete old picture if stored locally
@@ -117,7 +106,7 @@ class LawyerController extends Controller
                 }
             }
 
-            $lawyer->picture = 'storage/' . $path;
+            $lawyer->picture = 'storage/'.$path;
         }
 
         $lawyer->save();

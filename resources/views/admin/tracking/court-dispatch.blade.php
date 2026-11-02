@@ -278,7 +278,7 @@
         const inputError = document.getElementById('barcodeInputError');
         const permanentBarcodePattern = /^13\d{10}$/;
         const finalCasePattern = /^WRPET\s+\d+\/\d{4}$/i;
-        const validateIdentifierUrl = @json(route('admin.tracking.movement.validate-identifier'));
+        const validateIdentifierUrl = @json(route('admin.tracking.court.dispatch.validate-identifier'));
 
         function escapeHtml(value) {
             return String(value)

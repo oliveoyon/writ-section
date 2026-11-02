@@ -62,6 +62,20 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
 
+        .current-place {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            color: #075b46;
+            background: #e7f5ef;
+            border: 1px solid #b9dfcf;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
         @media (max-width: 767px) {
             .lawyer-sidebar {
                 display: none !important;
@@ -119,21 +133,35 @@
                         </a>
                     </div>
 
-                    <table class="table table-bordered mt-3">
+                    <div class="table-responsive mt-3">
+                    <table class="table table-bordered mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>{{ __('lawyer.case.id') }}</th>
                                 <th>{{ __('lawyer.case.case_type') }}</th>
                                 <th>{{ __('lawyer.case.status') }}</th>
+                                <th>{{ __('lawyer.case.current_place') }}</th>
                                 <th>{{ __('lawyer.case.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($cases as $case)
+                                @php
+                                    $currentPlace = $case->current_section ?: __('lawyer.case.lawyer_desk');
+                                    if (strtolower((string) $case->current_section) === 'court' && $case->latestMovement?->court) {
+                                        $currentPlace = 'Court (' . $case->latestMovement->court->displayName() . ')';
+                                    }
+                                @endphp
                                 <tr>
                                     <td>{{ $case->id }}</td>
                                     <td>{{ $case->case_type }}</td>
                                     <td>{{ ucfirst($case->status) }}</td>
+                                    <td>
+                                        <span class="current-place">
+                                            <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                                            {{ $currentPlace }}
+                                        </span>
+                                    </td>
                                     <td>
                                         <!-- View Summary Button (Always Visible) -->
                                         <a href="{{ route('lawyer.case.summary', $case->id) }}"
@@ -172,6 +200,7 @@
                             @endif
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
 

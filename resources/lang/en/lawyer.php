@@ -110,6 +110,8 @@ return [
         'id' => 'ID',
         'create_new' => 'Create New',
         'status' => 'Status',
+        'current_place' => 'Current Place',
+        'lawyer_desk' => "Lawyer's Desk",
         'actions' => 'Actions',
         'create_title' => 'File a New Case',
         'basic_info' => 'Basic Information',

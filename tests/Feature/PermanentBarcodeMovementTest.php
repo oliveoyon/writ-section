@@ -147,6 +147,82 @@ class PermanentBarcodeMovementTest extends TestCase
         $this->assertDatabaseMissing('file_movements', ['case_id' => $case->id]);
     }
 
+    public function test_dealing_assistant_can_validate_and_dispatch_only_files_in_personal_custody(): void
+    {
+        $department = Department::create([
+            'name' => 'Dealing Assistant',
+            'display_name' => 'Dealing Assistant',
+        ]);
+        $user = User::factory()->create([
+            'department' => $department->id,
+            'user_type' => 'staff',
+        ]);
+        $otherUser = User::factory()->create([
+            'department' => $department->id,
+            'user_type' => 'staff',
+        ]);
+        $court = Court::create([
+            'name_en' => 'Dispatch Test Court',
+            'code' => 'DSP-VALIDATE',
+            'is_active' => true,
+        ]);
+        $ownedCase = $this->createCase([
+            'permanent_barcode' => '132026000011',
+            'final_case_number' => 'WRPET 11/2026',
+            'status' => 'in_progress',
+            'current_section' => 'Dealing Assistant',
+            'current_holder_user_id' => $user->id,
+            'current_holder_at' => now(),
+        ]);
+        $otherCase = $this->createCase([
+            'permanent_barcode' => '132026000012',
+            'final_case_number' => 'WRPET 12/2026',
+            'status' => 'in_progress',
+            'current_section' => 'Dealing Assistant',
+            'current_holder_user_id' => $otherUser->id,
+            'current_holder_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->getJson(route('admin.tracking.court.dispatch.validate-identifier', [
+                'identifier' => $ownedCase->final_case_number,
+            ]))
+            ->assertOk()
+            ->assertJson([
+                'valid' => true,
+                'permanent_barcode' => $ownedCase->permanent_barcode,
+            ]);
+
+        $this->actingAs($user)
+            ->getJson(route('admin.tracking.court.dispatch.validate-identifier', [
+                'identifier' => $otherCase->permanent_barcode,
+            ]))
+            ->assertUnprocessable()
+            ->assertJson([
+                'valid' => false,
+                'message' => 'You can send only files currently in your custody.',
+            ]);
+
+        $this->actingAs($user)
+            ->post(route('admin.tracking.court.dispatch.store'), [
+                'court_id' => $court->id,
+                'barcodes' => $ownedCase->permanent_barcode,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('cases', [
+            'id' => $ownedCase->id,
+            'current_section' => 'Court',
+            'current_holder_user_id' => null,
+        ]);
+        $this->assertDatabaseHas('file_movements', [
+            'case_id' => $ownedCase->id,
+            'movement_type' => 'dispatch_to_court',
+            'received_by_user_id' => $user->id,
+        ]);
+        $this->assertSame($otherUser->id, $otherCase->fresh()->current_holder_user_id);
+    }
+
     public function test_office_assistant_can_receive_permanent_file_from_filing(): void
     {
         $department = Department::create(['name' => 'Office Assistant', 'display_name' => 'Office Assistant']);
@@ -285,6 +361,25 @@ class PermanentBarcodeMovementTest extends TestCase
             'movement_type' => 'user_handover',
             'received_by_user_id' => $colleague->id,
         ]);
+    }
+
+    public function test_receive_screen_keeps_successful_validation_result_for_queue_details(): void
+    {
+        $department = Department::create([
+            'name' => 'Affidavit Section',
+            'display_name' => 'Affidavit Section',
+        ]);
+        $user = User::factory()->create([
+            'department' => $department->id,
+            'user_type' => 'staff',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.tracking.section.receive'))
+            ->assertOk()
+            ->assertSee('let validationResult = null;', false)
+            ->assertSee('sentBy: validationResult?.sent_by || null', false)
+            ->assertDontSee('sentBy: result.sent_by || null', false);
     }
 
     public function test_office_assistant_becomes_holder_when_receiving_file_from_court(): void
