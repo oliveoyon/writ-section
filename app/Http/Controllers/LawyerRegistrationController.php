@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Lawyer;
+use App\Models\User;
+use App\Notifications\LawyerActivationNotification;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -19,7 +22,7 @@ class LawyerRegistrationController extends Controller
     public function checkMember(Request $request)
     {
         $request->validate(['member_id' => 'required'], [
-            'member_id.required' => __('writ.lawyer.validation_member_id')
+            'member_id.required' => __('writ.lawyer.validation_member_id'),
         ]);
 
         $memberId = $request->member_id;
@@ -29,7 +32,7 @@ class LawyerRegistrationController extends Controller
         if ($existingLawyer) {
             return response()->json([
                 'found' => false,
-                'message' => __('writ.lawyer.already_registered') // Add this string in your lang file
+                'message' => __('writ.lawyer.already_registered'), // Add this string in your lang file
             ]);
         }
 
@@ -93,32 +96,32 @@ class LawyerRegistrationController extends Controller
             curl_close($ch);
 
             if ($apiDiagnostics['http_status'] < 200 || $apiDiagnostics['http_status'] >= 300) {
-                throw new \RuntimeException('SCBA returned HTTP ' . $apiDiagnostics['http_status']);
+                throw new \RuntimeException('SCBA returned HTTP '.$apiDiagnostics['http_status']);
             }
 
             $response = preg_replace('/^\xEF\xBB\xBF/', '', (string) $response);
 
             $data = json_decode($response, true);
 
-            if (!is_array($data)) {
+            if (! is_array($data)) {
                 $apiDiagnostics['json_error'] = json_last_error_msg();
                 $apiDiagnostics['response_preview'] = mb_substr(trim(strip_tags((string) $response)), 0, 200);
                 throw new \RuntimeException('SCBA returned an invalid JSON response.');
             }
 
-            $member = array_filter($data, fn($m) => $m['memberId'] == $memberId);
+            $member = array_filter($data, fn ($m) => $m['memberId'] == $memberId);
             $member = array_values($member);
 
             if (empty($member)) {
                 return response()->json([
                     'found' => false,
-                    'message' => __('writ.lawyer.not_found')
+                    'message' => __('writ.lawyer.not_found'),
                 ]);
             }
 
             return response()->json([
                 'found' => true,
-                'member' => $member[0]
+                'member' => $member[0],
             ]);
         } catch (\Exception $e) {
             Log::warning('SCBA member lookup failed.', [
@@ -129,15 +132,13 @@ class LawyerRegistrationController extends Controller
 
             return response()->json([
                 'found' => false,
-                'message' => __('writ.lawyer.api_error')
+                'message' => __('writ.lawyer.api_error'),
             ]);
         }
     }
 
-
     public function register(Request $request)
     {
-
         $request->validate([
             'member_id' => [
                 'nullable',
@@ -177,28 +178,89 @@ class LawyerRegistrationController extends Controller
         // Optional: remove any other non-digit characters
         $phone = preg_replace('/\D/', '', $phone);
 
-        $user = User::create([
-            'name' => $request->full_name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'user_type' => 'lawyer',
-            'is_active' => 0
-        ]);
+        $user = DB::transaction(function () use ($request, $memberId, $phone): User {
+            $user = User::create([
+                'name' => $request->full_name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'user_type' => 'lawyer',
+                'is_active' => false,
+                'email_verified_at' => null,
+            ]);
 
-        Lawyer::create([
-            'user_id' => $user->id,
-            'bar_council_id' => $memberId,
-            'full_name' => $request->full_name,
-            'phone' => $phone,
-            'picture' => $request->picture ?? null,
-            'barDateOfJoining' => $request->barDateOfJoining ?? null,
-            'barDateOfEnrollment' => $request->barDateOfEnrollment ?? null,
-            'barCourtType' => $request->barCourtType ?? null,
-            'status' => $request->status ?? 'active',
-        ]);
+            Lawyer::create([
+                'user_id' => $user->id,
+                'bar_council_id' => $memberId,
+                'full_name' => $request->full_name,
+                'phone' => $phone,
+                'picture' => $request->picture ?? null,
+                'barDateOfJoining' => $request->barDateOfJoining ?? null,
+                'barDateOfEnrollment' => $request->barDateOfEnrollment ?? null,
+                'barCourtType' => $request->barCourtType ?? null,
+                'status' => $request->status ?? 'active',
+            ]);
 
+            return $user;
+        });
+
+        try {
+            $user->notify(new LawyerActivationNotification);
+
+            return redirect()->route('lawyer.login')
+                ->with('success', __('writ.lawyer.activation_email_sent'))
+                ->with('activation_email', $user->email);
+        } catch (\Throwable $exception) {
+            Log::error('Lawyer activation email could not be sent.', [
+                'user_id' => $user->id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return redirect()->route('lawyer.login')
+                ->with('warning', __('writ.lawyer.activation_email_failed'))
+                ->with('activation_email', $user->email);
+        }
+    }
+
+    public function activate(Request $request, User $user): RedirectResponse
+    {
+        abort_unless($user->user_type === 'lawyer' && $user->lawyer()->exists(), 404);
+        abort_unless(hash_equals((string) $request->route('hash'), sha1((string) $user->email)), 403);
+
+        if (! $user->is_active || $user->email_verified_at === null) {
+            $user->forceFill([
+                'email_verified_at' => $user->email_verified_at ?? now(),
+                'is_active' => true,
+            ])->save();
+        }
 
         return redirect()->route('lawyer.login')
-            ->with('success', __('writ.lawyer.registration_success'));
+            ->with('success', __('writ.lawyer.activation_success'));
+    }
+
+    public function resendActivation(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $user = User::query()
+            ->where('email', $validated['email'])
+            ->where('user_type', 'lawyer')
+            ->where('is_active', false)
+            ->whereNull('email_verified_at')
+            ->first();
+
+        if ($user && $user->lawyer()->exists()) {
+            try {
+                $user->notify(new LawyerActivationNotification);
+            } catch (\Throwable $exception) {
+                Log::error('Resent lawyer activation email could not be sent.', [
+                    'user_id' => $user->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        return back()->with('success', __('writ.lawyer.activation_resend_response'));
     }
 }

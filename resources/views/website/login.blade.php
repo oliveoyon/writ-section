@@ -54,6 +54,13 @@
                                 </div>
                             @endif
 
+                            @if(session('warning'))
+                                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                    {{ session('warning') }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            @endif
+
                             <form method="POST" action="{{ route('lawyer.login.submit') }}">
                                 @csrf
 
@@ -94,6 +101,24 @@
                                     <i class="bi bi-box-arrow-in-right me-1"></i> {{ __('writ.auth.login_button') }}
                                 </button>
                             </form>
+
+                            <details class="activation-resend mt-3" @if(session('activation_email')) open @endif>
+                                <summary>{{ __('writ.lawyer.resend_activation') }}</summary>
+                                <form method="POST" action="{{ route('lawyer.activation.resend') }}" class="mt-3">
+                                    @csrf
+                                    <div class="input-group">
+                                        <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
+                                            value="{{ old('email', session('activation_email')) }}"
+                                            placeholder="{{ __('writ.lawyer.email') }}" required>
+                                        <button type="submit" class="btn btn-outline-primary">
+                                            {{ __('writ.lawyer.resend') }}
+                                        </button>
+                                    </div>
+                                    @error('email')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </form>
+                            </details>
 
                             <div class="auth-switch text-center mt-4">
                                 <span>
@@ -156,6 +181,19 @@
         transform: skewX(-13deg) translateX(34%);
         transform-origin: top right;
         pointer-events: none;
+    }
+
+    .activation-resend {
+        border-top: 1px solid #e5eaf0;
+        padding-top: .85rem;
+    }
+
+    .activation-resend summary {
+        color: #315c7d;
+        cursor: pointer;
+        font-size: .9rem;
+        font-weight: 600;
+        text-align: center;
     }
 
     .lawyer-login-shell > .row {

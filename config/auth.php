@@ -112,4 +112,6 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    'lawyer_activation_expire' => env('LAWYER_ACTIVATION_EXPIRE_HOURS', 24),
+
 ];

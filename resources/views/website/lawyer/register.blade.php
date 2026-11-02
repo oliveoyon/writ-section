@@ -31,9 +31,9 @@
                                     <span>Account details</span>
                                 </div>
                                 <div>
-                                    <i class="bi bi-hourglass-split"></i>
-                                    <strong>Approval</strong>
-                                    <span>Admin review</span>
+                                    <i class="bi bi-envelope-check"></i>
+                                    <strong>Activate</strong>
+                                    <span>Email confirmation</span>
                                 </div>
                             </div>
                         </section>

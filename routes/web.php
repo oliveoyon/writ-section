@@ -34,6 +34,12 @@ Route::post('/lawyer/check-member', [LawyerRegistrationController::class, 'check
 Route::post('/lawyer/register', [LawyerRegistrationController::class, 'register'])
     ->middleware('throttle:5,1')
     ->name('lawyer.register.submit');
+Route::get('/lawyer/activate/{user}/{hash}', [LawyerRegistrationController::class, 'activate'])
+    ->middleware(['signed', 'throttle:10,1'])
+    ->name('lawyer.activate');
+Route::post('/lawyer/activation/resend', [LawyerRegistrationController::class, 'resendActivation'])
+    ->middleware('throttle:3,1')
+    ->name('lawyer.activation.resend');
 
 // Lawyer routes only
 Route::middleware(['auth', 'checkUserType:lawyer'])->prefix('lawyer')->group(function() {
