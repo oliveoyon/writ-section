@@ -116,6 +116,7 @@ return [
         'create_title' => 'File a New Case',
         'basic_info' => 'Basic Information',
         'description' => 'Description',
+        'court_name' => 'Court Name',
         'name_or_organization' => 'Name / Organization',
         'represented_by' => 'Represented By',
         'no_data' => 'No data found',

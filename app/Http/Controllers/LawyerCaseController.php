@@ -7,11 +7,13 @@ use App\Models\CasePetitioner;
 use App\Models\CaseRespondent;
 use App\Models\CaseFile;
 use App\Models\CourtCase;
+use App\Models\FileMovement;
 use Mpdf\Mpdf;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class LawyerCaseController extends Controller
@@ -31,6 +33,7 @@ class LawyerCaseController extends Controller
         $request->validate([
             'case_type' => ['required', 'string', 'max:255', Rule::in(CourtCase::caseTypes())],
             'description' => 'nullable|string',
+            'court_name' => 'required|string|max:255',
 
             'petitioners.*.name_or_organization' => 'required|string|max:255',
             'petitioners.*.represented_by' => 'nullable|string|max:255',
@@ -50,6 +53,7 @@ class LawyerCaseController extends Controller
             'lawyer_id' => auth()->user()->lawyer->id,
             'case_type' => $request->case_type,
             'description' => $request->description,
+            'court_name' => $request->court_name,
             'temporary_barcode' => $this->generateUniqueTempBarcode(),
             'temporary_barcode_generated_at' => now(),
         ]);
@@ -127,6 +131,7 @@ class LawyerCaseController extends Controller
         $request->validate([
             'case_type' => ['required', 'string', 'max:255', Rule::in(CourtCase::caseTypes())],
             'description' => 'nullable|string',
+            'court_name' => 'required|string|max:255',
             'petitioners.*.name_or_organization' => 'required|string|max:255',
             'petitioners.*.represented_by' => 'nullable|string|max:255',
             'petitioners.*.designation' => 'nullable|string|max:255',
@@ -142,6 +147,7 @@ class LawyerCaseController extends Controller
         $case->update([
             'case_type' => $request->case_type,
             'description' => $request->description,
+            'court_name' => $request->court_name,
         ]);
 
         // Update Petitioners (delete old and insert new)
@@ -195,15 +201,40 @@ class LawyerCaseController extends Controller
             return back()->with('error', 'Only returned cases can be resubmitted.');
         }
 
-        $newTemp = $this->generateUniqueTempBarcode();
-        $case->update([
-            'status' => 'resubmitted',
-            'temporary_barcode' => $newTemp,
-            'temporary_barcode_generated_at' => now(),
-        ]);
+        $tempBarcode = DB::transaction(function () use ($case): string {
+            $case = CourtCase::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
+            if ($case->status !== 'returned_to_lawyer') {
+                abort(409, 'This case has already been resubmitted.');
+            }
+
+            $tempBarcode = $case->temporary_barcode ?: $this->generateUniqueTempBarcode();
+            $resubmittedAt = now();
+
+            $case->update([
+                'status' => 'resubmitted',
+                'temporary_barcode' => $tempBarcode,
+                'temporary_barcode_generated_at' => $case->temporary_barcode_generated_at ?? $resubmittedAt,
+                'current_section' => 'Lawyer',
+                'current_holder_user_id' => null,
+                'current_holder_at' => null,
+            ]);
+
+            FileMovement::create([
+                'case_id' => $case->id,
+                'barcode_scanned' => $case->permanent_barcode ?: $tempBarcode,
+                'from_section' => 'Lawyer',
+                'to_section' => 'Lawyer',
+                'movement_type' => 'resubmitted',
+                'received_by_user_id' => auth()->id(),
+                'received_at' => $resubmittedAt,
+                'notes' => 'Corrected case resubmitted by lawyer.',
+            ]);
+
+            return $tempBarcode;
+        }, 3);
 
         return redirect()->route('lawyer.case.summary', $case->id)
-            ->with('success', 'Case resubmitted successfully. New Temp ID: ' . $newTemp);
+            ->with('success', 'Case resubmitted successfully. Temp ID remains: ' . $tempBarcode);
     }
 
     public function destroy(CourtCase $case)

@@ -191,6 +191,7 @@ return [
         'dispatch_to_court' => 'কোর্টে পাঠানো',
         'returned_from_court_handover' => 'কোর্ট থেকে গ্রহণ',
         'user_handover' => 'Internal Handover',
+        'resubmitted' => 'আইনজীবীর পুনরায় দাখিল',
         'old_case_receive' => 'পুরাতন মামলা গ্রহণ',
         'filter' => 'ফিল্টার',
         'print_title' => 'ফাইল মুভমেন্ট রেজিস্টার',

@@ -98,6 +98,7 @@ class PermanentBarcodeMovementTest extends TestCase
             'temporary_barcode' => $case->temporary_barcode,
             'case_type' => 'Constitutional Matter',
             'description' => null,
+            'court_name' => 'Annex 5, Main 23',
             'petitioners' => [[
                 'name_or_organization' => 'Test Petitioner',
                 'represented_by' => null,
@@ -114,6 +115,7 @@ class PermanentBarcodeMovementTest extends TestCase
         $case->refresh();
         $this->assertNotNull($case->permanent_barcode);
         $this->assertSame('filed', $case->status);
+        $this->assertSame('Annex 5, Main 23', $case->court_name);
         $this->assertSame('Filing Section', $case->current_section);
         $this->assertSame($user->id, $case->current_holder_user_id);
         $this->assertSame($user->id, $case->section_verified_by);

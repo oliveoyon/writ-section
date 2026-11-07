@@ -112,6 +112,177 @@
             white-space: nowrap;
         }
 
+        .workspace-user-bar {
+            position: sticky;
+            top: 56px;
+            z-index: 1020;
+            margin-top: 56px;
+            background: #fff;
+            border-top: 1px solid rgba(0, 40, 77, .08);
+            border-bottom: 3px solid #d4a017;
+            box-shadow: 0 5px 16px rgba(0, 40, 77, .16);
+        }
+
+        .workspace-bar-inner {
+            display: grid;
+            grid-template-columns: minmax(230px, 1fr) auto auto;
+            align-items: center;
+            gap: .9rem;
+            min-height: 78px;
+            padding: .55rem 0;
+        }
+
+        .workspace-user-identity {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            gap: .7rem;
+        }
+
+        .workspace-user-photo {
+            width: 50px;
+            height: 62px;
+            flex: 0 0 auto;
+            object-fit: cover;
+            border: 2px solid #fff;
+            border-radius: 4px;
+            outline: 2px solid #0b5f78;
+            background: #e8eef3;
+        }
+
+        .workspace-user-copy {
+            display: block;
+            min-width: 0;
+        }
+
+        .workspace-user-copy small,
+        .workspace-user-copy strong,
+        .workspace-user-copy span {
+            display: block;
+        }
+
+        .workspace-user-copy small {
+            color: #7a5a08;
+            font-size: .68rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .workspace-user-copy strong {
+            overflow: hidden;
+            color: #00284d;
+            font-size: 1rem;
+            font-weight: 900;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .workspace-user-copy span {
+            overflow: hidden;
+            color: #475569;
+            font-size: .82rem;
+            font-weight: 800;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .workspace-primary-actions {
+            display: flex;
+            align-items: stretch;
+            gap: .55rem;
+        }
+
+        .workspace-action {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            min-width: 142px;
+            min-height: 48px;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            color: #fff;
+            font-size: .91rem;
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+        .workspace-action:hover,
+        .workspace-action:focus {
+            color: #fff;
+            filter: brightness(.93);
+        }
+
+        .workspace-action.receive {
+            background: #08765d;
+            border-color: #075f4c;
+        }
+
+        .workspace-action.send {
+            background: #0b5f91;
+            border-color: #084d76;
+        }
+
+        .workspace-action i {
+            font-size: 1.15rem;
+        }
+
+        .workspace-action-count {
+            display: inline-grid;
+            place-items: center;
+            min-width: 25px;
+            height: 25px;
+            padding: 0 .35rem;
+            border: 2px solid #fff;
+            border-radius: 999px;
+            color: #fff;
+            background: #c81e32;
+            box-shadow: 0 2px 6px rgba(107, 20, 32, .35);
+            font-family: "Segoe UI", sans-serif;
+            font-size: .75rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .workspace-custody {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            min-width: 126px;
+            min-height: 50px;
+            padding: .4rem .7rem;
+            border: 2px solid #c81e32;
+            border-radius: 5px;
+            color: #7f1524;
+            background: #fff4f5;
+        }
+
+        .workspace-custody strong {
+            display: grid;
+            place-items: center;
+            min-width: 39px;
+            height: 39px;
+            padding: 0 .35rem;
+            border-radius: 4px;
+            color: #fff;
+            background: #c81e32;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 1.15rem;
+            font-weight: 900;
+        }
+
+        .workspace-custody span {
+            color: #7f1524;
+            font-size: .8rem;
+            font-weight: 900;
+            line-height: 1.12;
+        }
+
+        body.has-workspace-bar main {
+            padding-top: 18px;
+        }
+
         footer {
             background: #00284d;
             color: #fff;
@@ -183,12 +354,78 @@
             .user-menu-label {
                 max-width: none;
             }
+
+            .workspace-bar-inner {
+                grid-template-columns: minmax(190px, 1fr) auto;
+            }
+
+            .workspace-custody {
+                grid-column: 2;
+                grid-row: 1;
+            }
+
+            .workspace-primary-actions {
+                grid-column: 1 / -1;
+            }
+
+            .workspace-action {
+                flex: 1 1 50%;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .workspace-user-bar {
+                top: 55px;
+                margin-top: 55px;
+            }
+
+            .workspace-bar-inner {
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: .55rem;
+                min-height: 0;
+                padding: .55rem 0;
+            }
+
+            .workspace-user-photo {
+                width: 42px;
+                height: 52px;
+            }
+
+            .workspace-user-copy small {
+                font-size: .62rem;
+            }
+
+            .workspace-user-copy strong {
+                font-size: .9rem;
+            }
+
+            .workspace-user-copy span {
+                font-size: .75rem;
+            }
+
+            .workspace-custody {
+                min-width: 104px;
+                min-height: 46px;
+                padding: .3rem .45rem;
+            }
+
+            .workspace-custody strong {
+                min-width: 34px;
+                height: 34px;
+                font-size: 1rem;
+            }
+
+            .workspace-action {
+                min-width: 0;
+                min-height: 44px;
+                font-size: .82rem;
+            }
         }
     </style>
     @stack('css')
 </head>
 
-<body class="d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100 {{ $workspaceBar ? 'has-workspace-bar' : '' }}">
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
         <div class="container">
             @php
@@ -361,6 +598,44 @@
             </div>
         </div>
     </nav>
+
+    @if($workspaceBar)
+        <section class="workspace-user-bar" aria-label="Current user workspace">
+            <div class="container workspace-bar-inner">
+                <a href="{{ route('profile.edit') }}" class="workspace-user-identity text-decoration-none" title="View profile">
+                    <img class="workspace-user-photo"
+                        src="{{ $currentUser->photo ? asset($currentUser->photo) : asset('assets/img/user1-128x128.jpg') }}"
+                        alt="{{ $currentUser->name }}">
+                    <span class="workspace-user-copy">
+                        <small>Current Working User</small>
+                        <strong>{{ $currentUser->name }}</strong>
+                        <span>{{ $currentUser->departmentRelation?->label ?? 'Department not assigned' }}</span>
+                    </span>
+                </a>
+
+                <div class="workspace-primary-actions" aria-label="File actions">
+                    <a class="workspace-action receive" href="{{ route('admin.tracking.section.receive') }}">
+                        <i class="bi bi-upc-scan" aria-hidden="true"></i>
+                        <span>Receive Files</span>
+                        @if($workspaceBar['incoming_count'] > 0)
+                            <span class="workspace-action-count" aria-label="{{ $workspaceBar['incoming_count'] }} files waiting">
+                                {{ number_format($workspaceBar['incoming_count']) }}
+                            </span>
+                        @endif
+                    </a>
+                    <a class="workspace-action send" href="{{ route('admin.tracking.handover.recipients') }}">
+                        <i class="bi bi-send" aria-hidden="true"></i>
+                        <span>Send Files</span>
+                    </a>
+                </div>
+
+                <a class="workspace-custody text-decoration-none" href="{{ route('admin.tracking.handover.workspace') }}#custody-files" aria-label="{{ $workspaceBar['custody_count'] }} files in custody">
+                    <strong>{{ number_format($workspaceBar['custody_count']) }}</strong>
+                    <span>in<br>custody</span>
+                </a>
+            </div>
+        </section>
+    @endif
 
     <main class="flex-fill">
         @yield('content')

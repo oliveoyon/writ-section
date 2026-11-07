@@ -32,18 +32,6 @@
 
     <div class="desk-layout">
         <div class="action-grid">
-            <a class="desk-action send-action" href="{{ route('admin.tracking.handover.recipients') }}">
-                <span class="action-icon"><i class="bi bi-send" aria-hidden="true"></i></span>
-                <span class="action-copy">
-                    <strong>Send Files</strong>
-                    <span>{{ number_format($heldFiles) }} in your custody</span>
-                </span>
-                @if($outgoingPending > 0)
-                    <span class="action-count">{{ number_format($outgoingPending) }} waiting</span>
-                @endif
-                <i class="bi bi-chevron-right action-arrow" aria-hidden="true"></i>
-            </a>
-
             <a class="desk-action receive-action" href="{{ $receiveRoute }}">
                 <span class="action-icon"><i class="bi bi-upc-scan" aria-hidden="true"></i></span>
                 <span class="action-copy">
@@ -52,6 +40,18 @@
                 </span>
                 @if($incomingPending > 0)
                     <span class="action-count">{{ number_format($incomingPending) }} for you</span>
+                @endif
+                <i class="bi bi-chevron-right action-arrow" aria-hidden="true"></i>
+            </a>
+
+            <a class="desk-action send-action" href="{{ route('admin.tracking.handover.recipients') }}">
+                <span class="action-icon"><i class="bi bi-send" aria-hidden="true"></i></span>
+                <span class="action-copy">
+                    <strong>Send Files</strong>
+                    <span>{{ number_format($heldFiles) }} in your custody</span>
+                </span>
+                @if($outgoingPending > 0)
+                    <span class="action-count">{{ number_format($outgoingPending) }} waiting</span>
                 @endif
                 <i class="bi bi-chevron-right action-arrow" aria-hidden="true"></i>
             </a>

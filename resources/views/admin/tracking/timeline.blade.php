@@ -124,6 +124,7 @@
             'dispatch_to_court' => __('tracking.register.dispatch_to_court'),
             'returned_from_court_handover' => __('tracking.register.returned_from_court_handover'),
             'returned_to_lawyer' => 'Returned to Lawyer',
+            'resubmitted' => __('tracking.register.resubmitted'),
             'legacy_intake' => __('tracking.register.old_case_receive'),
             'legacy_receive' => __('tracking.register.old_case_receive'),
             'user_handover' => __('tracking.register.user_handover'),

@@ -191,6 +191,7 @@ return [
         'dispatch_to_court' => 'Send to Court',
         'returned_from_court_handover' => 'Receive from Court',
         'user_handover' => 'Internal Handover',
+        'resubmitted' => 'Lawyer Resubmission',
         'old_case_receive' => 'Old Case Receive',
         'filter' => 'Filter',
         'print_title' => 'File Movement Register',

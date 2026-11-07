@@ -68,6 +68,7 @@
                     <p><strong>Status:</strong> {{ ucfirst(str_replace('_', ' ', $case->status)) }}</p>
                     <p><strong>{{ __('lawyer.case.case_type') }}:</strong> {{ $case->case_type }}</p>
                     <p><strong>{{ __('lawyer.case.description') }}:</strong> {{ $case->description }}</p>
+                    <p><strong>{{ __('lawyer.case.court_name') }}:</strong> {{ $case->court_name ?? '-' }}</p>
                     @if ($case->status === 'returned_to_lawyer')
                         <div class="alert alert-warning mt-2 mb-0">
                             <strong>Returned Reason:</strong> {{ $case->return_reason ?? 'Incomplete information.' }}
@@ -161,7 +162,7 @@
                 @if ($case->status === 'returned_to_lawyer')
                     <form action="{{ route('lawyer.case.resubmit', $case->id) }}" method="POST" class="d-inline-block">
                         @csrf
-                        <button type="submit" class="btn btn-success">Re-Submit with New Temp ID</button>
+                        <button type="submit" class="btn btn-success">Re-Submit Corrections</button>
                     </form>
                 @endif
             </div>

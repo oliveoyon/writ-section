@@ -526,6 +526,19 @@
 
     </table>
 
+    <table class="tbl" style="margin-top:8px;">
+        <tbody>
+            <tr>
+                <td style="width:25%; font-weight:bold; background:#f2f2f2;">
+                    {{ __('lawyer.case.court_name') }}
+                </td>
+                <td class="wrap">
+                    {{ $case->court_name ?? '-' }}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
 
     {{-- SIGNATURE --}}
 

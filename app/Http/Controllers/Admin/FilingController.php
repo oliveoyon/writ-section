@@ -75,6 +75,7 @@ class FilingController extends Controller
             'temporary_barcode' => 'required|string|max:255',
             'case_type' => ['required', 'string', 'max:255', Rule::in(CourtCase::caseTypes())],
             'description' => 'nullable|string',
+            'court_name' => 'required|string|max:255',
             'petitioners' => 'required|array|min:1',
             'petitioners.*.name_or_organization' => 'required|string|max:255',
             'petitioners.*.represented_by' => 'nullable|string|max:255',
@@ -119,6 +120,7 @@ class FilingController extends Controller
                 $case->update([
                     'case_type' => $request->case_type,
                     'description' => $request->description,
+                    'court_name' => $request->court_name,
                     'status' => 'filed',
                     'final_case_number' => $registration['reference'],
                     'final_case_year' => $caseYear,
@@ -294,8 +296,6 @@ class FilingController extends Controller
                     'returned_at' => $returnedAt,
                     'returned_by_user_id' => $user->id,
                     'return_reason' => $request->return_reason,
-                    'temporary_barcode' => null,
-                    'temporary_barcode_generated_at' => null,
                 ]);
 
                 FileMovement::create([
@@ -326,6 +326,7 @@ class FilingController extends Controller
             'lawyer_password' => 'nullable|string|min:6|max:255',
             'case_type' => ['required', 'string', 'max:255', Rule::in(CourtCase::caseTypes())],
             'description' => 'nullable|string',
+            'court_name' => 'required|string|max:255',
             'petitioners' => 'required|array|min:1',
             'petitioners.*.name_or_organization' => 'required|string|max:255',
             'petitioners.*.represented_by' => 'nullable|string|max:255',
@@ -351,6 +352,7 @@ class FilingController extends Controller
                 'entry_source' => 'filing',
                 'case_type' => $request->case_type,
                 'description' => $request->description,
+                'court_name' => $request->court_name,
                 'status' => 'filed',
             ]);
 

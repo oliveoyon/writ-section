@@ -77,6 +77,7 @@
                     <option value="">{{ __('tracking.register.all_types') }}</option>
                     <option value="receive" @selected($movementType === 'receive')>{{ __('tracking.receive.receive') }}</option>
                     <option value="reject" @selected($movementType === 'reject')>{{ __('tracking.receive.reject') }}</option>
+                    <option value="resubmitted" @selected($movementType === 'resubmitted')>{{ __('tracking.register.resubmitted') }}</option>
                     <option value="override_receive" @selected($movementType === 'override_receive')>{{ __('tracking.register.override_receive') }}</option>
                     <option value="dispatch_to_court" @selected($movementType === 'dispatch_to_court')>{{ __('tracking.register.dispatch_to_court') }}</option>
                     <option value="returned_from_court_handover" @selected($movementType === 'returned_from_court_handover')>{{ __('tracking.register.returned_from_court_handover') }}</option>
@@ -111,6 +112,7 @@
             $movementTypeLabelKeys = [
                 'receive' => 'tracking.receive.receive',
                 'reject' => 'tracking.receive.reject',
+                'resubmitted' => 'tracking.register.resubmitted',
                 'override_receive' => 'tracking.register.override_receive',
                 'dispatch_to_court' => 'tracking.register.dispatch_to_court',
                 'returned_from_court_handover' => 'tracking.register.returned_from_court_handover',

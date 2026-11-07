@@ -53,6 +53,7 @@
         $movementTypeLabelKeys = [
             'receive' => 'tracking.receive.receive',
             'reject' => 'tracking.receive.reject',
+            'resubmitted' => 'tracking.register.resubmitted',
             'override_receive' => 'tracking.register.override_receive',
             'dispatch_to_court' => 'tracking.register.dispatch_to_court',
             'returned_from_court_handover' => 'tracking.register.returned_from_court_handover',

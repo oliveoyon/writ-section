@@ -116,6 +116,7 @@ return [
         'create_title' => 'নতুন মামলা দায়ের করুন',
         'basic_info' => 'মৌলিক তথ্য',
         'description' => 'বিবরণ',
+        'court_name' => 'কোর্টের নাম',
         'name_or_organization' => 'নাম / প্রতিষ্ঠান',
         'represented_by' => 'প্রতিনিধিত্বকারী',
         

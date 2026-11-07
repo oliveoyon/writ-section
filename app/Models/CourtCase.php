@@ -27,6 +27,7 @@ class CourtCase extends Model
         'entry_source',
         'case_type',
         'description',
+        'court_name',
         'status',
         'temporary_barcode',
         'temporary_barcode_generated_at',

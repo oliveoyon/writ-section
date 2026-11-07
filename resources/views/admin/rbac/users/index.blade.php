@@ -72,7 +72,12 @@
                     <tbody>
                         @forelse($users as $user)
                             <tr>
-                                <td>{{ $user->name }}</td>
+                                <td>
+                                    <div class="user-name-cell">
+                                        <img src="{{ $user->photo ? asset($user->photo) : asset('assets/img/user1-128x128.jpg') }}" alt="">
+                                        <span>{{ $user->name }}</span>
+                                    </div>
+                                </td>
                                 <td>{{ $user->email }}</td>
                                 <td>{{ $user->employee_id ?? '-' }}</td>
                                 <td>{{ $user->login_id ?? '-' }}</td>
@@ -214,6 +219,8 @@
     .pagination-wrap svg { width: 1rem; height: 1rem; }
     .lawyer-panel .panel-heading { border-left: 4px solid #d4a017; }
     .user-panel table { font-size: .92rem; }
+    .user-name-cell { display: flex; align-items: center; gap: .55rem; min-width: 150px; font-weight: 700; }
+    .user-name-cell img { width: 34px; height: 42px; object-fit: cover; border: 1px solid #d7dde5; border-radius: 3px; background: #eef2f6; }
     @media (max-width: 575.98px) {
         .summary-grid { grid-template-columns: 1fr; }
         .panel-heading { align-items: stretch; flex-direction: column; }

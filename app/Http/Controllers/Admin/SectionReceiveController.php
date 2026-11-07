@@ -141,15 +141,26 @@ class SectionReceiveController extends Controller
 
                 $latest = $case->latestMovement;
                 $fromSection = $latest?->to_section ?? $case->current_section;
+                $returnedAt = now();
+
+                $case->update([
+                    'status' => 'returned_to_lawyer',
+                    'current_section' => 'Lawyer',
+                    'current_holder_user_id' => null,
+                    'current_holder_at' => null,
+                    'returned_at' => $returnedAt,
+                    'returned_by_user_id' => $user->id,
+                    'return_reason' => $request->reason,
+                ]);
 
                 FileMovement::create([
                     'case_id' => $case->id,
                     'barcode_scanned' => $case->permanent_barcode,
                     'from_section' => $fromSection,
-                    'to_section' => $fromSection,
+                    'to_section' => 'Lawyer',
                     'movement_type' => 'reject',
                     'received_by_user_id' => $user->id,
-                    'received_at' => now(),
+                    'received_at' => $returnedAt,
                     'notes' => $request->reason,
                 ]);
             }, 3);
@@ -157,7 +168,7 @@ class SectionReceiveController extends Controller
             return back()->with('error', $exception->getMessage());
         }
 
-        return back()->with('success', 'Affidavit rejection recorded. Custody remains with previous section.');
+        return back()->with('success', 'File returned to the lawyer for correction.');
     }
 
     private function processBatchReceive(Request $request, $user, string $section)

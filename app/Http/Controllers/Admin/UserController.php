@@ -10,6 +10,7 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Picqer\Barcode\BarcodeGeneratorSVG;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -29,7 +30,7 @@ class UserController extends Controller
 
         if ($activeTab === 'users') {
             $users = User::query()
-                ->select('users.id', 'users.name', 'users.email', 'users.login_id', 'users.employee_id', 'users.department', 'users.user_type', 'users.is_active')
+                ->select('users.id', 'users.name', 'users.email', 'users.photo', 'users.login_id', 'users.employee_id', 'users.department', 'users.user_type', 'users.is_active')
                 ->with(['roles', 'departmentRelation:id,name,display_name'])
                 ->leftJoin('departments', 'departments.id', '=', 'users.department')
                 ->whereIn('users.user_type', ['admin', 'staff'])
@@ -102,6 +103,7 @@ class UserController extends Controller
             'employee_id' => 'required|string|max:255|unique:users,employee_id',
             'login_id' => 'nullable|string|max:255|unique:users,login_id',
             'email' => 'required|email|unique:users,email',
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'password' => 'required|string|min:8|confirmed',
             'department' => 'nullable|exists:departments,id', // validate FK
             'user_type' => 'required|in:admin,staff',
@@ -117,6 +119,9 @@ class UserController extends Controller
         $user->employee_id = $request->employee_id;
         $user->login_id = $request->login_id;
         $user->email = $request->email;
+        if ($request->hasFile('photo')) {
+            $user->photo = 'storage/'.$request->file('photo')->store('user-photos', 'public');
+        }
         $user->department = $request->department; // store department id
         $user->password = Hash::make($request->password);
         $user->is_active = $request->has('is_active');
@@ -158,6 +163,7 @@ class UserController extends Controller
             'employee_id' => 'required|string|max:255|unique:users,employee_id,' . $user->id,
             'login_id' => 'nullable|string|max:255|unique:users,login_id,' . $user->id,
             'email' => 'required|email|unique:users,email,' . $user->id,
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'password' => 'nullable|string|min:8|confirmed',
             'department' => 'nullable|exists:departments,id', // validate FK
             'user_type' => 'required|in:admin,staff',
@@ -184,6 +190,10 @@ class UserController extends Controller
         $user->employee_id = $request->employee_id;
         $user->login_id = $request->login_id;
         $user->email = $request->email;
+        $oldPhoto = $user->photo;
+        if ($request->hasFile('photo')) {
+            $user->photo = 'storage/'.$request->file('photo')->store('user-photos', 'public');
+        }
         $user->department = $request->department; // store department id
         if ($request->password) {
             $user->password = Hash::make($request->password);
@@ -191,6 +201,10 @@ class UserController extends Controller
         $user->is_active = $willBeActive;
         $user->user_type = $userType;
         $user->save();
+
+        if ($request->hasFile('photo')) {
+            $this->deleteStoredPhoto($oldPhoto);
+        }
 
         $roles = $isSuperAdmin && $userType === 'admin'
             ? ['Super Admin']
@@ -300,6 +314,15 @@ class UserController extends Controller
     private function activeSuperAdminCount(): int
     {
         return User::role('Super Admin')->where('is_active', true)->count();
+    }
+
+    private function deleteStoredPhoto(?string $photo): void
+    {
+        if (! $photo || ! str_starts_with($photo, 'storage/user-photos/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete(str_replace('storage/', '', $photo));
     }
 
     private function deactivationBlocked(Request $request, string $message)

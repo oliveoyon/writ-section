@@ -68,6 +68,12 @@
                     <label class="form-label">{{ __('tracking.filing.description') }}</label>
                     <textarea name="description" class="form-control" rows="3">{{ old('description', $case->description) }}</textarea>
                 </div>
+                <div class="col-md-12">
+                    <label for="court_name" class="form-label">{{ __('lawyer.case.court_name') }}</label>
+                    <input type="text" id="court_name" name="court_name" class="form-control @error('court_name') is-invalid @enderror"
+                        value="{{ old('court_name', $case->court_name) }}" placeholder="Annex 5, Main 23" maxlength="255" required>
+                    @error('court_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
             </div>
 
             @php

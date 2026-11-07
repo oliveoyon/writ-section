@@ -19,7 +19,7 @@
         <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
 
-    <form action="{{ $isEdit ? route('admin.users.update', $user->id) : route('admin.users.store') }}" method="POST" class="admin-panel user-form-panel">
+    <form action="{{ $isEdit ? route('admin.users.update', $user->id) : route('admin.users.store') }}" method="POST" enctype="multipart/form-data" class="admin-panel user-form-panel">
         @csrf
         @if($isEdit)
             @method('PUT')
@@ -44,24 +44,42 @@
                     <span>Identity</span>
                 </div>
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label" for="name">Name</label>
-                        <input type="text" id="name" name="name" class="form-control" value="{{ old('name', $user->name ?? '') }}" autofocus required>
+                    <div class="col-md-3">
+                        <div class="photo-field">
+                            <img id="userPhotoPreview"
+                                src="{{ isset($user) && $user->photo ? asset($user->photo) : asset('assets/img/user1-128x128.jpg') }}"
+                                alt="User photo">
+                            <label class="btn btn-outline-brand btn-sm" for="photo">
+                                <i class="bi bi-camera" aria-hidden="true"></i>
+                                {{ $isEdit ? 'Change Photo' : 'Select Photo' }}
+                            </label>
+                            <input type="file" id="photo" name="photo" class="visually-hidden" accept="image/jpeg,image/png,image/webp">
+                            <small>JPG, PNG or WEBP, max 2 MB</small>
+                        </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label" for="email">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" value="{{ old('email', $user->email ?? '') }}" required>
-                    </div>
+                    <div class="col-md-9">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="name">Name</label>
+                                <input type="text" id="name" name="name" class="form-control" value="{{ old('name', $user->name ?? '') }}" autofocus required>
+                            </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label" for="employee_id">Employee ID</label>
-                        <input type="text" id="employee_id" name="employee_id" class="form-control" value="{{ old('employee_id', $user->employee_id ?? '') }}" required>
-                    </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="email">Email</label>
+                                <input type="email" id="email" name="email" class="form-control" value="{{ old('email', $user->email ?? '') }}" required>
+                            </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label" for="login_id">Card ID</label>
-                        <input type="text" id="login_id" name="login_id" class="form-control" value="{{ old('login_id', $user->login_id ?? '') }}">
+                            <div class="col-md-6">
+                                <label class="form-label" for="employee_id">Employee ID</label>
+                                <input type="text" id="employee_id" name="employee_id" class="form-control" value="{{ old('employee_id', $user->employee_id ?? '') }}" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" for="login_id">Card ID</label>
+                                <input type="text" id="login_id" name="login_id" class="form-control" value="{{ old('login_id', $user->login_id ?? '') }}">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -190,6 +208,25 @@
         border-color: #d4a017;
         box-shadow: 0 0 0 .15rem rgba(212, 160, 23, .15);
     }
+    .photo-field {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .55rem;
+        height: 100%;
+        padding: .75rem;
+        border: 1px solid #d7dde5;
+        border-radius: 4px;
+        background: #f8fafc;
+    }
+    .photo-field img {
+        width: 112px;
+        aspect-ratio: 4 / 5;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 1px 5px rgba(0, 40, 77, .2);
+    }
+    .photo-field small { color: #6b7280; font-size: .72rem; text-align: center; }
     .active-switch {
         display: inline-flex;
         align-items: center;
@@ -257,6 +294,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const department = document.getElementById('department');
     const userType = document.getElementById('user_type');
     const adminOption = userType.querySelector('option[value="admin"]');
+    const photoInput = document.getElementById('photo');
+    const photoPreview = document.getElementById('userPhotoPreview');
 
     function applyDepartmentAccess() {
         const selected = department.options[department.selectedIndex];
@@ -270,6 +309,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     department.addEventListener('change', applyDepartmentAccess);
     applyDepartmentAccess();
+
+    photoInput.addEventListener('change', function () {
+        const file = this.files?.[0];
+        if (file) {
+            photoPreview.src = URL.createObjectURL(file);
+        }
+    });
 });
 </script>
 @endpush

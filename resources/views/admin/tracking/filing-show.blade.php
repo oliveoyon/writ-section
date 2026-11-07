@@ -26,6 +26,7 @@
         <div class="info-box"><span>{{ __('tracking.lookup.permanent_barcode') }}</span><strong>{{ $case->permanent_barcode ?? '-' }}</strong></div>
         <div class="info-box"><span>{{ __('tracking.lookup.current_section') }}</span><strong>{{ $case->current_section ?? '-' }}</strong></div>
         <div class="info-box"><span>{{ __('tracking.filing.lawyer_name') }}</span><strong>{{ $case->lawyer?->full_name ?? '-' }}</strong></div>
+        <div class="info-box"><span>{{ __('lawyer.case.court_name') }}</span><strong>{{ $case->court_name ?? '-' }}</strong></div>
     </div>
 
     <div class="row g-3 mb-3">

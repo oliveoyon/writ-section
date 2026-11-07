@@ -279,7 +279,7 @@ class RegistrarTrackingController extends Controller
         $request->validate([
             'filter_mode' => 'required|in:date_range,month,year',
             'section' => 'nullable|string|max:255',
-            'movement_type' => 'nullable|in:receive,reject,override_receive,dispatch_to_court,returned_from_court_handover,user_handover,old_case_receive,legacy_intake,legacy_receive',
+            'movement_type' => 'nullable|in:receive,reject,resubmitted,override_receive,dispatch_to_court,returned_from_court_handover,user_handover,old_case_receive,legacy_intake,legacy_receive',
             'movement_scope' => 'required|in:all,in,out',
         ]);
 
