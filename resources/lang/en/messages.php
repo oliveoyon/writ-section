@@ -1,5 +1,11 @@
 <?php
 return [
+    'send_success_title' => 'Files sent successfully!',
+    'send_partial_title' => 'Some files were not sent',
+    'send_count' => ':count file(s) sent',
+    'send_failed_count' => ':count file(s) could not be sent. Please review the results below before trying again.',
+    'send_feedback_ok' => 'OK, understood',
+    'home' => 'Home',
     'admin_panel_title' => 'RTFTS',
     'admin_panel_brand' => 'RTFTS',
     'dashboard'         => 'Dashboard',

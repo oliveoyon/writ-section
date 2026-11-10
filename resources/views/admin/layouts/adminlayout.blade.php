@@ -189,6 +189,7 @@
 
         .workspace-primary-actions {
             display: flex;
+            flex-wrap: wrap;
             align-items: stretch;
             gap: .55rem;
         }
@@ -207,6 +208,8 @@
             font-size: .91rem;
             font-weight: 900;
             text-decoration: none;
+            padding: .5rem .75rem;
+            background: #00284d;
         }
 
         .workspace-action:hover,
@@ -223,6 +226,16 @@
         .workspace-action.send {
             background: #0b5f91;
             border-color: #084d76;
+        }
+
+        .workspace-action.old-case {
+            background: #92400e;
+            border-color: #78350f;
+        }
+
+        .workspace-action.court-send {
+            background: #6d28d9;
+            border-color: #5b21b6;
         }
 
         .workspace-action i {
@@ -370,7 +383,7 @@
             }
 
             .workspace-action {
-                flex: 1 1 50%;
+                flex: 1 1 calc(50% - .55rem);
             }
         }
 
@@ -492,7 +505,6 @@
                                 <i class="bi bi-speedometer"></i> {{ __('messages.dashboard') }}
                             </a>
                         </li>
-
                         @if($canManageSystem)
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
@@ -615,6 +627,20 @@
                 </a>
 
                 <div class="workspace-primary-actions" aria-label="File actions">
+                    <a class="workspace-action" href="{{ $brandRoute }}">
+                        <i class="bi bi-house-door" aria-hidden="true"></i>
+                        <span>{{ __('messages.home') }}</span>
+                    </a>
+                    <a class="workspace-action old-case" href="{{ route('admin.tracking.old-case-receive') }}">
+                        <i class="bi bi-archive" aria-hidden="true"></i>
+                        <span>{{ __('messages.old_case_receive') }}</span>
+                    </a>
+                    @if(strtolower(trim(preg_replace('/\s+/', ' ', str_replace(['_', '-'], ' ', $currentUser->departmentRelation?->name ?? $currentUser->department ?? '')))) === 'dealing assistant')
+                        <a class="workspace-action court-send" href="{{ route('admin.tracking.court.dispatch.index') }}">
+                            <i class="bi bi-bank" aria-hidden="true"></i>
+                            <span>{{ __('messages.court_dispatch') }}</span>
+                        </a>
+                    @endif
                     <a class="workspace-action receive" href="{{ route('admin.tracking.section.receive') }}">
                         <i class="bi bi-upc-scan" aria-hidden="true"></i>
                         <span>Receive Files</span>
@@ -701,6 +727,7 @@
         });
     </script>
     @stack('js')
+    @include('partials.file-send-feedback')
 </body>
 
 </html>

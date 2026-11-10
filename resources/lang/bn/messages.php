@@ -1,6 +1,12 @@
 <?php
 
 return [
+    'send_success_title' => 'ফাইল সফলভাবে পাঠানো হয়েছে!',
+    'send_partial_title' => 'কিছু ফাইল পাঠানো যায়নি',
+    'send_count' => ':countটি ফাইল পাঠানো হয়েছে',
+    'send_failed_count' => ':countটি ফাইল পাঠানো যায়নি। আবার চেষ্টা করার আগে নিচের ফলাফল দেখুন।',
+    'send_feedback_ok' => 'ঠিক আছে, বুঝেছি',
+    'home' => 'হোম',
     'admin_panel_title' => 'RTFTS',
     'admin_panel_brand' => 'RTFTS',
     'dashboard' => 'ড্যাশবোর্ড',

@@ -256,10 +256,12 @@
     .desk-layout { display:grid; grid-template-columns:minmax(320px,.72fr) minmax(0,1.28fr); align-items:start; gap:1rem; }
     .notification-column { display:grid; gap:1rem; min-width:0; }
     .notice-panel { overflow:hidden; background:#fff; border-radius:4px; box-shadow:0 3px 10px rgba(0,40,77,.11); }
-    .incoming-panel { border:2px solid #d4a017; }
+    .incoming-panel { border:2px solid #c81e32; }
     .outgoing-panel { border:2px solid #3b82a0; }
     .notice-heading { display:grid; grid-template-columns:40px minmax(0,1fr) auto; align-items:center; gap:.7rem; padding:.75rem .85rem; border-bottom:1px solid; }
-    .incoming-heading { background:#fff8e5; border-bottom-color:#ead9a7; }
+    .incoming-heading { background:#fff4f5; border-bottom-color:#efc4cb; }
+    .incoming-heading .notice-heading-icon { background:#c81e32; border-radius:4px; }
+    .incoming-heading strong, .incoming-heading small { color:#7f1524; }
     .outgoing-heading { grid-template-columns:40px minmax(0,1fr); background:#eaf5f8; border-bottom-color:#bfdbe4; }
     .notice-heading-icon { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; color:#fff; background:#b7790b; font-size:1.05rem; }
     .outgoing-heading .notice-heading-icon { background:#0b5f78; }
