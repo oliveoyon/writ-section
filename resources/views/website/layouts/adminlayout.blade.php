@@ -165,29 +165,25 @@
     <!-- FOOTER -->
     <footer>
         <div class="container">
-            <div class="row text-center text-md-start">
-                <div class="col-md-4 mb-3">
-                    <h5>Contact Us</h5>
-                    <p>Email: info@example.com<br>Phone: +880 1234 567890</p>
-                </div>
-                <div class="col-md-4 mb-3">
+            <div class="row g-4 text-center text-sm-start mx-auto" style="max-width: 800px;">
+                <div class="col-sm-6">
                     <h5>Quick Links</h5>
-                    <ul class="list-unstyled">
+                    <ul class="list-unstyled mb-0" style="line-height: 2;">
                         <li><a href="#">Dashboard</a></li>
                         <li><a href="#">Reports</a></li>
                         <li><a href="#">Writ Section</a></li>
                     </ul>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-sm-6">
                     <h5>{{ __('writ.footer.system_access') }}</h5>
-                    <ul class="list-unstyled">
+                    <ul class="list-unstyled mb-0" style="line-height: 2;">
                         <li><a href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>
                         <li><a href="{{ route('login') }}">{{ __('writ.footer.section_login') }}</a></li>
                     </ul>
                 </div>
             </div>
 
-            <hr class="mt-3" style="border-color: #d4a017;">
+            <hr class="my-4" style="border-color: #d4a017;">
             <p class="text-center mt-2 mb-1">© {{ date('Y') }} RTFTS - Real Time File Tracking System</p>
             <div class="footer-meta">
                 <span>Implemented by The Supreme Court of Bangladesh</span>

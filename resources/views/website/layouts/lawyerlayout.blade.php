@@ -201,28 +201,24 @@
     <!-- FOOTER -->
     <footer>
         <div class="container">
-            <div class="row text-center text-md-start">
-                <div class="col-md-4 mb-3">
-                    <h5>{{ __('lawyer.footer.contact') }}</h5>
-                    <p>{{ __('lawyer.footer.email') }}<br>{{ __('lawyer.footer.phone') }}</p>
-                </div>
-                <div class="col-md-4 mb-3">
+            <div class="row g-4 text-center text-sm-start mx-auto" style="max-width: 800px;">
+                <div class="col-sm-6">
                     <h5>{{ __('lawyer.footer.quick_links') }}</h5>
-                        <ul class="list-unstyled">
+                        <ul class="list-unstyled mb-0" style="line-height: 2;">
                             <li><a href="{{ route('lawyer.dashboard') }}">{{ __('lawyer.nav.dashboard') }}</a></li>
                             <li><a href="{{ route('lawyer.my_cases') }}">{{ __('lawyer.nav.my_cases') }}</a></li>
                             <li><a href="{{ route('lawyer.messages') }}">{{ __('lawyer.nav.messages') }}</a></li>
                         </ul>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-sm-6">
                     <h5>{{ __('writ.footer.system_access') }}</h5>
-                    <ul class="list-unstyled">
+                    <ul class="list-unstyled mb-0" style="line-height: 2;">
                         <li><a href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>
                         <li><a href="{{ route('login') }}">{{ __('writ.footer.section_login') }}</a></li>
                     </ul>
                 </div>
             </div>
-            <hr class="mt-3" style="border-color: #d4a017;">
+            <hr class="my-4" style="border-color: #d4a017;">
             <div class="footer-meta">
                 <span>{{ __('lawyer.footer.copyright') }}</span>
                 <span>{{ __('lawyer.footer.implemented_by') }}</span>

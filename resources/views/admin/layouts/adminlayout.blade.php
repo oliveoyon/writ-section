@@ -643,14 +643,10 @@
 
     <footer>
         <div class="container">
-            <div class="row text-center text-md-start">
-                <div class="col-md-4 mb-3">
-                    <h5>{{ __('messages.contact_us') }}</h5>
-                    <p>{{ __('messages.contact_email') }}<br>{{ __('messages.contact_phone') }}</p>
-                </div>
-                <div class="col-md-4 mb-3">
+            <div class="row g-4 text-center text-sm-start mx-auto" style="max-width: 800px;">
+                <div class="col-sm-6">
                     <h5>{{ __('messages.quick_links') }}</h5>
-                    <ul class="list-unstyled">
+                    <ul class="list-unstyled mb-0" style="line-height: 2;">
                         @if($canSeeAdminMenu)
                             <li><a href="{{ route('admin.dashboard') }}">{{ __('messages.dashboard') }}</a></li>
                         @endif
@@ -676,16 +672,16 @@
                         @endif
                     </ul>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-sm-6">
                     <h5>{{ __('writ.footer.system_access') }}</h5>
-                    <ul class="list-unstyled">
+                    <ul class="list-unstyled mb-0" style="line-height: 2;">
                         <li><a href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>
                         <li><a href="{{ route('login') }}">{{ __('writ.footer.section_login') }}</a></li>
                     </ul>
                 </div>
             </div>
 
-            <hr class="mt-3" style="border-color: #d4a017;">
+            <hr class="my-4" style="border-color: #d4a017;">
             <div class="footer-meta">
                 <span>{{ __('messages.copyright', ['year' => date('Y')]) }}</span>
                 <span>{{ __('messages.implemented_by') }}</span>
