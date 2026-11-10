@@ -6,11 +6,19 @@
 
 <!-- HERO -->
     <section class="hero" id="home">
-        <div class="container" data-aos="fade-up">
+        <div class="container hero-content">
             <h1 class="display-4 fw-bold">{{ __('writ.hero.title') }}</h1>
             <p class="lead mt-3 mb-4">{{ __('writ.hero.subtitle') }}</p>
             <a href="{{ route('lawyer.register') }}" class="btn btn-gold btn-lg">{{ __('writ.hero.cta') }}</a>
         </div>
+        <figure class="hero-photo mb-0">
+            <img src="{{ asset('assets/img/supreme-court-bangladesh.jpg') }}"
+                alt="{{ __('writ.hero.image_alt') }}" width="4780" height="3186" fetchpriority="high">
+            <figcaption>
+                <a href="https://commons.wikimedia.org/wiki/File:Supreme_Court_of_Bangladesh_01.jpg">MD SAIFUL AMIN / Wikimedia Commons</a>
+                &middot; <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+            </figcaption>
+        </figure>
     </section>
 
     <!-- ABOUT -->

@@ -52,11 +52,64 @@
         }
 
         .hero {
-            background: linear-gradient(rgba(0, 0, 50, 0.45), rgba(0, 0, 0, 0.6)),
-                url('https://images.unsplash.com/photo-1587821525056-895ca712a5a2?q=80&w=1800') no-repeat center center/cover;
-            padding: 150px 0;
+            background: #00284d;
             color: #fff;
             text-align: center;
+        }
+
+        .hero-content {
+            padding-top: clamp(40px, 5vw, 72px);
+            padding-bottom: 40px;
+        }
+
+        .hero h1 {
+            max-width: 920px;
+            margin-inline: auto;
+            font-size: clamp(2rem, 4vw, 3.4rem);
+            line-height: 1.2;
+        }
+
+        .hero .lead {
+            max-width: 760px;
+            margin-inline: auto;
+            color: #dce6ef;
+        }
+
+        .hero .btn-gold {
+            color: #00284d;
+            font-weight: 700;
+            padding: 12px 28px;
+            border-radius: 6px;
+        }
+
+        .hero-photo {
+            position: relative;
+            border-top: 3px solid #d4a017;
+        }
+
+        .hero-photo img {
+            display: block;
+            width: 100%;
+            height: clamp(260px, 30vw, 440px);
+            object-fit: cover;
+            object-position: center 75%;
+        }
+
+        .hero-photo figcaption {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            padding: 5px 12px;
+            background: rgba(0, 25, 48, .85);
+            font: 11px/1.5 "Segoe UI", sans-serif;
+        }
+
+        .hero-photo a {
+            color: #fff;
+        }
+
+        section[id] {
+            scroll-margin-top: 80px;
         }
 
         .section-title {
@@ -155,8 +208,15 @@
                     <li class="nav-item"><a class="nav-link" href="{{ route('web.home') }}#benefits">{{ __('writ.nav.benefits') }}</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ route('web.home') }}#faq">{{ __('writ.nav.faq') }}</a></li>
                     @guest
-                        <li class="nav-item ms-lg-3">
-                            <a class="nav-link" href="{{ route('lawyer.login') }}">{{ __('writ.nav.login') }}</a>
+                        <li class="nav-item dropdown ms-lg-3">
+                            <button class="nav-link dropdown-toggle" type="button" id="loginDropdown"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ __('writ.nav.login') }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="loginDropdown">
+                                <li><a class="dropdown-item" href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>
+                                <li><a class="dropdown-item" href="{{ route('login') }}">{{ __('writ.footer.section_login') }}</a></li>
+                            </ul>
                         </li>
                     @else
                         @if(auth()->user()->user_type === 'lawyer')
@@ -213,7 +273,7 @@
                     <h5>{{ __('writ.footer.system_access') }}</h5>
                     <ul class="list-unstyled">
                         <li><a href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>
-                        <li><a href="{{ route('login') }}">{{ __('writ.footer.admin_login') }}</a></li>
+                        <li><a href="{{ route('login') }}">{{ __('writ.footer.section_login') }}</a></li>
                     </ul>
                 </div>
             </div>

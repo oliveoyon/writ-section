@@ -218,7 +218,7 @@
                     <h5>{{ __('writ.footer.system_access') }}</h5>
                     <ul class="list-unstyled">
                         <li><a href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>
-                        <li><a href="{{ route('login') }}">{{ __('writ.footer.admin_login') }}</a></li>
+                        <li><a href="{{ route('login') }}">{{ __('writ.footer.section_login') }}</a></li>
                     </ul>
                 </div>
             </div>
