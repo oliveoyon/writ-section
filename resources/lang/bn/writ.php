@@ -11,7 +11,7 @@ return [
         'login' => 'লগইন',
     ],
     'hero' => [
-        'title' => 'RTFTS - Real Time File Tracking System',
+        'title' => 'Real Time File Tracking System (RTFTS)',
         'subtitle' => 'বাংলাদেশে আইনজীবীদের জন্য রিট পিটিশন তৈরি, জমা এবং ট্র্যাক করার ডিজিটাল সমাধান।',
         'cta' => 'আইনজীবী হিসেবে নিবন্ধন করুন',
         'image_alt' => 'ঢাকায় অবস্থিত বাংলাদেশ সুপ্রিম কোর্ট ভবন',

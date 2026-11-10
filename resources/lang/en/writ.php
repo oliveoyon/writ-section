@@ -11,7 +11,7 @@ return [
         'login' => 'Login',
     ],
     'hero' => [
-        'title' => 'RTFTS - Real Time File Tracking System',
+        'title' => 'Real Time File Tracking System (RTFTS)',
         'subtitle' => 'A digital solution for lawyers to file, submit, and track writ petitions efficiently in Bangladesh.',
         'cta' => 'Register as Lawyer',
         'image_alt' => 'Supreme Court of Bangladesh building in Dhaka',
