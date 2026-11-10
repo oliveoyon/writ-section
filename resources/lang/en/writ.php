@@ -69,6 +69,8 @@ return [
         'login' => 'Login',
     ],
     'footer' => [
+        'court_name' => 'Supreme Court of Bangladesh',
+        'logo_alt' => 'Supreme Court of Bangladesh logo',
         'contact' => 'Contact',
         'email' => 'Email: support@writ.gov.bd',
         'phone' => 'Phone: +880 1XXX-XXXXXX',

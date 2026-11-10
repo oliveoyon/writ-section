@@ -257,8 +257,9 @@
     <!-- FOOTER -->
     <footer>
         <div class="container">
-            <div class="row g-4 text-center text-sm-start mx-auto" style="max-width: 800px;">
-                <div class="col-sm-6">
+            <div class="row g-4 text-center text-sm-start mx-auto" style="max-width: 1000px;">
+                @include('partials.footer-logo')
+                <div class="col-sm-6 col-md-4">
                     <h5>{{ __('writ.footer.quick_links') }}</h5>
                     <ul class="list-unstyled mb-0" style="line-height: 2;">
                         <li><a href="#about">{{ __('writ.nav.about') }}</a></li>
@@ -266,7 +267,7 @@
                         <li><a href="#faq">{{ __('writ.nav.faq') }}</a></li>
                     </ul>
                 </div>
-                <div class="col-sm-6">
+                <div class="col-sm-6 col-md-4">
                     <h5>{{ __('writ.footer.system_access') }}</h5>
                     <ul class="list-unstyled mb-0" style="line-height: 2;">
                         <li><a href="{{ route('lawyer.login') }}">{{ __('writ.footer.lawyer_login') }}</a></li>

@@ -69,6 +69,8 @@ return [
         'login' => 'লগইন',
     ],
     'footer' => [
+        'court_name' => 'বাংলাদেশ সুপ্রিম কোর্ট',
+        'logo_alt' => 'বাংলাদেশ সুপ্রিম কোর্টের লোগো',
         'contact' => 'যোগাযোগ',
         'email' => 'ইমেইল: support@writ.gov.bd',
         'phone' => 'ফোন: +880 1XXX-XXXXXX',
