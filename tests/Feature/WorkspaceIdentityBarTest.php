@@ -85,6 +85,7 @@ class WorkspaceIdentityBarTest extends TestCase
             ->assertSee('storage/user-photos/visible-user.jpg', false)
             ->assertSee('Receive Files')
             ->assertSee('Send Files')
+            ->assertDontSee('workspace-action old-case', false)
             ->assertSee('aria-label="2 files waiting"', false)
             ->assertSee('aria-label="4 files in custody"', false);
     }

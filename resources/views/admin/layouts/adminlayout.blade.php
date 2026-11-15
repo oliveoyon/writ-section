@@ -228,11 +228,6 @@
             border-color: #084d76;
         }
 
-        .workspace-action.old-case {
-            background: #92400e;
-            border-color: #78350f;
-        }
-
         .workspace-action.court-send {
             background: #6d28d9;
             border-color: #5b21b6;
@@ -630,10 +625,6 @@
                     <a class="workspace-action" href="{{ $brandRoute }}">
                         <i class="bi bi-house-door" aria-hidden="true"></i>
                         <span>{{ __('messages.home') }}</span>
-                    </a>
-                    <a class="workspace-action old-case" href="{{ route('admin.tracking.old-case-receive') }}">
-                        <i class="bi bi-archive" aria-hidden="true"></i>
-                        <span>{{ __('messages.old_case_receive') }}</span>
                     </a>
                     @if(strtolower(trim(preg_replace('/\s+/', ' ', str_replace(['_', '-'], ' ', $currentUser->departmentRelation?->name ?? $currentUser->department ?? '')))) === 'dealing assistant')
                         <a class="workspace-action court-send" href="{{ route('admin.tracking.court.dispatch.index') }}">
